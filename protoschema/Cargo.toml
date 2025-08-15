@@ -1,0 +1,17 @@
+[package]
+name = "protoschema"
+version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+keywords.workspace = true
+edition.workspace = true
+
+[dependencies]
+askama = { workspace = true }
+chrono = { workspace = true }
+bon = { workspace = true }
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
