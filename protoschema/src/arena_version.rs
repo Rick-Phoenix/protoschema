@@ -6,7 +6,7 @@ use bon::{builder, Builder};
 use paste::paste;
 
 use crate::{
-  field_data_builder::{SetFieldType, SetName, SetTag},
+  field_data_builder::{SetName, SetTag, SetTy},
   message_data_builder::IsSet,
 };
 pub use crate::{
@@ -14,8 +14,6 @@ pub use crate::{
   option::{OptionValue, ProtoOption},
 };
 
-#[macro_use]
-mod macros;
 mod field_type;
 #[macro_use]
 mod option;
@@ -29,11 +27,11 @@ struct SchemaInner {
 }
 
 #[derive(Clone, Default)]
-pub struct Package {
+pub struct Schema {
   arena: Arena,
 }
 
-impl Package {
+impl Schema {
   pub fn new_file(
     &self,
     name: &str,
@@ -55,18 +53,11 @@ impl<S: file_data_builder::State> FileDataBuilder<S>
 where
   S::Arena: IsSet,
   S::Id: IsSet,
-  S::Name: IsSet,
 {
-  fn new_message(
+  fn add_message(
     &self,
     name: &str,
-  ) -> MessageDataBuilder<
-    message_data_builder::SetArena<
-      message_data_builder::SetPackageId<
-        message_data_builder::SetId<message_data_builder::SetFile<message_data_builder::SetName>>,
-      >,
-    >,
-  > {
+  ) -> MessageDataBuilder<message_data_builder::SetFile<message_data_builder::SetName>> {
     let mut arena = self.get_arena().borrow_mut();
     let msg_id = arena.messages.len();
     arena.messages.push(MessageData::default());
@@ -76,9 +67,6 @@ where
     MessageData::builder()
       .name(name.into())
       .file(data.name.to_string())
-      .id(msg_id)
-      .package_id(1)
-      .arena(self.get_arena().clone())
   }
 }
 
@@ -87,13 +75,20 @@ pub struct FileData {
   #[builder(getter(name = get_id, vis = ""))]
   pub id: usize,
   #[builder(getter(name = get_arena, vis = ""))]
-  arena: Arena,
+  pub arena: Arena,
   pub name: Box<str>,
   pub options: Vec<ProtoOption>,
   pub messages: Vec<usize>,
   pub imports: Vec<String>,
   pub enums: Vec<usize>,
   pub package_id: String,
+}
+
+impl<S: package_data_builder::State> PackageDataBuilder<S>
+where
+  S::Name: IsSet,
+{
+  fn new_file(mut self) -> Self {}
 }
 
 #[derive(Builder)]
@@ -103,10 +98,95 @@ pub struct PackageData {
   pub name: Box<str>,
 }
 
+impl PackageData {
+  pub fn new(name: &str) -> Self {
+    Self {
+      name: name.into(),
+      files: vec![],
+    }
+  }
+
+  pub fn new_file(&self, name: &str) -> FileData {
+    FileData {
+      name: name.into(),
+      options: vec![],
+      messages: vec![],
+      imports: vec![],
+      enums: vec![],
+      package: self.name.clone().into(),
+    }
+  }
+}
+
+impl FileData {
+  pub fn new_message(
+    &self,
+    name: &str,
+  ) -> MessageDataBuilder<message_data_builder::SetFile<message_data_builder::SetName>> {
+    MessageData::builder()
+      .name(name.into())
+      .file(self.name.to_string())
+  }
+}
+
+macro_rules! string {
+  ($field_name:ident = $tag:literal $(, [$($option_name:expr),*])? $(,)?) => {
+    field!(string $field_name = $tag $(, [$($option_name),*])?)
+  };
+}
+
+macro_rules! field {
+  ($field_type:ident $field_name:ident = $tag:literal $(, [$($option_name:expr),*])? $(,)?) => {
+    FieldData::builder().name(stringify!($field_name).into()).ty(parse_field_type!($field_type)).tag($tag).options(vec![
+      $($($option_name),*)?
+    ])
+  };
+}
+
+macro_rules! add_field {
+  ($current_builder:expr, $field_def:expr) => {
+    $current_builder.field($field_def)
+  };
+
+  ($current_builder:expr, $head_field:expr, $($tail_fields:expr),* $(,)?) =>  {
+    add_field!(
+      $current_builder.field($head_field),
+      $($tail_fields),*
+    )
+  };
+}
+
+macro_rules! message_fields {
+  ($message:ident, [$head_field:expr, $($tail_fields:expr),* ] $(,)?) => {
+    add_field!($message.field($head_field), $($tail_fields),*)
+  };
+}
+
+macro_rules! message {
+  ($file:ident, $name:literal, [$head_field:expr, $($tail_fields:expr),* ] $(,)?) => {
+    {
+      let msg = $file.new_message($name);
+      message_fields!(msg, [ $head_field, $($tail_fields),* ])
+    }
+  };
+}
+
+macro_rules! parse_field_type {
+  ($ty:ident) => {
+    paste! {
+      FieldType::[< $ty:camel >]
+    }
+  };
+}
+
 fn example() {
-  let schema = Package::default();
+  let schema = Schema::default();
 
   let file = schema.new_file("abc");
+
+  let pac = PackageData::new("abc");
+
+  let file = pac.new_file("abc");
 
   let opt = ProtoOption {
     name: "abc",
@@ -124,7 +204,7 @@ fn example() {
     ]
   );
 
-  let field = msg_field!(msg, abc = 5);
+  let field = string!(abc = 5);
 
   let built = msg.build();
 }
@@ -148,18 +228,10 @@ pub struct EnumData {
 impl<S: message_data_builder::State> MessageDataBuilder<S>
 where
   S::Name: IsSet,
-  S::Id: IsSet,
-  S::Arena: IsSet,
 {
-  fn get_field_type(&self) -> FieldType {
-    FieldType::Message {
-      name: self.get_name().to_string(),
-      id: *self.get_id(),
-    }
-  }
   fn field(
     mut self,
-    new_field: FieldDataBuilder<field_data_builder::SetOptions<SetTag<SetFieldType<SetName>>>>,
+    new_field: FieldDataBuilder<field_data_builder::SetOptions<SetTag<SetTy<SetName>>>>,
   ) -> Self {
     self
       .fields
@@ -172,9 +244,7 @@ where
 pub struct MessageData {
   #[builder(field)]
   pub fields: Vec<FieldData>,
-  #[builder(getter(name = get_arena, vis = ""))]
-  arena: Arena,
-  #[builder(getter(name = get_id, vis = ""))]
+  pub arena: Arena,
   pub id: usize,
   pub package_id: usize,
   #[builder(getter(name = get_name, vis = ""))]
@@ -192,7 +262,7 @@ pub struct MessageData {
 pub struct FieldData {
   message: String,
   name: Box<str>,
-  field_type: FieldType,
+  ty: FieldType,
   tag: u32,
   options: Vec<ProtoOption>,
 }
