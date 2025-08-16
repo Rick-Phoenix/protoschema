@@ -2,18 +2,25 @@
 
 use std::{cell::RefCell, marker::PhantomData, rc::Rc};
 
-use bon::Builder;
-
+use crate::message::{Empty, MessageBuilder, MessageData};
 pub use crate::{
   field_type::FieldType,
   option::{OptionValue, ProtoOption},
 };
 
+pub mod fields;
+mod message;
 #[macro_use]
 mod macros;
 mod field_type;
 #[macro_use]
 mod option;
+
+#[derive(Clone, Debug)]
+pub struct Range {
+  pub start: u32,
+  pub end: u32,
+}
 
 type Arena = Rc<RefCell<SchemaInner>>;
 
@@ -45,9 +52,9 @@ impl Package {
 }
 
 #[derive(Clone, Debug)]
-pub struct Set;
+pub struct Set<T>(PhantomData<fn() -> T>);
 #[derive(Clone, Debug)]
-pub struct Unset;
+pub struct Unset<T>(PhantomData<fn() -> T>);
 
 pub struct FileBuilder {
   id: usize,
@@ -55,20 +62,20 @@ pub struct FileBuilder {
 }
 
 impl FileBuilder {
-  pub fn new_message(&self, name: &str) -> MessageBuilder<Unset> {
+  pub fn new_message(&self, name: &str) -> MessageBuilder<Empty> {
     let mut arena = self.arena.borrow_mut();
     let msg_id = arena.messages.len();
 
     arena.messages.push(MessageData {
       file_id: self.id,
       name: name.into(),
-      fields: vec![],
+      ..Default::default()
     });
 
     MessageBuilder {
       id: msg_id,
       arena: self.arena.clone(),
-      _fields_state: PhantomData,
+      _phantom: PhantomData,
     }
   }
 }
@@ -77,77 +84,4 @@ impl FileBuilder {
 pub struct FileData {
   pub name: Box<str>,
   pub messages: Vec<usize>,
-}
-
-#[derive(Clone, Debug)]
-pub struct MessageData {
-  pub file_id: usize,
-  pub name: String,
-  pub fields: Vec<Field>,
-}
-
-pub trait MessageState {
-  type Fields;
-}
-
-pub trait IsComplete: MessageState {}
-
-#[derive(Clone, Debug)]
-pub struct MessageBuilder<FieldsState> {
-  id: usize,
-  arena: Arena,
-  _fields_state: PhantomData<FieldsState>,
-}
-
-#[derive(Clone, Debug, Builder)]
-pub struct Field {
-  pub parent_message_id: usize,
-  pub name: Box<str>,
-  pub tag: u32,
-  pub field_type: FieldType,
-  #[builder(default)]
-  pub options: Vec<ProtoOption>,
-}
-
-impl MessageBuilder<Set> {
-  pub fn build(self) -> MessageData {
-    let arena = self.arena.borrow();
-    arena.messages[self.id].clone()
-  }
-}
-
-impl MessageBuilder<Unset> {
-  pub fn name(&self) -> String {
-    let arena = self.arena.borrow();
-
-    arena.messages[self.id].name.clone()
-  }
-  pub fn fields<F>(self, fields: F) -> MessageBuilder<Set>
-  where
-    F: IntoIterator<
-      Item = FieldBuilder<
-        field_builder::SetOptions<
-          field_builder::SetTag<field_builder::SetFieldType<field_builder::SetName>>,
-        >,
-      >,
-    >,
-  {
-    let final_fields: Vec<Field> = fields
-      .into_iter()
-      .map(|f| f.parent_message_id(self.id).build())
-      .collect();
-
-    {
-      let mut arena = self.arena.borrow_mut();
-      let msg = &mut arena.messages[self.id];
-
-      msg.fields = final_fields;
-    }
-
-    MessageBuilder {
-      id: self.id,
-      arena: self.arena,
-      _fields_state: PhantomData,
-    }
-  }
 }

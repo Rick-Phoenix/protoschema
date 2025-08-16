@@ -10,23 +10,33 @@ macro_rules! parse_field_type {
 #[macro_export]
 macro_rules! msg_field {
   ($msg:ident, $field_name:ident = $tag:literal $(, [$($option_name:expr),*])? $(,)? ) => {
-    field!(FieldType::Message { name: $msg.name().into() }, $field_name = $tag $(, [$($option_name),*])? )
+    field!(FieldType::Message { name: $msg.get_name().into() }, $field_name = $tag $(, [$($option_name),*])? )
   };
 }
 
 #[macro_export]
 macro_rules! field {
-  ($field_type:expr, $field_name:ident = $tag:literal $(, [$($option_name:expr),*])? $(,)?) => {
+  ($field_type:expr, $field_name:ident = $tag:literal $(, [$($option:expr),*])? $(,)?) => {
     Field::builder().name(stringify!($field_name).into()).field_type($field_type).tag($tag).options(vec![
-      $($($option_name),*)?
+      $($($option),*)?
     ])
   };
 }
 
 #[macro_export]
 macro_rules! string {
-  ($field_name:ident = $tag:literal $(, [$($option_name:expr),*])? $(,)?) => {
-    field!(parse_field_type!(string), $field_name = $tag $(, [$($option_name),*])? )
+  ($field_name:ident = $tag:literal, $validator:expr) => {
+    Field::builder()
+      .name(stringify!($field_name).into())
+      .field_type(parse_field_type!(string))
+      .tag($tag)
+      .option(build_string_validator_option($validator))
+  };
+  ($field_name:ident = $tag:literal) => {
+    Field::builder()
+      .name(stringify!($field_name).into())
+      .field_type(parse_field_type!(string))
+      .tag($tag)
   };
 }
 
