@@ -1,3 +1,4 @@
+#[macro_export]
 macro_rules! parse_field_type {
   ($ty:ident) => {
     paste! {
@@ -6,12 +7,14 @@ macro_rules! parse_field_type {
   };
 }
 
+#[macro_export]
 macro_rules! msg_field {
   ($msg:ident, $field_name:ident = $tag:literal $(, [$($option_name:expr),*])? $(,)? ) => {
     field!($msg.get_field_type(), $field_name = $tag $(, [$($option_name),*])? )
   };
 }
 
+#[macro_export]
 macro_rules! field {
   ($field_type:expr, $field_name:ident = $tag:literal $(, [$($option_name:expr),*])? $(,)?) => {
     FieldData::builder().name(stringify!($field_name).into()).field_type($field_type).tag($tag).options(vec![
@@ -20,12 +23,14 @@ macro_rules! field {
   };
 }
 
+#[macro_export]
 macro_rules! string {
   ($field_name:ident = $tag:literal $(, [$($option_name:expr),*])? $(,)?) => {
     field!(parse_field_type!(string), $field_name = $tag $(, [$($option_name),*])? )
   };
 }
 
+#[macro_export]
 macro_rules! add_field {
   ($current_builder:expr, $field_def:expr) => {
     $current_builder.field($field_def)
@@ -39,6 +44,7 @@ macro_rules! add_field {
   };
 }
 
+#[macro_export]
 macro_rules! message_fields {
   ($message:ident, [$head_field:expr, $($tail_fields:expr),* ] $(,)?) => {
     add_field!($message.field($head_field), $($tail_fields),*)

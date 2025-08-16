@@ -3,7 +3,6 @@
 use std::{cell::RefCell, rc::Rc};
 
 use bon::{builder, Builder};
-use paste::paste;
 
 use crate::{
   field_data_builder::{SetFieldType, SetName, SetTag},
@@ -22,7 +21,7 @@ mod option;
 
 type Arena = Rc<RefCell<SchemaInner>>;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 struct SchemaInner {
   pub(crate) files: Vec<FileData>,
   pub(crate) messages: Vec<MessageData>,
@@ -57,7 +56,7 @@ where
   S::Id: IsSet,
   S::Name: IsSet,
 {
-  fn new_message(
+  pub fn new_message(
     &self,
     name: &str,
   ) -> MessageDataBuilder<
@@ -82,7 +81,7 @@ where
   }
 }
 
-#[derive(Default, Builder)]
+#[derive(Default, Builder, Debug)]
 pub struct FileData {
   #[builder(getter(name = get_id, vis = ""))]
   pub id: usize,
@@ -103,32 +102,7 @@ pub struct PackageData {
   pub name: Box<str>,
 }
 
-fn example() {
-  let schema = Package::default();
-
-  let file = schema.new_file("abc");
-
-  let opt = ProtoOption {
-    name: "abc",
-    value: OptionValue::Bool(true),
-  };
-
-  let msg = message!(
-    file,
-    "MyMsg",
-    [
-      string!(abc = 5),
-      string!(abc = 5),
-      string!(abc = 5),
-      string!(abc = 5, [opt.clone(), opt])
-    ]
-  );
-
-  let field = msg_field!(msg, abc = 5);
-
-  let built = msg.build();
-}
-
+#[derive(Debug)]
 pub struct Range {
   pub start: u32,
   pub end: u32,
@@ -151,13 +125,13 @@ where
   S::Id: IsSet,
   S::Arena: IsSet,
 {
-  fn get_field_type(&self) -> FieldType {
+  pub fn get_field_type(&self) -> FieldType {
     FieldType::Message {
       name: self.get_name().to_string(),
       id: *self.get_id(),
     }
   }
-  fn field(
+  pub fn field(
     mut self,
     new_field: FieldDataBuilder<field_data_builder::SetOptions<SetTag<SetFieldType<SetName>>>>,
   ) -> Self {
@@ -168,7 +142,8 @@ where
   }
 }
 
-#[derive(Builder, Default)]
+#[derive(Builder, Default, Debug)]
+#[builder(finish_fn(vis = "", name = build_internal))]
 pub struct MessageData {
   #[builder(field)]
   pub fields: Vec<FieldData>,
@@ -188,11 +163,34 @@ pub struct MessageData {
   pub file: String,
 }
 
-#[derive(Builder)]
+impl<S: message_data_builder::IsComplete> MessageDataBuilder<S> {
+  pub fn build(self, package: &Package)
+  where
+    <S as message_data_builder::State>::Arena: IsSet,
+    <S as message_data_builder::State>::Id: IsSet,
+  {
+    let mut arena = package.arena.borrow_mut();
+    let id = &self.get_id().clone();
+    arena.messages[*id] = self.build_internal();
+  }
+}
+
+#[derive(Builder, Debug)]
 pub struct FieldData {
   message: String,
   name: Box<str>,
   field_type: FieldType,
   tag: u32,
   options: Vec<ProtoOption>,
+}
+
+impl MessageData {
+  pub fn get_message_type(&self) {
+    for field in &self.fields {
+      if let FieldType::Message { name: _, id } = field.field_type {
+        let msg_data = &self.arena.borrow().messages[id];
+        println!("{:#?}", msg_data);
+      }
+    }
+  }
 }

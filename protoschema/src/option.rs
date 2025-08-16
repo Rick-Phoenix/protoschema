@@ -2,7 +2,7 @@ use std::{collections::BTreeMap, fmt::Display};
 
 use askama::Template;
 
-#[derive(Template, Clone)]
+#[derive(Template, Clone, Debug)]
 #[template(path = "opt.proto.j2")]
 pub struct ProtoOption {
   pub name: &'static str,
@@ -51,7 +51,7 @@ impl Display for OptionValue {
   }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum OptionValue {
   Bool(bool),
   Int(i64),
