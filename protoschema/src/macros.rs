@@ -10,14 +10,14 @@ macro_rules! parse_field_type {
 #[macro_export]
 macro_rules! msg_field {
   ($msg:ident, $field_name:ident = $tag:literal $(, [$($option_name:expr),*])? $(,)? ) => {
-    field!($msg.get_field_type(), $field_name = $tag $(, [$($option_name),*])? )
+    field!(FieldType::Message { name: $msg.name().into() }, $field_name = $tag $(, [$($option_name),*])? )
   };
 }
 
 #[macro_export]
 macro_rules! field {
   ($field_type:expr, $field_name:ident = $tag:literal $(, [$($option_name:expr),*])? $(,)?) => {
-    FieldData::builder().name(stringify!($field_name).into()).field_type($field_type).tag($tag).options(vec![
+    Field::builder().name(stringify!($field_name).into()).field_type($field_type).tag($tag).options(vec![
       $($($option_name),*)?
     ])
   };

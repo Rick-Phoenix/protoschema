@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum FieldType {
   Double,
   Float,
@@ -13,12 +13,12 @@ pub enum FieldType {
   String,
   Bytes,
   Uint32,
-  Enum { name: String, id: usize },
+  Enum { name: Box<str> },
   Sfixed32,
   Sfixed64,
   Sint32,
   Sint64,
-  Message { name: String, id: usize },
+  Message { name: Box<str> },
   Duration,
   Timestamp,
   Any,
