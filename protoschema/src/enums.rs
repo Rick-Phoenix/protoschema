@@ -39,24 +39,11 @@ impl<S: EnumState> EnumBuilder<S> {
     let enum_ = &arena.enums[self.id];
 
     match enum_.parent_message {
-      Some(id) => {
-        let mut path = String::new();
-        let mut current_id = Some(id);
-        path.push_str(&enum_.name);
-
-        while let Some(id) = current_id {
-          let current_enum = &arena.enums[id];
-          path.insert(0, '.');
-          path.insert_str(0, &current_enum.name);
-
-          current_id = current_enum.parent_message;
-        }
-
-        path.insert(0, '.');
-        path.insert_str(0, &self.get_package());
-
-        path
-      }
+      Some(id) => format!(
+        "{}.{}",
+        arena.messages[id].get_full_name(&arena),
+        self.get_name()
+      ),
       None => format!("{}.{}", self.get_package(), self.get_name()),
     }
   }

@@ -1,0 +1,11 @@
+{% import "opt.proto.j2" as get_opts %}
+
+message {{ name }} {
+  {% for nested_msg in messages -%}
+    {{ nested_msg.render()? }}
+  {%- endfor %}
+
+  {%- for (tag, field) in fields %}
+    {{ field.field_type.render_name(parent_message_name.as_ref().unwrap_or(package)) }} {{ field.name }} = {{ tag }} {% call get_opts::get_opts(&field.options) %};
+  {%- endfor %}
+}

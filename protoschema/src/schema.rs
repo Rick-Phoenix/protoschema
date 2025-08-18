@@ -1,16 +1,14 @@
 use std::{cell::RefCell, collections::HashSet, marker::PhantomData, rc::Rc};
 
-use askama::Template;
-
 use crate::{
   enums::EnumData,
   message::{MessageBuilder, MessageData},
+  rendering::{FileTemplate, MessageTemplate},
 };
 
 pub(crate) type Arena = Rc<RefCell<PackageData>>;
 
-#[derive(Default, Debug, Template)]
-#[template(path = "template.proto.j2")]
+#[derive(Default, Debug)]
 pub(crate) struct PackageData {
   pub(crate) name: String,
   pub(crate) files: Vec<FileData>,
@@ -24,8 +22,30 @@ pub struct Package {
 }
 
 impl Package {
-  pub fn render(&self) -> String {
-    self.arena.borrow().render().unwrap()
+  pub fn build_templates(&self) -> Vec<FileTemplate> {
+    let mut templates: Vec<FileTemplate> = Vec::new();
+    let arena = self.arena.borrow();
+
+    for file in &arena.files {
+      let file_messages: Vec<MessageTemplate> = file
+        .messages
+        .iter()
+        .map(|id| {
+          let msg = &arena.messages[*id];
+
+          msg.build_template(&self.arena.borrow())
+        })
+        .collect();
+
+      templates.push(FileTemplate {
+        name: file.name.clone(),
+        package: self.arena.borrow().name.clone(),
+        messages: file_messages,
+        imports: file.imports.clone(),
+      });
+    }
+
+    templates
   }
 
   pub fn new(name: &str) -> Self {
@@ -55,8 +75,8 @@ impl Package {
 }
 
 pub struct FileBuilder {
-  id: usize,
-  arena: Arena,
+  pub(crate) id: usize,
+  pub(crate) arena: Arena,
 }
 
 impl FileBuilder {
@@ -64,6 +84,8 @@ impl FileBuilder {
     let mut arena = self.arena.borrow_mut();
     let package_name = arena.name.clone();
     let msg_id = arena.messages.len();
+
+    arena.files[self.id].messages.push(msg_id);
 
     arena.messages.push(MessageData {
       file_id: self.id,

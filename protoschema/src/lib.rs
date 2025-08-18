@@ -2,8 +2,6 @@
 
 use std::marker::PhantomData;
 
-pub use field_type::ImportedItemPath;
-
 pub use crate::{
   field_type::FieldType,
   option::{OptionValue, ProtoOption},
@@ -31,6 +29,7 @@ pub mod enums;
 pub mod fields;
 mod message;
 pub mod oneofs;
+pub mod rendering;
 pub mod schema;
 #[macro_use]
 mod macros;

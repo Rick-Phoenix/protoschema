@@ -1,16 +1,15 @@
-use std::collections::HashSet;
-
 use bon::Builder;
 pub(crate) use field_builder::*;
 
 use crate::{fields::string_validator_builder::IsComplete, FieldType, OptionValue, ProtoOption};
 
 #[derive(Clone, Debug, Builder)]
+#[builder(derive(Clone))]
 pub struct Field {
   #[builder(field)]
   pub options: Vec<ProtoOption>,
   #[builder(field)]
-  pub imports: HashSet<Box<str>>,
+  pub imports: Vec<Box<str>>,
   #[builder(setters(vis = "", name = field_type_internal))]
   pub field_type: FieldType,
   pub name: Box<str>,
@@ -32,6 +31,11 @@ impl<S: field_builder::State> FieldBuilder<S> {
 
   pub fn options(mut self, options: Vec<ProtoOption>) -> Self {
     self.options = options;
+    self
+  }
+
+  pub fn import(mut self, import: &str) -> Self {
+    self.imports.push(import.into());
     self
   }
 }

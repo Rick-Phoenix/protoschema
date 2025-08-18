@@ -1,3 +1,4 @@
+use askama::Template;
 use maplit::btreemap;
 use paste::paste;
 use protoschema::{
@@ -23,17 +24,30 @@ fn main_test() {
 
   let msg = file.new_message("MyMsg");
 
-  let field = msg_field!(msg, mymsgfield = 5);
+  let field = msg_field!(msg, mymsgfield);
 
-  let msg = msg
-    .fields(btreemap! {
-      1 => field,
-      2 => string!(abc).options(vec![opt.clone(), opt.clone(), opt.clone()]),
-      3 => string!(abc, |v| v.min_len(5).max_len(15))
-    })
-    .get_data();
+  let msg = msg.fields(btreemap! {
+    1 => field.clone(),
+    2 => string!(abc).options(vec![opt.clone(), opt.clone(), opt.clone()]),
+    3 => string!(abc, |v| v.min_len(5).max_len(15))
+  });
 
-  let render = package.render();
+  let msg2 = msg.new_message("MyNestedMsg");
+
+  let field2 = msg_field!(msg2, mymsgfield2);
+
+  let msg2 = msg2.fields(btreemap! {
+    1 => field2.clone(),
+  });
+
+  let msg3 = file.new_message("MyMsg2").fields(btreemap! {
+    1 => field2.clone(),
+    2 => field.clone()
+  });
+
+  let file_renders = &package.build_templates()[0];
+
+  let render = file_renders.render().unwrap();
 
   println!("{}", render);
 }

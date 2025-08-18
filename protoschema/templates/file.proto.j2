@@ -1,0 +1,9 @@
+{% for import in imports %}
+{% if import.to_string() != name.to_string() %}
+import "{{ import }}";
+{% endif %}
+{% endfor %}
+
+{% for msg in messages %}
+  {{ msg }}
+{% endfor %}

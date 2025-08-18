@@ -6,7 +6,7 @@ use std::{
 use crate::{
   fields::{self, Field, FieldBuilder},
   oneofs::OneofData,
-  schema::Arena,
+  schema::{Arena, PackageData},
   sealed, Empty, IsSet, IsUnset, ProtoOption, Range, Set, Unset,
 };
 
@@ -15,6 +15,33 @@ pub struct MessageBuilder<S: MessageState = Empty> {
   pub(crate) id: usize,
   pub(crate) arena: Arena,
   pub(crate) _phantom: PhantomData<fn() -> S>,
+}
+
+impl MessageData {
+  pub fn get_full_name(&self, arena: &PackageData) -> String {
+    let mut path = String::new();
+
+    match self.parent_message {
+      Some(id) => {
+        let mut current_id = Some(id);
+        path.push_str(&self.name);
+
+        while let Some(id) = current_id {
+          let current_message = &arena.messages[id];
+          path.insert(0, '.');
+          path.insert_str(0, &current_message.name);
+
+          current_id = current_message.parent_message;
+        }
+      }
+      None => path.push_str(&self.name),
+    }
+
+    path.insert(0, '.');
+    path.insert_str(0, &self.package);
+
+    path
+  }
 }
 
 #[derive(Clone, Debug, Default)]
@@ -35,6 +62,39 @@ pub struct MessageData {
 }
 
 impl<S: MessageState> MessageBuilder<S> {
+  pub fn new_message(&self, name: &str) -> MessageBuilder {
+    let file_id = self.get_file_id();
+    let package = self.get_package();
+    let mut arena = self.arena.borrow_mut();
+
+    let parent_message_id = self.id;
+    let child_message_id = arena.messages.len();
+
+    arena.messages[parent_message_id]
+      .messages
+      .push(child_message_id);
+
+    let new_msg = MessageData {
+      name: name.into(),
+      package,
+      file_id,
+      parent_message: Some(parent_message_id),
+      ..Default::default()
+    };
+
+    arena.messages.push(new_msg);
+
+    MessageBuilder {
+      id: child_message_id,
+      arena: self.arena.clone(),
+      _phantom: PhantomData,
+    }
+  }
+
+  pub fn get_file_id(&self) -> usize {
+    self.arena.borrow().messages[self.id].file_id
+  }
+
   pub fn get_data(self) -> MessageData
   where
     S::Fields: IsSet,
@@ -49,29 +109,11 @@ impl<S: MessageState> MessageBuilder<S> {
     arena.messages[self.id].name.clone()
   }
 
-  pub fn get_full_name(&self) -> Box<str> {
+  pub fn get_full_name(&self) -> String {
     let arena = self.arena.borrow();
 
     let msg = &arena.messages[self.id];
-
-    match msg.parent_message {
-      Some(id) => {
-        let mut path = String::new();
-        let mut current_id = Some(id);
-        path.push_str(&msg.name);
-
-        while let Some(id) = current_id {
-          let current_message = &arena.messages[id];
-          path.insert(0, '.');
-          path.insert_str(0, &current_message.name);
-
-          current_id = current_message.parent_message;
-        }
-
-        path.into()
-      }
-      None => self.get_name().into(),
-    }
+    msg.get_full_name(&arena)
   }
 
   pub fn get_package(&self) -> String {

@@ -1,22 +1,10 @@
 use std::fmt::Display;
 
-use crate::message::MessageBuilder;
-
 #[derive(Debug, Clone)]
 pub struct ImportedItemPath {
   pub package: String,
   pub file: String,
   pub name: String,
-}
-
-impl ImportedItemPath {
-  pub fn from_msg(msg: &MessageBuilder) -> Self {
-    ImportedItemPath {
-      name: msg.get_name().to_string(),
-      file: msg.get_file(),
-      package: msg.get_package(),
-    }
-  }
 }
 
 #[derive(Debug, Clone)]
@@ -51,8 +39,29 @@ impl Display for FieldType {
   }
 }
 
+fn strip_common_prefix<'a>(s1: &'a str, s2: &'a str) -> &'a str {
+  let zipped_chars = s1.chars().zip(s2.chars());
+
+  let prefix_len = zipped_chars.take_while(|(c1, c2)| c1 == c2).count();
+
+  let byte_offset = s1.chars().take(prefix_len).map(|c| c.len_utf8()).sum();
+
+  (&s1[byte_offset..]) as _
+}
+
 impl FieldType {
-  /// Returns the short, lowercase name for the field type.
+  pub fn render_name<T: AsRef<str> + Display>(&self, prefix: T) -> String {
+    match self {
+      FieldType::Message(name) => {
+        strip_common_prefix(name, &format!("{}.", prefix.as_ref())).to_string()
+      }
+      FieldType::Enum(name) => {
+        strip_common_prefix(name, &format!("{}.", prefix.as_ref())).to_string()
+      }
+      _ => self.name().to_string(),
+    }
+  }
+
   pub fn name(&self) -> &str {
     match self {
       FieldType::Double => "double",

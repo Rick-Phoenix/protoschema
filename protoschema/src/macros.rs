@@ -9,8 +9,11 @@ macro_rules! parse_field_type {
 
 #[macro_export]
 macro_rules! msg_field {
-  ($msg:ident, $field_name:ident = $tag:literal $(, [$($option_name:expr),*])? $(,)? ) => {
-    field!(FieldType::Message($msg.get_full_name()), $field_name $(, [$($option_name),*])? )
+  ($msg:ident, $field_name:ident $(, [$($option_name:expr),*])? $(,)? ) => {
+    Field::builder()
+      .name(stringify!($field_name).into())
+      .field_type(FieldType::Message($msg.get_full_name().into()))
+      .import(&$msg.get_file())
   };
 }
 
