@@ -1,14 +1,18 @@
 use std::{cell::RefCell, collections::HashSet, marker::PhantomData, rc::Rc};
 
+use askama::Template;
+
 use crate::{
   enums::EnumData,
   message::{MessageBuilder, MessageData},
 };
 
-pub(crate) type Arena = Rc<RefCell<SchemaInner>>;
+pub(crate) type Arena = Rc<RefCell<PackageData>>;
 
-#[derive(Default, Debug)]
-pub(crate) struct SchemaInner {
+#[derive(Default, Debug, Template)]
+#[template(path = "template.proto.j2")]
+pub(crate) struct PackageData {
+  pub(crate) name: String,
   pub(crate) files: Vec<FileData>,
   pub(crate) messages: Vec<MessageData>,
   pub(crate) enums: Vec<EnumData>,
@@ -16,15 +20,20 @@ pub(crate) struct SchemaInner {
 
 #[derive(Clone)]
 pub struct Package {
-  name: String,
   arena: Arena,
 }
 
 impl Package {
+  pub fn render(&self) -> String {
+    self.arena.borrow().render().unwrap()
+  }
+
   pub fn new(name: &str) -> Self {
     Package {
-      name: name.to_string(),
-      arena: Rc::new(RefCell::new(Default::default())),
+      arena: Rc::new(RefCell::new(PackageData {
+        name: name.to_string(),
+        ..Default::default()
+      })),
     }
   }
 }
@@ -36,27 +45,24 @@ impl Package {
 
     arena.files.push(FileData {
       name: name.into(),
-      package: self.name.clone(),
       ..Default::default()
     });
     FileBuilder {
       id: file_id,
       arena: self.arena.clone(),
-      name: name.to_string(),
     }
   }
 }
 
 pub struct FileBuilder {
   id: usize,
-  name: String,
   arena: Arena,
 }
 
 impl FileBuilder {
   pub fn new_message(&self, name: &str) -> MessageBuilder {
     let mut arena = self.arena.borrow_mut();
-    let package_name = arena.files[self.id].package.clone();
+    let package_name = arena.name.clone();
     let msg_id = arena.messages.len();
 
     arena.messages.push(MessageData {
@@ -77,7 +83,6 @@ impl FileBuilder {
 #[derive(Clone, Debug, Default)]
 pub struct FileData {
   pub name: Box<str>,
-  pub package: String,
   pub messages: Vec<usize>,
   pub enums: Vec<usize>,
   pub imports: HashSet<Box<str>>,

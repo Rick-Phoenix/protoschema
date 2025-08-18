@@ -24,6 +24,7 @@ pub trait IsUnset {}
 impl<T> IsSet for Set<T> {}
 impl<T> IsUnset for Unset<T> {}
 
+#[derive(Debug, Clone)]
 pub struct Empty;
 
 pub mod enums;

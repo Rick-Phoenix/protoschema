@@ -1,3 +1,4 @@
+use maplit::btreemap;
 use paste::paste;
 use protoschema::{
   field,
@@ -25,18 +26,14 @@ fn main_test() {
   let field = msg_field!(msg, mymsgfield = 5);
 
   let msg = msg
-    .fields([
-      field,
-      string!(abc = 5).options(vec![opt.clone(), opt.clone(), opt.clone()]),
-      string!(abc = 5, |v| v.min_len(5).max_len(15)),
-    ])
+    .fields(btreemap! {
+      1 => field,
+      2 => string!(abc).options(vec![opt.clone(), opt.clone(), opt.clone()]),
+      3 => string!(abc, |v| v.min_len(5).max_len(15))
+    })
     .get_data();
 
-  println!(
-    "{:#?}",
-    msg
-      .fields
-      .iter()
-      .for_each(|f| { println!("{}", f.get_type_str("abcde", "myapp.v12")) })
-  );
+  let render = package.render();
+
+  println!("{}", render);
 }

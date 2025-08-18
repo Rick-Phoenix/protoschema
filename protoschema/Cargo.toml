@@ -12,6 +12,7 @@ askama = { workspace = true }
 chrono = { workspace = true }
 bon = { workspace = true }
 paste = { workspace = true }
+maplit = { workspace = true }
 
 [package.metadata.docs.rs]
 all-features = true

@@ -1,7 +1,9 @@
 {% import "opt.proto.j2" as get_opts %}
 
-message {{ name }} {
-  {% for field in fields -%}
-    {{ field.ty }} {{ field.name }} = {{ field.tag }} {% call get_opts::get_opts(&field.options) %};
-  {%- endfor %}
-}
+{% for msg in messages %}
+  message {{ name }} {
+    {% for (tag, field) in msg.fields -%}
+      {{ field.field_type }} {{ field.name }} = {{ tag }} {% call get_opts::get_opts(&field.options) %};
+    {%- endfor %}
+  }
+{% endfor %}

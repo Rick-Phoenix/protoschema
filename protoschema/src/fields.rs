@@ -17,28 +17,6 @@ pub struct Field {
   pub tag: u32,
 }
 
-impl Field {
-  pub fn get_type_str(&self, file: &str, package: &str) -> String {
-    match &self.field_type {
-      FieldType::Message(path) => {
-        if path.file == file || path.package == package {
-          path.name.clone()
-        } else {
-          format!("{}.{}", path.package, path.name)
-        }
-      }
-      FieldType::Enum(path) => {
-        if path.file == file || path.package == package {
-          path.name.clone()
-        } else {
-          format!("{}.{}", path.package, path.name)
-        }
-      }
-      _ => self.field_type.to_string(),
-    }
-  }
-}
-
 impl<S: field_builder::State> FieldBuilder<S> {
   pub fn field_type(self, field_type: FieldType) -> FieldBuilder<SetFieldType<S>>
   where

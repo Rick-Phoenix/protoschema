@@ -1,4 +1,7 @@
-use std::{collections::HashSet, marker::PhantomData};
+use std::{
+  collections::{BTreeMap, HashSet},
+  marker::PhantomData,
+};
 
 use crate::{
   fields::{self, Field, FieldBuilder},
@@ -20,7 +23,7 @@ pub struct MessageData {
   pub package: String,
   pub file_id: usize,
   pub parent_message: Option<usize>,
-  pub fields: Vec<Field>,
+  pub fields: BTreeMap<u32, Field>,
   pub oneofs: Vec<OneofData>,
   pub reserved_numbers: Box<[u32]>,
   pub reserved_ranges: Vec<Range>,
@@ -29,6 +32,145 @@ pub struct MessageData {
   pub enums: Vec<usize>,
   pub messages: Vec<usize>,
   pub imports: HashSet<Box<str>>,
+}
+
+impl<S: MessageState> MessageBuilder<S> {
+  pub fn get_data(self) -> MessageData
+  where
+    S::Fields: IsSet,
+  {
+    let arena = self.arena.borrow();
+    arena.messages[self.id].clone()
+  }
+
+  pub fn get_name(&self) -> String {
+    let arena = self.arena.borrow();
+
+    arena.messages[self.id].name.clone()
+  }
+
+  pub fn get_full_name(&self) -> Box<str> {
+    let arena = self.arena.borrow();
+
+    let msg = &arena.messages[self.id];
+
+    match msg.parent_message {
+      Some(id) => {
+        let mut path = String::new();
+        let mut current_id = Some(id);
+        path.push_str(&msg.name);
+
+        while let Some(id) = current_id {
+          let current_message = &arena.messages[id];
+          path.insert(0, '.');
+          path.insert_str(0, &current_message.name);
+
+          current_id = current_message.parent_message;
+        }
+
+        path.into()
+      }
+      None => self.get_name().into(),
+    }
+  }
+
+  pub fn get_package(&self) -> String {
+    let arena = self.arena.borrow();
+
+    arena.messages[self.id].package.clone()
+  }
+
+  pub fn get_file(&self) -> String {
+    let arena = self.arena.borrow();
+
+    let file_id = arena.messages[self.id].file_id;
+    arena.files[file_id].name.to_string()
+  }
+
+  pub fn reserved_numbers(self, numbers: &[u32]) -> MessageBuilder<SetReservedNumbers>
+  where
+    S::ReservedNumbers: IsUnset,
+  {
+    {
+      let mut arena = self.arena.borrow_mut();
+      let msg = &mut arena.messages[self.id];
+
+      msg.reserved_numbers = numbers.into()
+    }
+
+    MessageBuilder {
+      id: self.id,
+      arena: self.arena,
+      _phantom: PhantomData,
+    }
+  }
+
+  pub fn reserved_names(self, names: &[&str]) -> MessageBuilder<SetReservedNames>
+  where
+    S::ReservedNames: IsUnset,
+  {
+    {
+      let mut arena = self.arena.borrow_mut();
+      let msg = &mut arena.messages[self.id];
+
+      msg.reserved_names = names.iter().map(|n| n.to_string()).collect::<Vec<String>>()
+    }
+
+    MessageBuilder {
+      id: self.id,
+      arena: self.arena,
+      _phantom: PhantomData,
+    }
+  }
+
+  pub fn reserved_ranges(self, ranges: &[Range]) -> MessageBuilder<SetReservedRanges>
+  where
+    S::ReservedRanges: IsUnset,
+  {
+    {
+      let mut arena = self.arena.borrow_mut();
+      let msg = &mut arena.messages[self.id];
+
+      msg.reserved_ranges = ranges.to_vec()
+    }
+
+    MessageBuilder {
+      id: self.id,
+      arena: self.arena,
+      _phantom: PhantomData,
+    }
+  }
+
+  pub fn fields(
+    self,
+    fields: BTreeMap<u32, FieldBuilder<fields::SetFieldType<fields::SetName>>>,
+  ) -> MessageBuilder<SetFields<S>>
+  where
+    S::Fields: IsUnset,
+  {
+    {
+      let mut arena = self.arena.borrow_mut();
+
+      let final_fields: BTreeMap<u32, Field> = fields
+        .into_iter()
+        .map(|(tag, field)| {
+          let field = field.tag(tag).build();
+          let file_id = arena.messages[self.id].file_id;
+          arena.files[file_id].imports.extend(field.imports.clone());
+
+          (tag, field)
+        })
+        .collect();
+
+      arena.messages[self.id].fields = final_fields
+    }
+
+    MessageBuilder {
+      id: self.id,
+      arena: self.arena,
+      _phantom: PhantomData,
+    }
+  }
 }
 
 #[allow(non_camel_case_types)]
@@ -204,110 +346,4 @@ impl<S: MessageState> MessageState for SetOneofs<S> {
   type Oneofs = Set<members::oneofs>;
 
   const SEALED: sealed::Sealed = sealed::Sealed;
-}
-
-impl<S: MessageState> MessageBuilder<S>
-where
-  S::Fields: IsSet,
-{
-  pub fn get_data(self) -> MessageData {
-    let arena = self.arena.borrow();
-    arena.messages[self.id].clone()
-  }
-}
-
-impl<S: MessageState> MessageBuilder<S> {
-  pub fn get_name(&self) -> String {
-    let arena = self.arena.borrow();
-
-    arena.messages[self.id].name.clone()
-  }
-
-  pub fn get_package(&self) -> String {
-    let arena = self.arena.borrow();
-
-    arena.messages[self.id].package.clone()
-  }
-
-  pub fn get_file(&self) -> String {
-    let arena = self.arena.borrow();
-
-    let file_id = arena.messages[self.id].file_id;
-    arena.files[file_id].name.to_string()
-  }
-
-  pub fn reserved_numbers(self, numbers: &[u32]) -> MessageBuilder<SetReservedNumbers>
-  where
-    S::ReservedNumbers: IsUnset,
-  {
-    {
-      let mut arena = self.arena.borrow_mut();
-      let msg = &mut arena.messages[self.id];
-
-      msg.reserved_numbers = numbers.into()
-    }
-
-    MessageBuilder {
-      id: self.id,
-      arena: self.arena,
-      _phantom: PhantomData,
-    }
-  }
-
-  pub fn reserved_names(self, names: &[&str]) -> MessageBuilder<SetReservedNames>
-  where
-    S::ReservedNames: IsUnset,
-  {
-    {
-      let mut arena = self.arena.borrow_mut();
-      let msg = &mut arena.messages[self.id];
-
-      msg.reserved_names = names.iter().map(|n| n.to_string()).collect::<Vec<String>>()
-    }
-
-    MessageBuilder {
-      id: self.id,
-      arena: self.arena,
-      _phantom: PhantomData,
-    }
-  }
-
-  pub fn reserved_ranges(self, ranges: &[Range]) -> MessageBuilder<SetReservedRanges>
-  where
-    S::ReservedRanges: IsUnset,
-  {
-    {
-      let mut arena = self.arena.borrow_mut();
-      let msg = &mut arena.messages[self.id];
-
-      msg.reserved_ranges = ranges.to_vec()
-    }
-
-    MessageBuilder {
-      id: self.id,
-      arena: self.arena,
-      _phantom: PhantomData,
-    }
-  }
-
-  pub fn fields<F>(self, fields: F) -> MessageBuilder<SetFields<S>>
-  where
-    F: IntoIterator<Item = FieldBuilder<fields::SetTag<fields::SetFieldType<fields::SetName>>>>,
-    S::Fields: IsUnset,
-  {
-    let final_fields: Vec<Field> = fields.into_iter().map(|f| f.build()).collect();
-
-    {
-      let mut arena = self.arena.borrow_mut();
-      let msg = &mut arena.messages[self.id];
-
-      msg.fields = final_fields;
-    }
-
-    MessageBuilder {
-      id: self.id,
-      arena: self.arena,
-      _phantom: PhantomData,
-    }
-  }
 }
