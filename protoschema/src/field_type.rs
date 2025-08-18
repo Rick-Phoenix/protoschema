@@ -1,5 +1,24 @@
 use std::fmt::Display;
 
+use crate::message::MessageBuilder;
+
+#[derive(Debug, Clone)]
+pub struct ImportedItemPath {
+  pub package: String,
+  pub file: String,
+  pub name: String,
+}
+
+impl ImportedItemPath {
+  pub fn from_msg(msg: &MessageBuilder) -> Self {
+    ImportedItemPath {
+      name: msg.get_name().to_string(),
+      file: msg.get_file(),
+      package: msg.get_package(),
+    }
+  }
+}
+
 #[derive(Debug, Clone)]
 pub enum FieldType {
   Double,
@@ -13,12 +32,12 @@ pub enum FieldType {
   String,
   Bytes,
   Uint32,
-  Enum { name: Box<str> },
+  Enum(Box<ImportedItemPath>),
   Sfixed32,
   Sfixed64,
   Sint32,
   Sint64,
-  Message { name: Box<str> },
+  Message(Box<ImportedItemPath>),
   Duration,
   Timestamp,
   Any,
@@ -47,12 +66,12 @@ impl FieldType {
       FieldType::String => "string",
       FieldType::Bytes => "bytes",
       FieldType::Uint32 => "uint32",
-      FieldType::Enum { name, .. } => name,
+      FieldType::Enum(path) => path.name.as_str(),
       FieldType::Sfixed32 => "sfixed32",
       FieldType::Sfixed64 => "sfixed64",
       FieldType::Sint32 => "sint32",
       FieldType::Sint64 => "sint64",
-      FieldType::Message { name, .. } => name,
+      FieldType::Message(path) => path.name.as_str(),
       FieldType::Duration => "google.protobuf.Duration",
       FieldType::Timestamp => "google.protobuf.Timestamp",
       FieldType::Any => "google.protobuf.Any",

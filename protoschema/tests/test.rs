@@ -2,14 +2,16 @@ use paste::paste;
 use protoschema::{
   field,
   fields::{self, build_string_validator_option},
-  msg_field, parse_field_type, string, FieldType, OptionValue, Package, ProtoOption,
+  msg_field, parse_field_type,
+  schema::Package,
+  string, FieldType, OptionValue, ProtoOption,
 };
 
 use crate::fields::Field;
 
 #[test]
 fn main_test() {
-  let package = Package::default();
+  let package = Package::new("myapp.v1");
 
   let file = package.new_file("abc");
 
@@ -25,10 +27,16 @@ fn main_test() {
   let msg = msg
     .fields([
       field,
-      string!(abc = 5),
+      string!(abc = 5).options(vec![opt.clone(), opt.clone(), opt.clone()]),
       string!(abc = 5, |v| v.min_len(5).max_len(15)),
     ])
     .get_data();
 
-  println!("{:#?}", msg);
+  println!(
+    "{:#?}",
+    msg
+      .fields
+      .iter()
+      .for_each(|f| { println!("{}", f.get_type_str("abcde", "myapp.v12")) })
+  );
 }

@@ -10,7 +10,7 @@ macro_rules! parse_field_type {
 #[macro_export]
 macro_rules! msg_field {
   ($msg:ident, $field_name:ident = $tag:literal $(, [$($option_name:expr),*])? $(,)? ) => {
-    field!(FieldType::Message { name: $msg.get_name().into() }, $field_name = $tag $(, [$($option_name),*])? )
+    field!(FieldType::Message(Box::new(protoschema::ImportedItemPath::from_msg(&$msg))) , $field_name = $tag $(, [$($option_name),*])? )
   };
 }
 

@@ -1,117 +1,34 @@
-use std::marker::PhantomData;
+use std::{collections::HashSet, marker::PhantomData};
 
 use crate::{
   fields::{self, Field, FieldBuilder},
-  Arena, ProtoOption, Range, Set, Unset,
+  oneofs::OneofData,
+  schema::Arena,
+  sealed, Empty, IsSet, IsUnset, ProtoOption, Range, Set, Unset,
 };
-mod sealed {
-  pub struct Sealed;
-}
 
-pub trait IsComplete: MessageState {
-  #[doc(hidden)]
-  const SEALED: sealed::Sealed;
-}
-#[doc(hidden)]
-impl<S: MessageState> IsComplete for S
-where
-  S::Fields: IsSet,
-  S::ReservedNumbers: IsSet,
-  S::ReservedRanges: IsSet,
-  S::ReservedNames: IsSet,
-  S::Options: IsSet,
-  S::Enums: IsSet,
-{
-  const SEALED: sealed::Sealed = sealed::Sealed;
-}
-pub struct SetFields<S: MessageState = Empty>(PhantomData<fn() -> S>);
-pub struct SetReservedNumbers<S: MessageState = Empty>(PhantomData<fn() -> S>);
-pub struct SetReservedRanges<S: MessageState = Empty>(PhantomData<fn() -> S>);
-pub struct SetReservedNames<S: MessageState = Empty>(PhantomData<fn() -> S>);
-pub struct SetOptions<S: MessageState = Empty>(PhantomData<fn() -> S>);
-pub struct SetEnums<S: MessageState = Empty>(PhantomData<fn() -> S>);
-
-#[doc(hidden)]
-impl MessageState for Empty {
-  type Fields = Unset<members::fields>;
-  type ReservedNumbers = Unset<members::reserved_numbers>;
-  type ReservedRanges = Unset<members::reserved_ranges>;
-  type ReservedNames = Unset<members::reserved_names>;
-  type Options = Unset<members::options>;
-  type Enums = Unset<members::enums>;
-  const SEALED: sealed::Sealed = sealed::Sealed;
-}
-#[doc(hidden)]
-impl<S: MessageState> MessageState for SetFields<S> {
-  type Fields = Set<members::fields>;
-  type ReservedNumbers = S::ReservedNumbers;
-  type ReservedRanges = S::ReservedRanges;
-  type ReservedNames = S::ReservedNames;
-  type Options = S::Options;
-  type Enums = S::Enums;
-  const SEALED: sealed::Sealed = sealed::Sealed;
-}
-#[doc(hidden)]
-impl<S: MessageState> MessageState for SetReservedNumbers<S> {
-  type Fields = S::Fields;
-  type ReservedNumbers = Set<members::reserved_numbers>;
-  type ReservedRanges = S::ReservedRanges;
-  type ReservedNames = S::ReservedNames;
-  type Options = S::Options;
-  type Enums = S::Enums;
-  const SEALED: sealed::Sealed = sealed::Sealed;
-}
-#[doc(hidden)]
-impl<S: MessageState> MessageState for SetReservedRanges<S> {
-  type Fields = S::Fields;
-  type ReservedNumbers = S::ReservedNumbers;
-  type ReservedRanges = Set<members::reserved_ranges>;
-  type ReservedNames = S::ReservedNames;
-  type Options = S::Options;
-  type Enums = S::Enums;
-  const SEALED: sealed::Sealed = sealed::Sealed;
-}
-#[doc(hidden)]
-impl<S: MessageState> MessageState for SetReservedNames<S> {
-  type Fields = S::Fields;
-  type ReservedNumbers = S::ReservedNumbers;
-  type ReservedRanges = S::ReservedRanges;
-  type ReservedNames = Set<members::reserved_names>;
-  type Options = S::Options;
-  type Enums = S::Enums;
-  const SEALED: sealed::Sealed = sealed::Sealed;
-}
-#[doc(hidden)]
-impl<S: MessageState> MessageState for SetOptions<S> {
-  type Fields = S::Fields;
-  type ReservedNumbers = S::ReservedNumbers;
-  type ReservedRanges = S::ReservedRanges;
-  type ReservedNames = S::ReservedNames;
-  type Options = Set<members::options>;
-  type Enums = S::Enums;
-  const SEALED: sealed::Sealed = sealed::Sealed;
-}
-#[doc(hidden)]
-impl<S: MessageState> MessageState for SetEnums<S> {
-  type Fields = S::Fields;
-  type ReservedNumbers = S::ReservedNumbers;
-  type ReservedRanges = S::ReservedRanges;
-  type ReservedNames = S::ReservedNames;
-  type Options = S::Options;
-  type Enums = Set<members::enums>;
-  const SEALED: sealed::Sealed = sealed::Sealed;
+#[derive(Clone, Debug)]
+pub struct MessageBuilder<S: MessageState = Empty> {
+  pub(crate) id: usize,
+  pub(crate) arena: Arena,
+  pub(crate) _phantom: PhantomData<fn() -> S>,
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct MessageData {
-  pub file_id: usize,
   pub name: String,
+  pub package: String,
+  pub file_id: usize,
+  pub parent_message: Option<usize>,
   pub fields: Vec<Field>,
+  pub oneofs: Vec<OneofData>,
   pub reserved_numbers: Box<[u32]>,
   pub reserved_ranges: Vec<Range>,
   pub reserved_names: Vec<String>,
   pub options: Vec<ProtoOption>,
   pub enums: Vec<usize>,
+  pub messages: Vec<usize>,
+  pub imports: HashSet<Box<str>>,
 }
 
 #[allow(non_camel_case_types)]
@@ -122,6 +39,8 @@ mod members {
   pub struct reserved_names;
   pub struct options;
   pub struct enums;
+  pub struct oneofs;
+  pub struct messages;
 }
 
 pub trait MessageState: Sized {
@@ -131,23 +50,160 @@ pub trait MessageState: Sized {
   type ReservedNames;
   type Options;
   type Enums;
+  type Oneofs;
+  type Messages;
   #[doc(hidden)]
   const SEALED: sealed::Sealed;
 }
 
-pub trait IsSet {}
-pub trait IsUnset {}
+pub trait IsComplete: MessageState {
+  #[doc(hidden)]
+  const SEALED: sealed::Sealed;
+}
 
-impl<T> IsSet for Set<T> {}
-impl<T> IsUnset for Unset<T> {}
+#[doc(hidden)]
+impl<S: MessageState> IsComplete for S
+where
+  S::Fields: IsSet,
+  S::ReservedNumbers: IsSet,
+  S::ReservedRanges: IsSet,
+  S::ReservedNames: IsSet,
+  S::Options: IsSet,
+  S::Enums: IsSet,
+  S::Messages: IsSet,
+  S::Oneofs: IsSet,
+{
+  const SEALED: sealed::Sealed = sealed::Sealed;
+}
 
-pub struct Empty;
+pub struct SetFields<S: MessageState = Empty>(PhantomData<fn() -> S>);
+pub struct SetReservedNumbers<S: MessageState = Empty>(PhantomData<fn() -> S>);
+pub struct SetReservedRanges<S: MessageState = Empty>(PhantomData<fn() -> S>);
+pub struct SetReservedNames<S: MessageState = Empty>(PhantomData<fn() -> S>);
+pub struct SetOptions<S: MessageState = Empty>(PhantomData<fn() -> S>);
+pub struct SetEnums<S: MessageState = Empty>(PhantomData<fn() -> S>);
+pub struct SetMessages<S: MessageState = Empty>(PhantomData<fn() -> S>);
+pub struct SetOneofs<S: MessageState = Empty>(PhantomData<fn() -> S>);
 
-#[derive(Clone, Debug)]
-pub struct MessageBuilder<S: MessageState = Empty> {
-  pub(crate) id: usize,
-  pub(crate) arena: Arena,
-  pub(crate) _phantom: PhantomData<fn() -> S>,
+#[doc(hidden)]
+impl MessageState for Empty {
+  type Fields = Unset<members::fields>;
+  type ReservedNumbers = Unset<members::reserved_numbers>;
+  type ReservedRanges = Unset<members::reserved_ranges>;
+  type ReservedNames = Unset<members::reserved_names>;
+  type Options = Unset<members::options>;
+  type Enums = Unset<members::enums>;
+  type Messages = Unset<members::messages>;
+  type Oneofs = Unset<members::oneofs>;
+  const SEALED: sealed::Sealed = sealed::Sealed;
+}
+
+#[doc(hidden)]
+impl<S: MessageState> MessageState for SetFields<S> {
+  type Fields = Set<members::fields>;
+  type ReservedNumbers = S::ReservedNumbers;
+  type ReservedRanges = S::ReservedRanges;
+  type ReservedNames = S::ReservedNames;
+  type Options = S::Options;
+  type Enums = S::Enums;
+  type Messages = S::Messages;
+  type Oneofs = S::Oneofs;
+  const SEALED: sealed::Sealed = sealed::Sealed;
+}
+
+#[doc(hidden)]
+impl<S: MessageState> MessageState for SetReservedNumbers<S> {
+  type Fields = S::Fields;
+  type ReservedNumbers = Set<members::reserved_numbers>;
+  type ReservedRanges = S::ReservedRanges;
+  type ReservedNames = S::ReservedNames;
+  type Options = S::Options;
+  type Enums = S::Enums;
+  type Messages = S::Messages;
+  type Oneofs = S::Oneofs;
+
+  const SEALED: sealed::Sealed = sealed::Sealed;
+}
+#[doc(hidden)]
+impl<S: MessageState> MessageState for SetReservedRanges<S> {
+  type Fields = S::Fields;
+  type ReservedNumbers = S::ReservedNumbers;
+  type ReservedRanges = Set<members::reserved_ranges>;
+  type ReservedNames = S::ReservedNames;
+  type Options = S::Options;
+  type Enums = S::Enums;
+  type Messages = S::Messages;
+  type Oneofs = S::Oneofs;
+
+  const SEALED: sealed::Sealed = sealed::Sealed;
+}
+#[doc(hidden)]
+impl<S: MessageState> MessageState for SetReservedNames<S> {
+  type Fields = S::Fields;
+  type ReservedNumbers = S::ReservedNumbers;
+  type ReservedRanges = S::ReservedRanges;
+  type ReservedNames = Set<members::reserved_names>;
+  type Options = S::Options;
+  type Enums = S::Enums;
+  type Messages = S::Messages;
+  type Oneofs = S::Oneofs;
+
+  const SEALED: sealed::Sealed = sealed::Sealed;
+}
+#[doc(hidden)]
+impl<S: MessageState> MessageState for SetOptions<S> {
+  type Fields = S::Fields;
+  type ReservedNumbers = S::ReservedNumbers;
+  type ReservedRanges = S::ReservedRanges;
+  type ReservedNames = S::ReservedNames;
+  type Options = Set<members::options>;
+  type Enums = S::Enums;
+  type Messages = S::Messages;
+  type Oneofs = S::Oneofs;
+
+  const SEALED: sealed::Sealed = sealed::Sealed;
+}
+
+#[doc(hidden)]
+impl<S: MessageState> MessageState for SetEnums<S> {
+  type Fields = S::Fields;
+  type ReservedNumbers = S::ReservedNumbers;
+  type ReservedRanges = S::ReservedRanges;
+  type ReservedNames = S::ReservedNames;
+  type Options = S::Options;
+  type Enums = Set<members::enums>;
+  type Messages = S::Messages;
+  type Oneofs = S::Oneofs;
+
+  const SEALED: sealed::Sealed = sealed::Sealed;
+}
+
+#[doc(hidden)]
+impl<S: MessageState> MessageState for SetMessages<S> {
+  type Fields = S::Fields;
+  type ReservedNumbers = S::ReservedNumbers;
+  type ReservedRanges = S::ReservedRanges;
+  type ReservedNames = S::ReservedNames;
+  type Options = S::Options;
+  type Enums = S::Enums;
+  type Messages = Set<members::messages>;
+  type Oneofs = S::Oneofs;
+
+  const SEALED: sealed::Sealed = sealed::Sealed;
+}
+
+#[doc(hidden)]
+impl<S: MessageState> MessageState for SetOneofs<S> {
+  type Fields = S::Fields;
+  type ReservedNumbers = S::ReservedNumbers;
+  type ReservedRanges = S::ReservedRanges;
+  type ReservedNames = S::ReservedNames;
+  type Options = S::Options;
+  type Enums = S::Enums;
+  type Messages = S::Messages;
+  type Oneofs = Set<members::oneofs>;
+
+  const SEALED: sealed::Sealed = sealed::Sealed;
 }
 
 impl<S: MessageState> MessageBuilder<S>
@@ -166,6 +222,20 @@ impl<S: MessageState> MessageBuilder<S> {
 
     arena.messages[self.id].name.clone()
   }
+
+  pub fn get_package(&self) -> String {
+    let arena = self.arena.borrow();
+
+    arena.messages[self.id].package.clone()
+  }
+
+  pub fn get_file(&self) -> String {
+    let arena = self.arena.borrow();
+
+    let file_id = arena.messages[self.id].file_id;
+    arena.files[file_id].name.to_string()
+  }
+
   pub fn reserved_numbers(self, numbers: &[u32]) -> MessageBuilder<SetReservedNumbers>
   where
     S::ReservedNumbers: IsUnset,
@@ -183,6 +253,7 @@ impl<S: MessageState> MessageBuilder<S> {
       _phantom: PhantomData,
     }
   }
+
   pub fn reserved_names(self, names: &[&str]) -> MessageBuilder<SetReservedNames>
   where
     S::ReservedNames: IsUnset,
@@ -200,6 +271,7 @@ impl<S: MessageState> MessageBuilder<S> {
       _phantom: PhantomData,
     }
   }
+
   pub fn reserved_ranges(self, ranges: &[Range]) -> MessageBuilder<SetReservedRanges>
   where
     S::ReservedRanges: IsUnset,
@@ -217,15 +289,13 @@ impl<S: MessageState> MessageBuilder<S> {
       _phantom: PhantomData,
     }
   }
+
   pub fn fields<F>(self, fields: F) -> MessageBuilder<SetFields<S>>
   where
     F: IntoIterator<Item = FieldBuilder<fields::SetTag<fields::SetFieldType<fields::SetName>>>>,
     S::Fields: IsUnset,
   {
-    let final_fields: Vec<Field> = fields
-      .into_iter()
-      .map(|f| f.parent_message_id(self.id).build())
-      .collect();
+    let final_fields: Vec<Field> = fields.into_iter().map(|f| f.build()).collect();
 
     {
       let mut arena = self.arena.borrow_mut();

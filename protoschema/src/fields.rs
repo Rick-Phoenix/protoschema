@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use std::collections::HashSet;
 
 use bon::Builder;
 pub(crate) use field_builder::*;
@@ -9,13 +9,44 @@ use crate::{fields::string_validator_builder::IsComplete, FieldType, OptionValue
 pub struct Field {
   #[builder(field)]
   pub options: Vec<ProtoOption>,
-  pub parent_message_id: usize,
+  #[builder(field)]
+  pub imports: HashSet<Box<str>>,
+  #[builder(setters(vis = "", name = field_type_internal))]
+  pub field_type: FieldType,
   pub name: Box<str>,
   pub tag: u32,
-  pub field_type: FieldType,
+}
+
+impl Field {
+  pub fn get_type_str(&self, file: &str, package: &str) -> String {
+    match &self.field_type {
+      FieldType::Message(path) => {
+        if path.file == file || path.package == package {
+          path.name.clone()
+        } else {
+          format!("{}.{}", path.package, path.name)
+        }
+      }
+      FieldType::Enum(path) => {
+        if path.file == file || path.package == package {
+          path.name.clone()
+        } else {
+          format!("{}.{}", path.package, path.name)
+        }
+      }
+      _ => self.field_type.to_string(),
+    }
+  }
 }
 
 impl<S: field_builder::State> FieldBuilder<S> {
+  pub fn field_type(self, field_type: FieldType) -> FieldBuilder<SetFieldType<S>>
+  where
+    S::FieldType: field_builder::IsUnset,
+  {
+    self.field_type_internal(field_type)
+  }
+
   pub fn option(mut self, option: ProtoOption) -> Self {
     self.options.push(option);
     self
