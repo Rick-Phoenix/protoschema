@@ -50,48 +50,21 @@ macro_rules! string {
 
 #[macro_export]
 macro_rules! message_body {
+  ($msg_builder:ident, options = $options:expr, $($tokens:tt)*) => {
+    $crate::_internal_message_body! {
+        @builder($msg_builder)
+        @fields()
+        @oneofs()
+        @input($($tokens)*)
+    }.options($options)
+  };
+
   ($msg_builder:ident, $($tokens:tt)*) => {
     $crate::_internal_message_body! {
         @builder($msg_builder)
         @fields()
         @oneofs()
         @input($($tokens)*)
-    }
-  };
-}
-
-#[macro_export]
-macro_rules! oneof {
-  (
-    $msg:ident,
-    $name:expr,
-    options = $options_expr:expr,
-    $($tag:literal => $field:expr),*
-  ) => {
-    {
-      OneofData::builder()
-        .name($name.to_string())
-        .parent_message_id($msg.get_id())
-        .options($options_expr)
-        .fields(
-            vec! [ $($field.tag($tag).build()),* ]
-        ).build()
-    }
-  };
-
-  (
-    $msg:ident,
-    $name:expr,
-    $($tag:literal => $field:expr),*
-  ) => {
-    {
-      OneofData::builder()
-        .name($name.to_string())
-        .parent_message_id($msg.get_id())
-        .fields(
-        vec! [ $($field.tag($tag).build()),* ]
-        )
-        .build()
     }
   };
 }
@@ -175,6 +148,42 @@ macro_rules! _internal_message_body {
         @fields($($fields)* $tag => $field)
         @oneofs($($oneofs)*)
         @input()
+    }
+  };
+}
+
+#[macro_export]
+macro_rules! oneof {
+  (
+    $msg:ident,
+    $name:expr,
+    options = $options_expr:expr,
+    $($tag:literal => $field:expr),*
+  ) => {
+    {
+      OneofData::builder()
+        .name($name.to_string())
+        .parent_message_id($msg.get_id())
+        .options($options_expr)
+        .fields(
+            vec! [ $($field.tag($tag).build()),* ]
+        ).build()
+    }
+  };
+
+  (
+    $msg:ident,
+    $name:expr,
+    $($tag:literal => $field:expr),*
+  ) => {
+    {
+      OneofData::builder()
+        .name($name.to_string())
+        .parent_message_id($msg.get_id())
+        .fields(
+        vec! [ $($field.tag($tag).build()),* ]
+        )
+        .build()
     }
   };
 }

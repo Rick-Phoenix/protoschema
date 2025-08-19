@@ -133,7 +133,7 @@ impl<S: MessageState> MessageBuilder<S> {
     arena.files[file_id].name.to_string()
   }
 
-  pub fn reserved_numbers(self, numbers: &[u32]) -> MessageBuilder<SetReservedNumbers>
+  pub fn reserved_numbers(self, numbers: &[u32]) -> MessageBuilder<SetReservedNumbers<S>>
   where
     S::ReservedNumbers: IsUnset,
   {
@@ -151,7 +151,25 @@ impl<S: MessageState> MessageBuilder<S> {
     }
   }
 
-  pub fn reserved_names(self, names: &[&str]) -> MessageBuilder<SetReservedNames>
+  pub fn options(self, options: Vec<ProtoOption>) -> MessageBuilder<SetOptions<S>>
+  where
+    S::Options: IsUnset,
+  {
+    {
+      let mut arena = self.arena.borrow_mut();
+      let msg = &mut arena.messages[self.id];
+
+      msg.options = options
+    }
+
+    MessageBuilder {
+      id: self.id,
+      arena: self.arena,
+      _phantom: PhantomData,
+    }
+  }
+
+  pub fn reserved_names(self, names: &[&str]) -> MessageBuilder<SetReservedNames<S>>
   where
     S::ReservedNames: IsUnset,
   {
@@ -169,7 +187,7 @@ impl<S: MessageState> MessageBuilder<S> {
     }
   }
 
-  pub fn reserved_ranges(self, ranges: &[Range]) -> MessageBuilder<SetReservedRanges>
+  pub fn reserved_ranges(self, ranges: &[Range]) -> MessageBuilder<SetReservedRanges<S>>
   where
     S::ReservedRanges: IsUnset,
   {
