@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, HashSet};
 
 use askama::Template;
 
-use crate::{fields::Field, message::MessageData, schema::PackageData};
+use crate::{fields::Field, message::MessageData, oneofs::OneofData, schema::PackageData};
 
 #[derive(Debug, Clone, Template, Default)]
 #[template(path = "file.proto.j2")]
@@ -19,8 +19,9 @@ pub struct MessageTemplate {
   pub name: String,
   pub package: String,
   pub parent_message_name: Option<String>,
-  pub fields: BTreeMap<u32, Field>,
+  pub fields: Vec<Field>,
   pub messages: Vec<MessageTemplate>,
+  pub oneofs: Vec<OneofData>,
 }
 
 impl MessageData {
@@ -44,6 +45,7 @@ impl MessageData {
       package: self.package.clone(),
       fields: self.fields.clone(),
       parent_message_name,
+      oneofs: self.oneofs.clone(),
       messages: built_messages,
     }
   }

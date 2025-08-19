@@ -35,15 +35,16 @@ macro_rules! field {
 
 #[macro_export]
 macro_rules! string {
-  ($field_name:ident, $validator:expr) => {
+  ($field_name:literal, $validator:expr) => {
     Field::builder()
-      .name(stringify!($field_name).into())
+      .name($field_name.into())
       .field_type(parse_field_type!(string))
       .option(build_string_validator_option($validator))
   };
-  ($field_name:ident) => {
+
+  ($field_name:literal) => {
     Field::builder()
-      .name(stringify!($field_name).into())
+      .name($field_name.into())
       .field_type(parse_field_type!(string))
   };
 }
@@ -62,19 +63,19 @@ macro_rules! message {
 macro_rules! message_body {
   ($msg_builder:ident, options = $options:expr, $($tokens:tt)*) => {
     $crate::_internal_message_body! {
-        @builder($msg_builder)
-        @fields()
-        @oneofs()
-        @input($($tokens)*)
+      @builder($msg_builder)
+      @fields()
+      @oneofs()
+      @input($($tokens)*)
     }.options($options)
   };
 
   ($msg_builder:ident, $($tokens:tt)*) => {
     $crate::_internal_message_body! {
-        @builder($msg_builder)
-        @fields()
-        @oneofs()
-        @input($($tokens)*)
+      @builder($msg_builder)
+      @fields()
+      @oneofs()
+      @input($($tokens)*)
     }
   };
 }
@@ -102,13 +103,13 @@ macro_rules! _internal_message_body {
     @input(oneof $name:ident { $($oneof_body:tt)* }, $($rest:tt)*)
   ) => {
     $crate::_internal_message_body! {
-        @builder($builder)
-        @fields($($fields)*)
-        @oneofs(
-            $($oneofs)*
-            $crate::oneof!($builder, stringify!($name), $($oneof_body)*),
-        )
-        @input($($rest)*)
+      @builder($builder)
+      @fields($($fields)*)
+      @oneofs(
+        $($oneofs)*
+        $crate::oneof!($builder, stringify!($name), $($oneof_body)*),
+      )
+      @input($($rest)*)
     }
   };
 
@@ -120,13 +121,13 @@ macro_rules! _internal_message_body {
     @input(oneof $name:ident { $($oneof_body:tt)* })
   ) => {
     $crate::_internal_message_body! {
-        @builder($builder)
-        @fields($($fields)*)
-        @oneofs(
-            $($oneofs)*
-            $crate::oneof!($builder, stringify!($name), $($oneof_body)*)
-        )
-        @input()
+      @builder($builder)
+      @fields($($fields)*)
+      @oneofs(
+        $($oneofs)*
+        $crate::oneof!($builder, stringify!($name), $($oneof_body)*)
+      )
+      @input()
     }
   };
 
@@ -139,10 +140,10 @@ macro_rules! _internal_message_body {
     @input($tag:literal => $field:expr, $($rest:tt)*)
   ) => {
     $crate::_internal_message_body! {
-        @builder($builder)
-        @fields($($fields)* $tag => $field,)
-        @oneofs($($oneofs)*)
-        @input($($rest)*)
+      @builder($builder)
+      @fields($($fields)* $tag => $field,)
+      @oneofs($($oneofs)*)
+      @input($($rest)*)
     }
   };
 
@@ -154,10 +155,10 @@ macro_rules! _internal_message_body {
     @input($tag:literal => $field:expr)
   ) => {
     $crate::_internal_message_body! {
-        @builder($builder)
-        @fields($($fields)* $tag => $field)
-        @oneofs($($oneofs)*)
-        @input()
+      @builder($builder)
+      @fields($($fields)* $tag => $field)
+      @oneofs($($oneofs)*)
+      @input()
     }
   };
 }
@@ -176,8 +177,9 @@ macro_rules! oneof {
         .parent_message_id($msg.get_id())
         .options($options_expr)
         .fields(
-            vec! [ $($field.tag($tag).build()),* ]
-        ).build()
+          vec! [ $($field.tag($tag).build()),* ]
+        )
+        .build()
     }
   };
 
@@ -191,7 +193,7 @@ macro_rules! oneof {
         .name($name.to_string())
         .parent_message_id($msg.get_id())
         .fields(
-        vec! [ $($field.tag($tag).build()),* ]
+          vec! [ $($field.tag($tag).build()),* ]
         )
         .build()
     }

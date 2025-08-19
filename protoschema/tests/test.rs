@@ -31,8 +31,8 @@ fn main_test() {
     msg,
     options = vec![ opt.clone() ],
     1 => field.clone(),
-    2 => string!(abc).options(vec![opt.clone(), opt.clone(), opt.clone()]),
-    3 => string!(abc, |v| v.min_len(5).max_len(15)),
+    2 => string!("abc").options(vec![opt.clone(), opt.clone(), opt.clone()]),
+    3 => string!("abc", |v| v.min_len(5).max_len(15)),
 
     oneof my_oneof {
       options = vec![ opt.clone() ],

@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
   fields::{self, Field, FieldBuilder},
-  oneofs::{self, OneofData, OneofDataBuilder},
+  oneofs::OneofData,
   schema::{Arena, PackageData},
   sealed, Empty, IsSet, IsUnset, ProtoOption, Range, Set, Unset,
 };
@@ -50,7 +50,7 @@ pub struct MessageData {
   pub package: String,
   pub file_id: usize,
   pub parent_message: Option<usize>,
-  pub fields: BTreeMap<u32, Field>,
+  pub fields: Vec<Field>,
   pub oneofs: Vec<OneofData>,
   pub reserved_numbers: Box<[u32]>,
   pub reserved_ranges: Vec<Range>,
@@ -222,6 +222,20 @@ impl<S: MessageState> MessageBuilder<S> {
     }
   }
 
+  pub fn oneof(self, oneof: OneofData) -> MessageBuilder<S> {
+    {
+      let mut arena = self.arena.borrow_mut();
+
+      arena.messages[self.id].oneofs.push(oneof);
+    }
+
+    MessageBuilder {
+      id: self.id,
+      arena: self.arena,
+      _phantom: PhantomData,
+    }
+  }
+
   pub fn fields(
     self,
     fields: BTreeMap<u32, FieldBuilder<fields::SetFieldType<fields::SetName>>>,
@@ -232,14 +246,14 @@ impl<S: MessageState> MessageBuilder<S> {
     {
       let mut arena = self.arena.borrow_mut();
 
-      let final_fields: BTreeMap<u32, Field> = fields
+      let final_fields: Vec<Field> = fields
         .into_iter()
         .map(|(tag, field)| {
           let field = field.tag(tag).build();
           let file_id = arena.messages[self.id].file_id;
           arena.files[file_id].imports.extend(field.imports.clone());
 
-          (tag, field)
+          field
         })
         .collect();
 
