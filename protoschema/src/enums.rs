@@ -9,12 +9,12 @@ pub struct EnumBuilder<S: EnumState = Empty> {
   pub(crate) _phantom: PhantomData<fn() -> S>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct EnumData {
   pub name: String,
   pub variants: BTreeMap<i32, String>,
-  pub package: String,
   pub file: String,
+  pub package: String,
   pub parent_message: Option<usize>,
   pub reserved_numbers: Box<[u32]>,
   pub reserved_ranges: Vec<Range>,
@@ -23,6 +23,39 @@ pub struct EnumData {
 }
 
 impl<S: EnumState> EnumBuilder<S> {
+  pub fn option(self, option: ProtoOption) -> EnumBuilder<S> {
+    {
+      let mut arena = self.arena.borrow_mut();
+      let msg = &mut arena.enums[self.id];
+
+      msg.options.push(option)
+    }
+
+    EnumBuilder {
+      id: self.id,
+      arena: self.arena,
+      _phantom: PhantomData,
+    }
+  }
+
+  pub fn options(self, options: Vec<ProtoOption>) -> EnumBuilder<SetOptions<S>>
+  where
+    S::Options: IsUnset,
+  {
+    {
+      let mut arena = self.arena.borrow_mut();
+      let msg = &mut arena.enums[self.id];
+
+      msg.options = options
+    }
+
+    EnumBuilder {
+      id: self.id,
+      arena: self.arena,
+      _phantom: PhantomData,
+    }
+  }
+
   pub fn get_name(&self) -> String {
     let arena = self.arena.borrow();
 
@@ -48,7 +81,7 @@ impl<S: EnumState> EnumBuilder<S> {
     }
   }
 
-  pub fn reserved_numbers(self, numbers: &[u32]) -> EnumBuilder<SetReservedNumbers>
+  pub fn reserved_numbers(self, numbers: &[u32]) -> EnumBuilder<SetReservedNumbers<S>>
   where
     S::ReservedNumbers: IsUnset,
   {
@@ -65,7 +98,7 @@ impl<S: EnumState> EnumBuilder<S> {
       _phantom: PhantomData,
     }
   }
-  pub fn reserved_names(self, names: &[&str]) -> EnumBuilder<SetReservedNames>
+  pub fn reserved_names(self, names: &[&str]) -> EnumBuilder<SetReservedNames<S>>
   where
     S::ReservedNames: IsUnset,
   {
@@ -82,7 +115,7 @@ impl<S: EnumState> EnumBuilder<S> {
       _phantom: PhantomData,
     }
   }
-  pub fn reserved_ranges(self, ranges: &[Range]) -> EnumBuilder<SetReservedRanges>
+  pub fn reserved_ranges(self, ranges: &[Range]) -> EnumBuilder<SetReservedRanges<S>>
   where
     S::ReservedRanges: IsUnset,
   {
@@ -99,7 +132,7 @@ impl<S: EnumState> EnumBuilder<S> {
       _phantom: PhantomData,
     }
   }
-  pub fn variants<F>(self, variants: BTreeMap<i32, String>) -> EnumBuilder<SetVariants<S>>
+  pub fn variants(self, variants: BTreeMap<i32, String>) -> EnumBuilder<SetVariants<S>>
   where
     S::Variants: IsUnset,
   {

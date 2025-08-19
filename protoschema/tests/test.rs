@@ -33,14 +33,18 @@ fn main_test() {
     1 => field.clone(),
     2 => string!("abc").options(vec![opt.clone(), opt.clone(), opt.clone()]),
     3 => string!("abc", |v| v.min_len(5).max_len(15)),
+    10 => field.clone(),
 
-    oneof my_oneof {
+    oneof "my_oneof" {
       options = vec![ opt.clone() ],
       6 => field.clone(),
       7 => field.clone()
     },
 
-    10 => field.clone(),
+    enum "my_enum" {
+      1 => "UNSPECIFIED",
+    }
+
   };
 
   println!("{:#?}", msg.get_data());

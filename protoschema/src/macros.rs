@@ -66,6 +66,7 @@ macro_rules! message_body {
       @builder($msg_builder)
       @fields()
       @oneofs()
+      @enums()
       @input($($tokens)*)
     }.options($options)
   };
@@ -75,6 +76,7 @@ macro_rules! message_body {
       @builder($msg_builder)
       @fields()
       @oneofs()
+      @enums()
       @input($($tokens)*)
     }
   };
@@ -87,28 +89,67 @@ macro_rules! _internal_message_body {
     @builder($builder:ident)
     @fields($($fields:tt)*)
     @oneofs($($oneofs:tt)*)
+    @enums($($enums:tt)*)
     @input()
   ) => {
     {
+      { $($enums)* };
       let fields_map = btreemap! { $($fields)* };
-      let oneofs_map = vec! [ $($oneofs)* ];
+      let oneofs_map: Vec<OneofData> = vec! [ $($oneofs)* ];
       $builder.fields(fields_map).oneofs(oneofs_map)
     }
   };
 
+  // Enum with trailing comma
   (
     @builder($builder:ident)
     @fields($($fields:tt)*)
     @oneofs($($oneofs:tt)*)
-    @input(oneof $name:ident { $($oneof_body:tt)* }, $($rest:tt)*)
+    @enums($($enums:tt)*)
+    @input(enum $name:literal { $($tokens:tt)* }, $($rest:tt)*)
+  ) => {
+    $crate::_internal_message_body! {
+      @builder($builder)
+      @fields($($fields)*)
+      @oneofs($($oneofs)*)
+      @enums($crate::proto_enum!($builder.new_enum($name), $($tokens)*); $($enums)*)
+      @input($($rest)*)
+    }
+  };
+
+  // Enum without trailing comma
+  (
+    @builder($builder:ident)
+    @fields($($fields:tt)*)
+    @oneofs($($oneofs:tt)*)
+    @enums($($enums:tt)*)
+    @input(enum $name:literal { $($tokens:tt)* } $($rest:tt)*)
+  ) => {
+    $crate::_internal_message_body! {
+      @builder($builder)
+      @fields($($fields)*)
+      @oneofs($($oneofs)*)
+      @enums($crate::proto_enum!($builder.new_enum($name), $($tokens)*); $($enums)*)
+      @input()
+    }
+  };
+
+  // Oneof with trailing comma
+  (
+    @builder($builder:ident)
+    @fields($($fields:tt)*)
+    @oneofs($($oneofs:tt)*)
+    @enums($($enums:tt)*)
+    @input(oneof $name:literal { $($oneof_body:tt)* }, $($rest:tt)*)
   ) => {
     $crate::_internal_message_body! {
       @builder($builder)
       @fields($($fields)*)
       @oneofs(
         $($oneofs)*
-        $crate::oneof!($builder, stringify!($name), $($oneof_body)*),
+        $crate::oneof!($builder, $name, $($oneof_body)*),
       )
+      @enums($($enums)*)
       @input($($rest)*)
     }
   };
@@ -118,15 +159,17 @@ macro_rules! _internal_message_body {
     @builder($builder:ident)
     @fields($($fields:tt)*)
     @oneofs($($oneofs:tt)*)
-    @input(oneof $name:ident { $($oneof_body:tt)* })
+    @enums($($enums:tt)*)
+    @input(oneof $name:literal { $($oneof_body:tt)* })
   ) => {
     $crate::_internal_message_body! {
       @builder($builder)
       @fields($($fields)*)
       @oneofs(
         $($oneofs)*
-        $crate::oneof!($builder, stringify!($name), $($oneof_body)*)
+        $crate::oneof!($builder, $name, $($oneof_body)*)
       )
+      @enums($($enums)*)
       @input()
     }
   };
@@ -137,12 +180,14 @@ macro_rules! _internal_message_body {
     @builder($builder:ident)
     @fields($($fields:tt)*)
     @oneofs($($oneofs:tt)*)
+    @enums($($enums:tt)*)
     @input($tag:literal => $field:expr, $($rest:tt)*)
   ) => {
     $crate::_internal_message_body! {
       @builder($builder)
       @fields($($fields)* $tag => $field,)
       @oneofs($($oneofs)*)
+      @enums($($enums)*)
       @input($($rest)*)
     }
   };
@@ -152,13 +197,44 @@ macro_rules! _internal_message_body {
     @builder($builder:ident)
     @fields($($fields:tt)*)
     @oneofs($($oneofs:tt)*)
+              @enums($($enums:tt)*)
     @input($tag:literal => $field:expr)
   ) => {
     $crate::_internal_message_body! {
       @builder($builder)
       @fields($($fields)* $tag => $field)
       @oneofs($($oneofs)*)
+      @enums($($enums)*)
       @input()
+    }
+  };
+}
+
+#[macro_export]
+macro_rules! proto_enum {
+  (
+    $enum:expr,
+    options = $options_expr:expr,
+    $($tag:literal => $variant:literal),* $(,)?
+  ) => {
+    {
+      $enum
+        .options($options_expr)
+        .variants(
+          btreemap! { $($tag => $variant.to_string()),* }
+        )
+    }
+  };
+
+  (
+    $enum:expr,
+    $($tag:literal => $variant:literal),* $(,)?
+  ) => {
+    {
+      $enum
+        .variants(
+          btreemap! { $($tag => $variant.to_string()),* }
+        )
     }
   };
 }
@@ -169,7 +245,7 @@ macro_rules! oneof {
     $msg:ident,
     $name:expr,
     options = $options_expr:expr,
-    $($tag:literal => $field:expr),*
+    $($tag:literal => $field:expr),* $(,)?
   ) => {
     {
       OneofData::builder()
@@ -186,7 +262,7 @@ macro_rules! oneof {
   (
     $msg:ident,
     $name:expr,
-    $($tag:literal => $field:expr),*
+    $($tag:literal => $field:expr),* $(,)?
   ) => {
     {
       OneofData::builder()

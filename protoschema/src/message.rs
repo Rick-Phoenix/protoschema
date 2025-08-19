@@ -4,6 +4,7 @@ use std::{
 };
 
 use crate::{
+  enums::{EnumBuilder, EnumData},
   fields::{self, Field, FieldBuilder},
   oneofs::OneofData,
   schema::{Arena, PackageData},
@@ -62,6 +63,33 @@ pub struct MessageData {
 }
 
 impl<S: MessageState> MessageBuilder<S> {
+  pub fn new_enum(&self, name: &str) -> EnumBuilder {
+    let file = self.get_file();
+    let package = self.get_package();
+    let mut arena = self.arena.borrow_mut();
+
+    let parent_message_id = self.id;
+    let new_enum_id = arena.enums.len();
+
+    arena.messages[parent_message_id].enums.push(new_enum_id);
+
+    let new_enum = EnumData {
+      name: name.into(),
+      package,
+      file: file.clone(),
+      parent_message: Some(parent_message_id),
+      ..Default::default()
+    };
+
+    arena.enums.push(new_enum);
+
+    EnumBuilder {
+      id: new_enum_id,
+      arena: self.arena.clone(),
+      _phantom: PhantomData,
+    }
+  }
+
   pub fn new_message(&self, name: &str) -> MessageBuilder {
     let file_id = self.get_file_id();
     let package = self.get_package();
