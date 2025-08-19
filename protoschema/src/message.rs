@@ -1,6 +1,7 @@
 use std::{
   collections::{BTreeMap, HashSet},
   marker::PhantomData,
+  ops::Range,
 };
 
 use crate::{
@@ -8,7 +9,7 @@ use crate::{
   fields::{self, Field, FieldBuilder},
   oneofs::OneofData,
   schema::{Arena, PackageData},
-  sealed, Empty, IsSet, IsUnset, ProtoOption, Range, Set, Unset,
+  sealed, Empty, IsSet, IsUnset, ProtoOption, Set, Unset,
 };
 
 #[derive(Clone, Debug)]
@@ -54,7 +55,7 @@ pub struct MessageData {
   pub fields: Vec<Field>,
   pub oneofs: Vec<OneofData>,
   pub reserved_numbers: Box<[u32]>,
-  pub reserved_ranges: Vec<Range>,
+  pub reserved_ranges: Vec<Range<u32>>,
   pub reserved_names: Vec<String>,
   pub options: Vec<ProtoOption>,
   pub enums: Vec<usize>,
@@ -215,7 +216,7 @@ impl<S: MessageState> MessageBuilder<S> {
     }
   }
 
-  pub fn reserved_ranges(self, ranges: &[Range]) -> MessageBuilder<SetReservedRanges<S>>
+  pub fn reserved_ranges(self, ranges: &[Range<u32>]) -> MessageBuilder<SetReservedRanges<S>>
   where
     S::ReservedRanges: IsUnset,
   {

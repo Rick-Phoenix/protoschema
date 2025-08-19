@@ -67,6 +67,8 @@ macro_rules! message_body {
       @fields()
       @oneofs()
       @enums()
+      @reserved()
+      @reserved_names()
       @input($($tokens)*)
     }.options($options)
   };
@@ -77,6 +79,8 @@ macro_rules! message_body {
       @fields()
       @oneofs()
       @enums()
+      @reserved()
+      @reserved_names()
       @input($($tokens)*)
     }
   };
@@ -90,13 +94,71 @@ macro_rules! _internal_message_body {
     @fields($($fields:tt)*)
     @oneofs($($oneofs:tt)*)
     @enums($($enums:tt)*)
+    @reserved($($reserved:tt)*)
+    @reserved_names($($names:expr)?)
     @input($(,)?)
   ) => {
     {
       { $($enums)* };
+
       let fields_map = btreemap! { $($fields)* };
       let oneofs_map: Vec<OneofData> = vec! [ $($oneofs)* ];
-      $builder.fields(fields_map).oneofs(oneofs_map)
+
+      let mut new_msg = $builder
+        .fields(fields_map)
+        .oneofs(oneofs_map)
+      $(
+        .reserved_names($names)
+      )?;
+
+      $crate::parse_reserved! {
+        @builder(new_msg)
+        @ranges()
+        @numbers()
+        @rest($($reserved)*)
+      }
+    }
+  };
+
+  // Reserved numbers
+  (
+    @builder($builder:ident)
+    @fields($($fields:tt)*)
+    @oneofs($($oneofs:tt)*)
+    @enums($($enums:tt)*)
+    @reserved()
+    @reserved_names($($reserved_names:tt)*)
+    @input($(,)? reserved = [ $($items:tt)* ] $($rest:tt)*)
+  ) => {
+    $crate::_internal_message_body! {
+      @builder($builder)
+      @fields($($fields)*)
+      @oneofs($($oneofs)*)
+      @enums($($enums)*)
+      @reserved($($items)*)
+      @reserved_names($($reserved_names)*)
+      @input($($rest)*)
+    }
+  };
+
+  // Reserved names
+  (
+    @builder($builder:ident)
+    @fields($($fields:tt)*)
+    @oneofs($($oneofs:tt)*)
+    @enums($($enums:tt)*)
+    @reserved($($reserved:tt)*)
+    @reserved_names()
+    @input($(,)? reserved_names = [ $($name:literal),* ] $($rest:tt)*)
+  ) => {
+    $crate::_internal_message_body! {
+      @builder($builder)
+      @fields($($fields)*)
+      @oneofs($($oneofs)*)
+      @enums($($enums)*)
+      @reserved($($reserved)*)
+      @reserved_names( &[ $($name),* ] )
+      @input($($rest)*)
     }
   };
 
@@ -106,6 +168,8 @@ macro_rules! _internal_message_body {
     @fields($($fields:tt)*)
     @oneofs($($oneofs:tt)*)
     @enums($($enums:tt)*)
+    @reserved($($reserved:tt)*)
+    @reserved_names($($reserved_names:tt)*)
     @input($(,)? enum $name:literal { $($tokens:tt)* } $($rest:tt)* )
   ) => {
     $crate::_internal_message_body! {
@@ -113,6 +177,8 @@ macro_rules! _internal_message_body {
       @fields($($fields)*)
       @oneofs($($oneofs)*)
       @enums($crate::proto_enum!($builder.new_enum($name), $($tokens)*); $($enums)*)
+      @reserved($($reserved)*)
+      @reserved_names($($reserved_names)*)
       @input($($rest)*)
     }
   };
@@ -123,6 +189,8 @@ macro_rules! _internal_message_body {
     @fields($($fields:tt)*)
     @oneofs($($oneofs:tt)*)
     @enums($($enums:tt)*)
+    @reserved($($reserved:tt)*)
+    @reserved_names($($reserved_names:tt)*)
     @input($(,)? oneof $name:literal { $($oneof_body:tt)* } $($rest:tt)* )
   ) => {
     $crate::_internal_message_body! {
@@ -133,6 +201,8 @@ macro_rules! _internal_message_body {
         $crate::oneof!($builder, $name, $($oneof_body)*),
       )
       @enums($($enums)*)
+      @reserved($($reserved)*)
+      @reserved_names($($reserved_names)*)
       @input($($rest)*)
     }
   };
@@ -143,6 +213,8 @@ macro_rules! _internal_message_body {
     @fields($($fields:tt)*)
     @oneofs($($oneofs:tt)*)
     @enums($($enums:tt)*)
+    @reserved($($reserved:tt)*)
+    @reserved_names($($reserved_names:tt)*)
     @input($(,)? $tag:literal => $field:expr, $($rest:tt)* )
   ) => {
     $crate::_internal_message_body! {
@@ -150,6 +222,8 @@ macro_rules! _internal_message_body {
       @fields($($fields)* $tag => $field,)
       @oneofs($($oneofs)*)
       @enums($($enums)*)
+      @reserved($($reserved)*)
+      @reserved_names($($reserved_names)*)
       @input($($rest)*)
     }
   };
@@ -160,6 +234,8 @@ macro_rules! _internal_message_body {
     @fields($($fields:tt)*)
     @oneofs($($oneofs:tt)*)
     @enums($($enums:tt)*)
+    @reserved($($reserved:tt)*)
+    @reserved_names($($reserved_names:tt)*)
     @input($(,)? $tag:literal => $field:expr)
   ) => {
     $crate::_internal_message_body! {
@@ -167,6 +243,8 @@ macro_rules! _internal_message_body {
       @fields($($fields)* $tag => $field)
       @oneofs($($oneofs)*)
       @enums($($enums)*)
+      @reserved($($reserved)*)
+      @reserved_names($($reserved_names)*)
       @input()
     }
   };
@@ -195,11 +273,11 @@ macro_rules! proto_enum_impl {
     @rest(options = $options_expr:expr, $($rest:tt)*)
   ) => {
     $crate::proto_enum_impl! {
-      @builder( $enum ),
-      @options( $options_expr ),
-      @reserved( $($reserved)* ),
-      @reserved_names( $($reserved_names)* ),
-      @rest( $($rest)* )
+      @builder($enum),
+      @options($options_expr),
+      @reserved($($reserved)*),
+      @reserved_names($($reserved_names)*),
+      @rest($($rest)*)
     }
   };
 
@@ -208,14 +286,14 @@ macro_rules! proto_enum_impl {
     @options($($options:tt)*),
     @reserved(),
     @reserved_names($($reserved_names:tt)*),
-    @rest( reserved = [ $($items:tt)* ], $($rest:tt)* )
+    @rest(reserved = [ $($items:tt)* ], $($rest:tt)*)
   ) => {
     $crate::proto_enum_impl! {
-      @builder( $enum ),
-      @options( $($options)* ),
-      @reserved( $($items)* ),
-      @reserved_names( $($reserved_names)* ),
-      @rest( $($rest)* )
+      @builder($enum),
+      @options($($options)*),
+      @reserved($($items)*),
+      @reserved_names($($reserved_names)*),
+      @rest($($rest)*)
     }
   };
 
@@ -224,14 +302,14 @@ macro_rules! proto_enum_impl {
     @options($($options:tt)*),
     @reserved($($reserved:tt)*),
     @reserved_names(),
-    @rest( reserved_names = [ $($names:literal),* $(,)? ], $($rest:tt)* )
+    @rest(reserved_names = [ $($names:literal),* $(,)? ], $($rest:tt)*)
   ) => {
     $crate::proto_enum_impl! {
       @builder( $enum ),
       @options( $($options)* ),
       @reserved( $($reserved)* ),
       @reserved_names(
-          &[ $($names),* ]
+        &[ $($names),* ]
       ),
       @rest( $($rest)* )
     }
@@ -271,6 +349,15 @@ macro_rules! proto_enum_impl {
 
 #[macro_export]
 macro_rules! parse_reserved {
+  (
+    @builder($builder:ident)
+    @ranges()
+    @numbers()
+    @rest($(,)?)
+  ) => {
+     $builder
+  };
+
   (
     @builder($builder:ident)
     @ranges($($start:literal..$end:literal),* $(,)?)
