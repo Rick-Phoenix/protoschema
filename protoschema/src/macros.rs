@@ -50,7 +50,7 @@ macro_rules! string {
 
 #[macro_export]
 macro_rules! message_body {
-  ($msg_builder:expr, $($tokens:tt)*) => {
+  ($msg_builder:ident, $($tokens:tt)*) => {
     $crate::_internal_message_body! {
         @builder($msg_builder)
         @fields()
@@ -61,25 +61,59 @@ macro_rules! message_body {
 }
 
 #[macro_export]
+macro_rules! oneof {
+  (
+    $msg:ident,
+    $name:expr,
+    options = $options_expr:expr,
+    $($tag:literal => $field:expr),*
+  ) => {
+    {
+      OneofData::builder()
+        .name($name.to_string())
+        .parent_message_id($msg.get_id())
+        .options($options_expr)
+        .fields(
+            vec! [ $($field.tag($tag).build()),* ]
+        ).build()
+    }
+  };
+
+  (
+    $msg:ident,
+    $name:expr,
+    $($tag:literal => $field:expr),*
+  ) => {
+    {
+      OneofData::builder()
+        .name($name.to_string())
+        .parent_message_id($msg.get_id())
+        .fields(
+        vec! [ $($field.tag($tag).build()),* ]
+        )
+        .build()
+    }
+  };
+}
+
+#[macro_export]
 macro_rules! _internal_message_body {
   // No tokens remaining, process items
   (
-    @builder($builder:expr)
+    @builder($builder:ident)
     @fields($($fields:tt)*)
     @oneofs($($oneofs:tt)*)
     @input()
   ) => {
     {
-      let builder = $builder;
       let fields_map = btreemap! { $($fields)* };
-      let oneofs_map = btreemap! { $($oneofs)* };
-      builder.fields(fields_map).oneofs(oneofs_map)
+      let oneofs_map = vec! [ $($oneofs)* ];
+      $builder.fields(fields_map).oneofs(oneofs_map)
     }
   };
 
-  // Process oneof with a trailing comma
   (
-    @builder($builder:expr)
+    @builder($builder:ident)
     @fields($($fields:tt)*)
     @oneofs($($oneofs:tt)*)
     @input(oneof $name:ident { $($oneof_body:tt)* }, $($rest:tt)*)
@@ -87,14 +121,17 @@ macro_rules! _internal_message_body {
     $crate::_internal_message_body! {
         @builder($builder)
         @fields($($fields)*)
-        @oneofs($($oneofs)* stringify!($name).to_string() => btreemap!{$($oneof_body)*},)
+        @oneofs(
+            $($oneofs)*
+            $crate::oneof!($builder, stringify!($name), $($oneof_body)*),
+        )
         @input($($rest)*)
     }
   };
 
   // Process oneof without trailing comma
   (
-    @builder($builder:expr)
+    @builder($builder:ident)
     @fields($($fields:tt)*)
     @oneofs($($oneofs:tt)*)
     @input(oneof $name:ident { $($oneof_body:tt)* })
@@ -102,14 +139,18 @@ macro_rules! _internal_message_body {
     $crate::_internal_message_body! {
         @builder($builder)
         @fields($($fields)*)
-        @oneofs($($oneofs)* stringify!($name).to_string() => btreemap!{$($oneof_body)*})
+        @oneofs(
+            $($oneofs)*
+            $crate::oneof!($builder, stringify!($name), $($oneof_body)*)
+        )
         @input()
     }
   };
 
+
   // Process normal field with trailing comma
   (
-    @builder($builder:expr)
+    @builder($builder:ident)
     @fields($($fields:tt)*)
     @oneofs($($oneofs:tt)*)
     @input($tag:literal => $field:expr, $($rest:tt)*)
@@ -124,7 +165,7 @@ macro_rules! _internal_message_body {
 
   // Process normal field
   (
-    @builder($builder:expr)
+    @builder($builder:ident)
     @fields($($fields:tt)*)
     @oneofs($($oneofs:tt)*)
     @input($tag:literal => $field:expr)

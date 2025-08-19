@@ -1,16 +1,16 @@
 use std::marker::PhantomData;
 
 use bon::Builder;
+pub(crate) use oneof_data_builder::*;
 
-use crate::{sealed, Empty, IsSet, ProtoOption, Set, Unset};
+use crate::{fields::Field, sealed, Empty, IsSet, ProtoOption, Set, Unset};
 
 #[derive(Clone, Debug, Builder)]
 pub struct OneofData {
   pub name: String,
   pub parent_message_id: usize,
-  pub package: String,
-  pub file: String,
-  pub fields: Vec<usize>,
+  pub fields: Vec<Field>,
+  #[builder(default)]
   pub options: Vec<ProtoOption>,
 }
 

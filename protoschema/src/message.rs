@@ -5,6 +5,7 @@ use std::{
 
 use crate::{
   fields::{self, Field, FieldBuilder},
+  oneofs::{self, OneofData, OneofDataBuilder},
   schema::{Arena, PackageData},
   sealed, Empty, IsSet, IsUnset, ProtoOption, Range, Set, Unset,
 };
@@ -50,7 +51,7 @@ pub struct MessageData {
   pub file_id: usize,
   pub parent_message: Option<usize>,
   pub fields: BTreeMap<u32, Field>,
-  pub oneofs: BTreeMap<String, BTreeMap<u32, Field>>,
+  pub oneofs: Vec<OneofData>,
   pub reserved_numbers: Box<[u32]>,
   pub reserved_ranges: Vec<Range>,
   pub reserved_names: Vec<String>,
@@ -88,6 +89,10 @@ impl<S: MessageState> MessageBuilder<S> {
       arena: self.arena.clone(),
       _phantom: PhantomData,
     }
+  }
+
+  pub fn get_id(&self) -> usize {
+    self.id
   }
 
   pub fn get_file_id(&self) -> usize {
@@ -182,27 +187,14 @@ impl<S: MessageState> MessageBuilder<S> {
     }
   }
 
-  pub fn oneofs(
-    self,
-    oneofs: BTreeMap<String, BTreeMap<u32, FieldBuilder<fields::SetFieldType<fields::SetName>>>>,
-  ) -> MessageBuilder<SetOneofs<S>>
+  pub fn oneofs(self, oneofs: Vec<OneofData>) -> MessageBuilder<SetOneofs<S>>
   where
     S::Oneofs: IsUnset,
   {
     {
       let mut arena = self.arena.borrow_mut();
 
-      arena.messages[self.id].oneofs = oneofs
-        .into_iter()
-        .map(|(name, map)| {
-          let built_fields: BTreeMap<u32, Field> = map
-            .into_iter()
-            .map(|(tag, field)| (tag, field.tag(tag).build()))
-            .collect();
-
-          (name.clone(), built_fields)
-        })
-        .collect::<BTreeMap<String, BTreeMap<u32, Field>>>();
+      arena.messages[self.id].oneofs = oneofs;
     }
 
     MessageBuilder {

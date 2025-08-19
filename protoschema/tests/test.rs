@@ -3,7 +3,9 @@ use maplit::btreemap;
 use paste::paste;
 use protoschema::{
   fields::{self, build_string_validator_option},
-  message_body, msg_field, parse_field_type,
+  message_body, msg_field, oneof,
+  oneofs::OneofData,
+  parse_field_type,
   schema::Package,
   string, FieldType, OptionValue, ProtoOption,
 };
@@ -32,11 +34,12 @@ fn main_test() {
     3 => string!(abc, |v| v.min_len(5).max_len(15)),
 
     oneof my_oneof {
+      options = vec![ opt.clone() ],
       6 => field.clone(),
       7 => field.clone()
     },
 
-    10 => field.clone()
+    10 => field.clone(),
   };
 
   println!("{:#?}", msg.get_data());
