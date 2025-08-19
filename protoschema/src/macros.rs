@@ -47,33 +47,3 @@ macro_rules! string {
       .field_type(parse_field_type!(string))
   };
 }
-
-#[macro_export]
-macro_rules! add_field {
-  ($current_builder:expr, $field_def:expr) => {
-    $current_builder.field($field_def)
-  };
-
-  ($current_builder:expr, $head_field:expr, $($tail_fields:expr),* $(,)?) =>  {
-    add_field!(
-      $current_builder.field($head_field),
-      $($tail_fields),*
-    )
-  };
-}
-
-#[macro_export]
-macro_rules! message_fields {
-  ($message:ident, [$head_field:expr, $($tail_fields:expr),* ] $(,)?) => {
-    add_field!($message.field($head_field), $($tail_fields),*)
-  };
-}
-
-macro_rules! message {
-  ($file:ident, $name:literal, [$head_field:expr, $($tail_fields:expr),* ] $(,)?) => {
-    {
-      let msg = $file.new_message($name);
-      message_fields!(msg, [ $head_field, $($tail_fields),* ])
-    }
-  };
-}

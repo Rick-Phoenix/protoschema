@@ -5,7 +5,6 @@ use std::{
 
 use crate::{
   fields::{self, Field, FieldBuilder},
-  oneofs::OneofData,
   schema::{Arena, PackageData},
   sealed, Empty, IsSet, IsUnset, ProtoOption, Range, Set, Unset,
 };
@@ -51,7 +50,7 @@ pub struct MessageData {
   pub file_id: usize,
   pub parent_message: Option<usize>,
   pub fields: BTreeMap<u32, Field>,
-  pub oneofs: Vec<OneofData>,
+  pub oneofs: BTreeMap<String, BTreeMap<u32, Field>>,
   pub reserved_numbers: Box<[u32]>,
   pub reserved_ranges: Vec<Range>,
   pub reserved_names: Vec<String>,
@@ -174,6 +173,23 @@ impl<S: MessageState> MessageBuilder<S> {
       let msg = &mut arena.messages[self.id];
 
       msg.reserved_ranges = ranges.to_vec()
+    }
+
+    MessageBuilder {
+      id: self.id,
+      arena: self.arena,
+      _phantom: PhantomData,
+    }
+  }
+
+  pub fn oneofs(self, oneofs: BTreeMap<String, BTreeMap<u32, Field>>) -> MessageBuilder<SetOneofs>
+  where
+    S::Oneofs: IsUnset,
+  {
+    {
+      let mut arena = self.arena.borrow_mut();
+
+      arena.messages[self.id].oneofs = oneofs;
     }
 
     MessageBuilder {
