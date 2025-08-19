@@ -49,6 +49,16 @@ macro_rules! string {
 }
 
 #[macro_export]
+macro_rules! message {
+  ($file:ident, $name:literal, $($tokens:tt)*) => {
+    {
+      let msg = $file.new_message($name);
+      message_body!(msg, $($tokens)*)
+    }
+  };
+}
+
+#[macro_export]
 macro_rules! message_body {
   ($msg_builder:ident, options = $options:expr, $($tokens:tt)*) => {
     $crate::_internal_message_body! {
