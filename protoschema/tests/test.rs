@@ -29,23 +29,31 @@ fn main_test() {
 
   let msg = message_body! {
     msg,
+
     options = vec![ opt.clone() ],
+
     1 => field.clone(),
     2 => string!("abc").options(vec![opt.clone(), opt.clone(), opt.clone()]),
     3 => string!("abc", |v| v.min_len(5).max_len(15)),
-    10 => field.clone(),
+
+
+
+    enum "my_enum" {
+      options = vec![ opt.clone() ],
+      reserved_names = [ "one", "two" ],
+      reserved = [ 1, 2..4 ],
+
+      1 => "UNSPECIFIED",
+    },
 
     oneof "my_oneof" {
       options = vec![ opt.clone() ],
+
       6 => field.clone(),
       7 => field.clone()
     },
 
-    enum "my_enum" {
-      reserved_names = [ "one", "two" ],
-      reserved = [ 1, 2..4 ],
-      1 => "UNSPECIFIED",
-    }
+    10 => field.clone(),
 
   };
 

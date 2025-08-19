@@ -90,7 +90,7 @@ macro_rules! _internal_message_body {
     @fields($($fields:tt)*)
     @oneofs($($oneofs:tt)*)
     @enums($($enums:tt)*)
-    @input()
+    @input($(,)?)
   ) => {
     {
       { $($enums)* };
@@ -100,13 +100,13 @@ macro_rules! _internal_message_body {
     }
   };
 
-  // Enum with trailing comma
+  // Handle enum
   (
     @builder($builder:ident)
     @fields($($fields:tt)*)
     @oneofs($($oneofs:tt)*)
     @enums($($enums:tt)*)
-    @input(enum $name:literal { $($tokens:tt)* }, $($rest:tt)*)
+    @input($(,)? enum $name:literal { $($tokens:tt)* } $($rest:tt)* )
   ) => {
     $crate::_internal_message_body! {
       @builder($builder)
@@ -117,30 +117,13 @@ macro_rules! _internal_message_body {
     }
   };
 
-  // Enum without trailing comma
+  // Handle oneof
   (
     @builder($builder:ident)
     @fields($($fields:tt)*)
     @oneofs($($oneofs:tt)*)
     @enums($($enums:tt)*)
-    @input(enum $name:literal { $($tokens:tt)* } $($rest:tt)*)
-  ) => {
-    $crate::_internal_message_body! {
-      @builder($builder)
-      @fields($($fields)*)
-      @oneofs($($oneofs)*)
-      @enums($crate::proto_enum!($builder.new_enum($name), $($tokens)*); $($enums)*)
-      @input()
-    }
-  };
-
-  // Oneof with trailing comma
-  (
-    @builder($builder:ident)
-    @fields($($fields:tt)*)
-    @oneofs($($oneofs:tt)*)
-    @enums($($enums:tt)*)
-    @input(oneof $name:literal { $($oneof_body:tt)* }, $($rest:tt)*)
+    @input($(,)? oneof $name:literal { $($oneof_body:tt)* } $($rest:tt)* )
   ) => {
     $crate::_internal_message_body! {
       @builder($builder)
@@ -154,34 +137,13 @@ macro_rules! _internal_message_body {
     }
   };
 
-  // Process oneof without trailing comma
-  (
-    @builder($builder:ident)
-    @fields($($fields:tt)*)
-    @oneofs($($oneofs:tt)*)
-    @enums($($enums:tt)*)
-    @input(oneof $name:literal { $($oneof_body:tt)* })
-  ) => {
-    $crate::_internal_message_body! {
-      @builder($builder)
-      @fields($($fields)*)
-      @oneofs(
-        $($oneofs)*
-        $crate::oneof!($builder, $name, $($oneof_body)*)
-      )
-      @enums($($enums)*)
-      @input()
-    }
-  };
-
-
   // Process normal field with trailing comma
   (
     @builder($builder:ident)
     @fields($($fields:tt)*)
     @oneofs($($oneofs:tt)*)
     @enums($($enums:tt)*)
-    @input($tag:literal => $field:expr, $($rest:tt)*)
+    @input($(,)? $tag:literal => $field:expr, $($rest:tt)* )
   ) => {
     $crate::_internal_message_body! {
       @builder($builder)
@@ -197,8 +159,8 @@ macro_rules! _internal_message_body {
     @builder($builder:ident)
     @fields($($fields:tt)*)
     @oneofs($($oneofs:tt)*)
-              @enums($($enums:tt)*)
-    @input($tag:literal => $field:expr)
+    @enums($($enums:tt)*)
+    @input($(,)? $tag:literal => $field:expr)
   ) => {
     $crate::_internal_message_body! {
       @builder($builder)
@@ -313,7 +275,7 @@ macro_rules! parse_reserved {
     @builder($builder:ident)
     @ranges($($start:literal..$end:literal),* $(,)?)
     @numbers()
-    @rest()
+    @rest($(,)?)
   ) => {
      $builder
       .reserved_ranges(&[$(::std::ops::Range { start: $start, end: $end }),*])
@@ -323,7 +285,7 @@ macro_rules! parse_reserved {
     @builder($builder:ident)
     @ranges()
     @numbers($($number:literal),* $(,)?)
-    @rest()
+    @rest($(,)?)
   ) => {
      $builder
       .reserved_numbers(&[$($number),*])
@@ -333,7 +295,7 @@ macro_rules! parse_reserved {
     @builder($builder:ident)
     @ranges($($start:literal..$end:literal),* $(,)?)
     @numbers($($number:literal),* $(,)?)
-    @rest()
+    @rest($(,)?)
   ) => {
      $builder
       .reserved_ranges(&[$(::std::ops::Range { start: $start, end: $end }),*])
@@ -344,7 +306,21 @@ macro_rules! parse_reserved {
     @builder($builder:ident)
     @ranges($($ranges:tt)*)
     @numbers($($numbers:tt)*)
-    @rest($number:literal, $($rest:tt)*)
+    @rest($(,)? $start:literal..$end:literal $($rest:tt)* )
+  ) => {
+    $crate::parse_reserved!{
+      @builder($builder)
+      @ranges($($ranges)* $start..$end,)
+      @numbers($($numbers)*)
+      @rest($($rest)*)
+    }
+  };
+
+  (
+    @builder($builder:ident)
+    @ranges($($ranges:tt)*)
+    @numbers($($numbers:tt)*)
+    @rest($(,)? $number:literal $($rest:tt)* )
   ) => {
     $crate::parse_reserved!{
       @builder($builder)
@@ -353,52 +329,6 @@ macro_rules! parse_reserved {
       @rest($($rest)*)
     }
   };
-
-
-  (
-    @builder($builder:ident)
-    @ranges($($ranges:tt)*)
-    @numbers($($numbers:tt)*)
-    @rest($start:literal..$end:literal, $($rest:tt)*)
-  ) => {
-    $crate::parse_reserved!{
-      @builder($builder)
-      @ranges($($ranges)* $start..$end,)
-      @numbers($($numbers)*)
-      @rest($($rest)*)
-    }
-  };
-
-  (
-    @builder($builder:ident)
-    @ranges($($ranges:tt)*)
-    @numbers($($numbers:tt)*)
-    @rest($start:literal..$end:literal $($rest:tt)*)
-  ) => {
-    $crate::parse_reserved!{
-      @builder($builder)
-      @ranges($($ranges)* $start..$end,)
-      @numbers($($numbers)*)
-      @rest()
-    }
-  };
-
-  (
-    @builder($builder:ident)
-    @ranges($($ranges:tt)*)
-    @numbers($($numbers:tt)*)
-    @rest($number:literal $($rest:tt)*)
-  ) => {
-    $crate::parse_reserved! {
-      @builder($builder)
-      @ranges($($ranges)*)
-      @numbers($($numbers)* $number)
-      @rest()
-    }
-  };
-
-
-
 }
 
 #[macro_export]
