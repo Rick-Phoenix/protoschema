@@ -2,9 +2,8 @@ use askama::Template;
 use maplit::btreemap;
 use paste::paste;
 use protoschema::{
-  field,
   fields::{self, build_string_validator_option},
-  msg_field, parse_field_type,
+  message_body, msg_field, parse_field_type,
   schema::Package,
   string, FieldType, OptionValue, ProtoOption,
 };
@@ -26,24 +25,21 @@ fn main_test() {
 
   let field = msg_field!(msg, mymsgfield);
 
-  let msg = msg.fields(btreemap! {
+  let msg = message_body! {
+    msg,
     1 => field.clone(),
     2 => string!(abc).options(vec![opt.clone(), opt.clone(), opt.clone()]),
-    3 => string!(abc, |v| v.min_len(5).max_len(15))
-  });
+    3 => string!(abc, |v| v.min_len(5).max_len(15)),
 
-  let msg2 = msg.new_message("MyNestedMsg");
+    oneof my_oneof {
+      6 => field.clone(),
+      7 => field.clone()
+    },
 
-  let field2 = msg_field!(msg2, mymsgfield2);
+    10 => field.clone()
+  };
 
-  let msg2 = msg2.fields(btreemap! {
-    1 => field2.clone(),
-  });
-
-  let msg3 = file.new_message("MyMsg2").fields(btreemap! {
-    1 => field2.clone(),
-    2 => field.clone()
-  });
+  println!("{:#?}", msg.get_data());
 
   let file_renders = &package.build_templates()[0];
 

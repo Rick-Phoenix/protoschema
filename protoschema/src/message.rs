@@ -182,14 +182,27 @@ impl<S: MessageState> MessageBuilder<S> {
     }
   }
 
-  pub fn oneofs(self, oneofs: BTreeMap<String, BTreeMap<u32, Field>>) -> MessageBuilder<SetOneofs>
+  pub fn oneofs(
+    self,
+    oneofs: BTreeMap<String, BTreeMap<u32, FieldBuilder<fields::SetFieldType<fields::SetName>>>>,
+  ) -> MessageBuilder<SetOneofs<S>>
   where
     S::Oneofs: IsUnset,
   {
     {
       let mut arena = self.arena.borrow_mut();
 
-      arena.messages[self.id].oneofs = oneofs;
+      arena.messages[self.id].oneofs = oneofs
+        .into_iter()
+        .map(|(name, map)| {
+          let built_fields: BTreeMap<u32, Field> = map
+            .into_iter()
+            .map(|(tag, field)| (tag, field.tag(tag).build()))
+            .collect();
+
+          (name.clone(), built_fields)
+        })
+        .collect::<BTreeMap<String, BTreeMap<u32, Field>>>();
     }
 
     MessageBuilder {
