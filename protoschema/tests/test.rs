@@ -42,6 +42,8 @@ fn main_test() {
     },
 
     enum "my_enum" {
+      reserved_names = [ "one", "two" ],
+      reserved = [ 1, 2..4 ],
       1 => "UNSPECIFIED",
     }
 

@@ -1,6 +1,6 @@
-use std::{collections::BTreeMap, marker::PhantomData};
+use std::{collections::BTreeMap, marker::PhantomData, ops::Range};
 
-use crate::{schema::Arena, sealed, Empty, IsSet, IsUnset, ProtoOption, Range, Set, Unset};
+use crate::{schema::Arena, sealed, Empty, IsSet, IsUnset, ProtoOption, Set, Unset};
 
 #[derive(Clone, Debug)]
 pub struct EnumBuilder<S: EnumState = Empty> {
@@ -17,7 +17,7 @@ pub struct EnumData {
   pub package: String,
   pub parent_message: Option<usize>,
   pub reserved_numbers: Box<[u32]>,
-  pub reserved_ranges: Vec<Range>,
+  pub reserved_ranges: Vec<Range<i32>>,
   pub reserved_names: Vec<String>,
   pub options: Vec<ProtoOption>,
 }
@@ -115,7 +115,7 @@ impl<S: EnumState> EnumBuilder<S> {
       _phantom: PhantomData,
     }
   }
-  pub fn reserved_ranges(self, ranges: &[Range]) -> EnumBuilder<SetReservedRanges<S>>
+  pub fn reserved_ranges(self, ranges: &[Range<i32>]) -> EnumBuilder<SetReservedRanges<S>>
   where
     S::ReservedRanges: IsUnset,
   {

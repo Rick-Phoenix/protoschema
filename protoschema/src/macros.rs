@@ -212,31 +212,193 @@ macro_rules! _internal_message_body {
 
 #[macro_export]
 macro_rules! proto_enum {
+  ($enum:expr, $($tokens:tt)*) => {
+    $crate::proto_enum_impl! {
+      @builder($enum),
+      @options(),
+      @reserved(),
+      @reserved_names(),
+      @rest($($tokens)*)
+    }
+  };
+}
+
+#[macro_export]
+macro_rules! proto_enum_impl {
   (
-    $enum:expr,
-    options = $options_expr:expr,
-    $($tag:literal => $variant:literal),* $(,)?
+    @builder($enum:expr),
+    @options(),
+    @reserved($($reserved:tt)*),
+    @reserved_names($($reserved_names:tt)*),
+    @rest(options = $options_expr:expr, $($rest:tt)*)
   ) => {
-    {
-      $enum
-        .options($options_expr)
-        .variants(
-          btreemap! { $($tag => $variant.to_string()),* }
-        )
+    $crate::proto_enum_impl! {
+      @builder( $enum ),
+      @options( $options_expr ),
+      @reserved( $($reserved)* ),
+      @reserved_names( $($reserved_names)* ),
+      @rest( $($rest)* )
     }
   };
 
   (
-    $enum:expr,
-    $($tag:literal => $variant:literal),* $(,)?
+    @builder($enum:expr),
+    @options($($options:tt)*),
+    @reserved(),
+    @reserved_names($($reserved_names:tt)*),
+    @rest( reserved = [ $($items:tt)* ], $($rest:tt)* )
   ) => {
-    {
-      $enum
-        .variants(
-          btreemap! { $($tag => $variant.to_string()),* }
-        )
+    $crate::proto_enum_impl! {
+      @builder( $enum ),
+      @options( $($options)* ),
+      @reserved( $($items)* ),
+      @reserved_names( $($reserved_names)* ),
+      @rest( $($rest)* )
     }
   };
+
+  (
+    @builder($enum:expr),
+    @options($($options:tt)*),
+    @reserved($($reserved:tt)*),
+    @reserved_names(),
+    @rest( reserved_names = [ $($names:literal),* $(,)? ], $($rest:tt)* )
+  ) => {
+    $crate::proto_enum_impl! {
+      @builder( $enum ),
+      @options( $($options)* ),
+      @reserved( $($reserved)* ),
+      @reserved_names(
+          &[ $($names),* ]
+      ),
+      @rest( $($rest)* )
+    }
+  };
+
+  (
+    @builder($enum:expr),
+    @options($($options:expr)?),
+    @reserved($($reserved:tt)*),
+    @reserved_names($($reserved_names:expr)?),
+    @rest($($tag:literal => $variant:literal),* $(,)?)
+  ) => {
+    {
+      let mut temp_enum = $enum
+
+      $(
+        .options($options)
+      )?
+
+      $(
+        .reserved_names($reserved_names)
+      )?
+
+      .variants(
+        btreemap! { $($tag => $variant.to_string()),* }
+      );
+
+      $crate::parse_reserved!{
+        @builder(temp_enum)
+        @ranges()
+        @numbers()
+        @rest($($reserved)*)
+      }
+    }
+  };
+}
+
+#[macro_export]
+macro_rules! parse_reserved {
+  (
+    @builder($builder:ident)
+    @ranges($($start:literal..$end:literal),* $(,)?)
+    @numbers()
+    @rest()
+  ) => {
+     $builder
+      .reserved_ranges(&[$(::std::ops::Range { start: $start, end: $end }),*])
+  };
+
+  (
+    @builder($builder:ident)
+    @ranges()
+    @numbers($($number:literal),* $(,)?)
+    @rest()
+  ) => {
+     $builder
+      .reserved_numbers(&[$($number),*])
+  };
+
+  (
+    @builder($builder:ident)
+    @ranges($($start:literal..$end:literal),* $(,)?)
+    @numbers($($number:literal),* $(,)?)
+    @rest()
+  ) => {
+     $builder
+      .reserved_ranges(&[$(::std::ops::Range { start: $start, end: $end }),*])
+      .reserved_numbers(&[$($number),*])
+  };
+
+  (
+    @builder($builder:ident)
+    @ranges($($ranges:tt)*)
+    @numbers($($numbers:tt)*)
+    @rest($number:literal, $($rest:tt)*)
+  ) => {
+    $crate::parse_reserved!{
+      @builder($builder)
+      @ranges($($ranges)*)
+      @numbers($($numbers)* $number,)
+      @rest($($rest)*)
+    }
+  };
+
+
+  (
+    @builder($builder:ident)
+    @ranges($($ranges:tt)*)
+    @numbers($($numbers:tt)*)
+    @rest($start:literal..$end:literal, $($rest:tt)*)
+  ) => {
+    $crate::parse_reserved!{
+      @builder($builder)
+      @ranges($($ranges)* $start..$end,)
+      @numbers($($numbers)*)
+      @rest($($rest)*)
+    }
+  };
+
+  (
+    @builder($builder:ident)
+    @ranges($($ranges:tt)*)
+    @numbers($($numbers:tt)*)
+    @rest($start:literal..$end:literal $($rest:tt)*)
+  ) => {
+    $crate::parse_reserved!{
+      @builder($builder)
+      @ranges($($ranges)* $start..$end,)
+      @numbers($($numbers)*)
+      @rest()
+    }
+  };
+
+  (
+    @builder($builder:ident)
+    @ranges($($ranges:tt)*)
+    @numbers($($numbers:tt)*)
+    @rest($number:literal $($rest:tt)*)
+  ) => {
+    $crate::parse_reserved! {
+      @builder($builder)
+      @ranges($($ranges)*)
+      @numbers($($numbers)* $number)
+      @rest()
+    }
+  };
+
+
+
 }
 
 #[macro_export]
