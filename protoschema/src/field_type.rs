@@ -1,22 +1,12 @@
 use std::fmt::Display;
 
+pub use proto_types::{Duration, Timestamp};
+
 #[derive(Debug, Clone)]
 pub struct ImportedItemPath {
   pub package: String,
   pub file: String,
   pub name: String,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct Timestamp {
-  pub seconds: i64,
-  pub nanos: i32,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct Duration {
-  pub seconds: i64,
-  pub nanos: i32,
 }
 
 #[derive(Debug, Clone)]

@@ -5,6 +5,14 @@ fn validate_comparables<T>(lt: Option<T>, lte: Option<T>, gt: Option<T>, gte: Op
 where
   T: Copy + PartialEq + PartialOrd,
 {
+  if lt.is_some() && lte.is_some() {
+    panic!("Cannot use lt and lte together")
+  }
+
+  if gt.is_some() && gte.is_some() {
+    panic!("Cannot use gt and gte together")
+  }
+
   if let Some(lt_val) = lt {
     if let Some(gt_val) = gt && lt_val <= gt_val {
       panic!("Lt cannot be smaller than or equal to gt")
