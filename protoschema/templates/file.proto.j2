@@ -4,6 +4,11 @@ import "{{ import }}";
 {% endif %}
 {% endfor %}
 
-{% for msg in messages %}
+
+{%- for enum_ in enums %}
+  {{ enum_ }}
+{%- endfor -%}
+
+{%- for msg in messages %}
   {{ msg }}
-{% endfor %}
+{%- endfor -%}

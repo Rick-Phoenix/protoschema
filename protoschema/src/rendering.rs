@@ -1,8 +1,14 @@
-use std::collections::HashSet;
+use std::{
+  collections::{BTreeMap, HashSet},
+  ops::Range,
+};
 
 use askama::Template;
 
-use crate::{fields::Field, message::MessageData, oneofs::OneofData, schema::PackageData};
+use crate::{
+  enums::EnumData, fields::Field, message::MessageData, oneofs::OneofData, schema::PackageData,
+  ProtoOption,
+};
 
 #[derive(Debug, Clone, Template, Default)]
 #[template(path = "file.proto.j2")]
@@ -11,6 +17,7 @@ pub struct FileTemplate {
   pub imports: HashSet<Box<str>>,
   pub package: String,
   pub messages: Vec<MessageTemplate>,
+  pub enums: Vec<EnumTemplate>,
 }
 
 #[derive(Clone, Debug, Default, Template)]
@@ -22,6 +29,31 @@ pub struct MessageTemplate {
   pub fields: Vec<Field>,
   pub messages: Vec<MessageTemplate>,
   pub oneofs: Vec<OneofData>,
+  pub enums: Vec<EnumTemplate>,
+}
+
+#[derive(Clone, Debug, Default, Template)]
+#[template(path = "enum.proto.j2")]
+pub struct EnumTemplate {
+  pub name: String,
+  pub variants: BTreeMap<i32, String>,
+  pub reserved_numbers: Box<[u32]>,
+  pub reserved_ranges: Vec<Range<i32>>,
+  pub reserved_names: Vec<String>,
+  pub options: Vec<ProtoOption>,
+}
+
+impl From<EnumData> for EnumTemplate {
+  fn from(value: EnumData) -> Self {
+    EnumTemplate {
+      name: value.name,
+      variants: value.variants,
+      reserved_numbers: value.reserved_numbers,
+      reserved_ranges: value.reserved_ranges,
+      reserved_names: value.reserved_names,
+      options: value.options,
+    }
+  }
 }
 
 impl MessageData {
@@ -40,6 +72,12 @@ impl MessageData {
       .parent_message
       .map(|id| package.messages[id].get_full_name(package));
 
+    let enums: Vec<EnumTemplate> = self
+      .enums
+      .iter()
+      .map(|id| package.enums[*id].clone().into())
+      .collect();
+
     MessageTemplate {
       name: self.name.clone(),
       package: self.package.clone(),
@@ -47,6 +85,7 @@ impl MessageData {
       parent_message_name,
       oneofs: self.oneofs.clone(),
       messages: built_messages,
+      enums,
     }
   }
 }

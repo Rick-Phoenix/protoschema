@@ -14,6 +14,10 @@
 {% endmacro %}
 
 message {{ name }} {
+  {%- for enum_ in enums %}
+    {{ enum_ }}
+  {%- endfor -%}
+
   {%- for nested_msg in messages -%}
     {{ nested_msg.render()? | indent(2) }}
   {%- endfor -%}

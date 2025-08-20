@@ -3,9 +3,9 @@ use maplit::btreemap;
 use paste::paste;
 use protoschema::{
   fields::{self, build_string_validator_option},
-  message_body, msg_field, oneof,
+  message_body, msg_field,
   oneofs::OneofData,
-  parse_field_type,
+  parse_field_type, proto_enum,
   schema::Package,
   string, FieldType, OptionValue, ProtoOption,
 };
@@ -57,9 +57,15 @@ fn main_test() {
 
   };
 
-  println!("{:#?}", msg.get_data());
+  let new_enum2 = proto_enum!(
+    file.new_enum("file_enum"),
+    options = vec![opt.clone()],
+    1 => "UNSPECIFIED"
+  );
 
   let file_renders = &package.build_templates()[0];
+
+  println!("{:#?}", file_renders);
 
   let render = file_renders.render().unwrap();
 

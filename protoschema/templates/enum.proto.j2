@@ -1,0 +1,13 @@
+{% macro render_options(options) %}
+{% for option in options %}
+  option {{ option.name }} = {{ option.value }};
+{% endfor %}
+{% endmacro %}
+
+enum {{ name }} {
+  {% call render_options(&options) %}
+
+  {% for (tag, name) in variants %}
+    {{ name }} = {{ tag }};
+  {% endfor %}
+}
