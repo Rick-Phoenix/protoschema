@@ -54,7 +54,7 @@ macro_rules! message_body {
       @reserved()
       @reserved_names()
       @input($($tokens)*)
-    }.options($options)
+    }.options($options.as_slice())
   };
 
   ($msg_builder:expr, $($tokens:tt)*) => {
@@ -92,7 +92,7 @@ macro_rules! _internal_message_body {
         .fields(fields_list)
         .oneofs(oneofs_list)
       $(
-        .reserved_names($names)
+        .reserved_names($names.as_slice())
       )?;
 
       $crate::parse_reserved! {
@@ -133,7 +133,8 @@ macro_rules! _internal_message_body {
     @enums($($enums:tt)*)
     @reserved($($reserved:tt)*)
     @reserved_names()
-    @input($(,)? reserved_names = [ $($name:literal),* ] $($rest:tt)*)
+    // Expr cannot be followed by tt so there must be a comma right after
+    @input($(,)? reserved_names = $reserved_names:expr, $($rest:tt)*)
   ) => {
     $crate::_internal_message_body! {
       @builder($builder)
@@ -141,7 +142,7 @@ macro_rules! _internal_message_body {
       @oneofs($($oneofs)*)
       @enums($($enums)*)
       @reserved($($reserved)*)
-      @reserved_names( &[ $($name),* ] )
+      @reserved_names($reserved_names)
       @input($($rest)*)
     }
   };
@@ -286,15 +287,13 @@ macro_rules! proto_enum_impl {
     @options($($options:tt)*),
     @reserved($($reserved:tt)*),
     @reserved_names(),
-    @rest(reserved_names = [ $($names:literal),* $(,)? ], $($rest:tt)*)
+    @rest(reserved_names = $reserved_names:expr, $($rest:tt)*)
   ) => {
     $crate::proto_enum_impl! {
       @builder( $enum ),
       @options( $($options)* ),
       @reserved( $($reserved)* ),
-      @reserved_names(
-        &[ $($names),* ]
-      ),
+      @reserved_names($reserved_names),
       @rest( $($rest)* )
     }
   };
@@ -310,11 +309,11 @@ macro_rules! proto_enum_impl {
       let mut temp_enum = $enum
 
       $(
-        .options($options)
+        .options($options.as_slice())
       )?
 
       $(
-        .reserved_names($reserved_names)
+        .reserved_names($reserved_names.as_slice())
       )?
 
       .variants(
@@ -414,7 +413,7 @@ macro_rules! oneof {
       OneofData::builder()
         .name($name.to_string())
         .parent_message_id($msg.get_id())
-        .options($options_expr)
+        .options($options_expr.as_slice())
         .fields(
           vec! [ $($field.tag($tag).build()),* ]
         )

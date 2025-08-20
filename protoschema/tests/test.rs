@@ -31,7 +31,7 @@ fn main_test() {
   message_body! {
     msg,
 
-    options = &[ opt.clone(), opt.clone() ],
+    options = [ opt.clone(), opt.clone() ],
     reserved_names = [ "one", "two" ],
     reserved = [ 2, 2..4 ],
 
@@ -40,7 +40,7 @@ fn main_test() {
     3 => string!("abc", |v| v.min_len(5).max_len(15)),
 
     enum "my_enum" {
-      options = &[ opt.clone() ],
+      options = [ opt.clone() ],
       reserved_names = [ "one", "two" ],
       reserved = [ 1, 2..4 ],
 
@@ -48,7 +48,7 @@ fn main_test() {
     },
 
     oneof "my_oneof" {
-      options = &[ opt.clone() ],
+      options = [ opt.clone() ],
 
       6 => field.clone(),
       7 => field.clone()
@@ -60,7 +60,7 @@ fn main_test() {
 
   proto_enum!(
     file.new_enum("file_enum"),
-    options = &[opt.clone()],
+    options = [opt.clone()],
     1 => "UNSPECIFIED"
   );
 
