@@ -30,7 +30,7 @@ fn main_test() {
 
     1 => field.clone(),
     2 => string!("abc").options(&[opt.clone(), opt.clone(), opt.clone()]),
-    3 => string!("abc", |v| v.min_len(5).max_len(15)),
+    3 => string!("abc", |v| v.min_len(5).max_len(15).email()),
 
     enum "my_enum" {
       options = [ opt.clone() ],

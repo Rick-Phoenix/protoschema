@@ -2,11 +2,27 @@ use std::{collections::BTreeMap, fmt::Display};
 
 use askama::Template;
 
+use crate::field_type::{Duration, Timestamp};
+
 #[derive(Template, Clone, Debug)]
 #[template(path = "opt.proto.j2")]
 pub struct ProtoOption {
   pub name: &'static str,
   pub value: OptionValue,
+}
+
+#[derive(Clone, Debug)]
+pub enum OptionValue {
+  Bool(bool),
+  Int(i64),
+  Uint(u64),
+  Float(f64),
+  String(Box<str>),
+  List(Box<[OptionValue]>),
+  Message(BTreeMap<Box<str>, OptionValue>),
+  Identifier(Box<str>),
+  Duration(Duration),
+  Timestamp(Timestamp),
 }
 
 impl Display for OptionValue {
@@ -42,28 +58,14 @@ impl Display for OptionValue {
       OptionValue::Identifier(v) => {
         write!(f, "{}", v)
       }
-      OptionValue::Duration { seconds, nanos } => {
+      OptionValue::Duration(Duration { seconds, nanos }) => {
         write!(f, "{{ seconds: {}, nanos: {} }}", seconds, nanos)
       }
-      OptionValue::Timestamp { seconds, nanos } => {
+      OptionValue::Timestamp(Timestamp { seconds, nanos }) => {
         write!(f, "{{ seconds: {}, nanos: {} }}", seconds, nanos)
       }
     }
   }
-}
-
-#[derive(Clone, Debug)]
-pub enum OptionValue {
-  Bool(bool),
-  Int(i64),
-  Uint(u64),
-  Float(f64),
-  String(Box<str>),
-  List(Box<[OptionValue]>),
-  Message(BTreeMap<Box<str>, OptionValue>),
-  Identifier(Box<str>),
-  Duration { seconds: i64, nanos: i32 },
-  Timestamp { seconds: i64, nanos: i32 },
 }
 
 #[macro_export]

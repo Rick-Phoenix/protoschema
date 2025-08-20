@@ -7,6 +7,18 @@ pub struct ImportedItemPath {
   pub name: String,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct Timestamp {
+  pub seconds: i64,
+  pub nanos: i32,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Duration {
+  pub seconds: i64,
+  pub nanos: i32,
+}
+
 #[derive(Debug, Clone)]
 pub enum FieldType {
   Double,

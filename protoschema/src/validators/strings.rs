@@ -148,10 +148,6 @@ impl WellKnown {
   }
 }
 
-pub trait FieldValidator {
-  type Type;
-}
-
 pub fn build_string_validator_option<F, S>(config_fn: F) -> ProtoOption
 where
   F: FnOnce(StringValidatorBuilder) -> StringValidatorBuilder<S>,
@@ -161,14 +157,16 @@ where
   let validator = config_fn(builder).build();
   let name = "(buf.validate.field).string";
 
+  let mut values: BTreeMap<Box<str>, OptionValue> = BTreeMap::new();
+
   if let Some(const_val) = validator.const_ {
+    values.insert("const".into(), OptionValue::String(const_val.into()));
+
     return ProtoOption {
       name,
-      value: OptionValue::String(const_val.into()),
+      value: OptionValue::Message(values),
     };
   }
-
-  let mut values: BTreeMap<Box<str>, OptionValue> = BTreeMap::new();
 
   insert_option!(validator, values, len, uint);
   insert_option!(validator, values, min_len, uint);
