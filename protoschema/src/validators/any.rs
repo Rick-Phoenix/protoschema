@@ -10,7 +10,7 @@ pub struct AnyValidator<'a> {
   pub not_in: Option<&'a [&'a str]>,
 }
 
-pub fn build_bytes_validator_option<F, S>(config_fn: F) -> ProtoOption
+pub fn build_any_validator_option<F, S>(config_fn: F) -> ProtoOption
 where
   F: FnOnce(AnyValidatorBuilder) -> AnyValidatorBuilder<S>,
   S: any_validator_builder::IsComplete,

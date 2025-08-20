@@ -23,21 +23,12 @@ pub mod macros {
           .into_boxed_slice(),
       )
     };
-    ($val:ident, [i32]) => {
-      OptionValue::List(
-        $val
-          .iter()
-          .map(|i| OptionValue::Int(*i as i64))
-          .collect::<Vec<OptionValue>>()
-          .into_boxed_slice(),
-      )
-    };
     ($val:ident, [$val_type:ident]) => {
       paste::paste! {
         OptionValue::List(
           $val
             .iter()
-            .map(|i| OptionValue::[< $val_type:camel >](*i))
+            .map(|i| OptionValue::from(*i))
             .collect::<Vec<OptionValue>>()
             .into_boxed_slice()
         )
@@ -48,7 +39,7 @@ pub mod macros {
     };
     ($val:ident, $val_type:ident) => {
       paste::paste! {
-        OptionValue::[< $val_type:camel >]($val)
+        OptionValue::from($val)
       }
     };
   }
@@ -59,5 +50,6 @@ pub mod booleans;
 pub mod bytes;
 pub mod duration;
 pub mod enums;
+pub mod numeric;
 pub mod strings;
 pub mod timestamp;

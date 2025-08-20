@@ -16,7 +16,7 @@ pub struct DurationValidator {
   pub defined_only: Option<bool>,
 }
 
-pub fn build_bytes_validator_option<F, S>(config_fn: F) -> ProtoOption
+pub fn build_duration_validator_option<F, S>(config_fn: F) -> ProtoOption
 where
   F: FnOnce(DurationValidatorBuilder) -> DurationValidatorBuilder<S>,
   S: duration_validator_builder::IsComplete,

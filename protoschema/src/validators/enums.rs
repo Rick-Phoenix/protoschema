@@ -5,14 +5,14 @@ use bon::Builder;
 use crate::{OptionValue, ProtoOption};
 
 #[derive(Clone, Debug, Builder)]
-pub struct EnumValidator {
-  pub in_: Option<Box<[i32]>>,
-  pub not_in: Option<Box<[i32]>>,
+pub struct EnumValidator<'a> {
+  pub in_: Option<&'a [i32]>,
+  pub not_in: Option<&'a [i32]>,
   pub const_: Option<i32>,
   pub defined_only: Option<bool>,
 }
 
-pub fn build_bytes_validator_option<F, S>(config_fn: F) -> ProtoOption
+pub fn build_enum_validator_option<F, S>(config_fn: F) -> ProtoOption
 where
   F: FnOnce(EnumValidatorBuilder) -> EnumValidatorBuilder<S>,
   S: enum_validator_builder::IsComplete,

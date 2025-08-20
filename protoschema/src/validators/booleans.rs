@@ -9,7 +9,7 @@ pub struct BoolValidator {
   pub const_: Option<bool>,
 }
 
-pub fn build_bytes_validator_option<F, S>(config_fn: F) -> ProtoOption
+pub fn build_bool_validator_option<F, S>(config_fn: F) -> ProtoOption
 where
   F: FnOnce(BoolValidatorBuilder) -> BoolValidatorBuilder<S>,
   S: bool_validator_builder::IsComplete,
