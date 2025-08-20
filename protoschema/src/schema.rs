@@ -4,6 +4,7 @@ use crate::{
   enums::{EnumBuilder, EnumData},
   message::{MessageBuilder, MessageData},
   rendering::{EnumTemplate, FileTemplate, MessageTemplate},
+  sealed, Empty, IsUnset, Set, Unset,
 };
 
 pub(crate) type Arena = Rc<RefCell<PackageData>>;
@@ -78,16 +79,61 @@ impl Package {
     FileBuilder {
       id: file_id,
       arena: self.arena.clone(),
+      _phantom: PhantomData,
     }
   }
 }
 
-pub struct FileBuilder {
+#[derive(Debug, Clone)]
+pub struct FileBuilder<S: FileState = Empty> {
   pub(crate) id: usize,
   pub(crate) arena: Arena,
+  _phantom: PhantomData<S>,
 }
 
-impl FileBuilder {
+#[allow(non_camel_case_types)]
+mod members {
+  pub struct imports;
+}
+
+pub trait FileState: Sized {
+  type Imports;
+  #[doc(hidden)]
+  const SEALED: sealed::Sealed;
+}
+
+impl FileState for Empty {
+  type Imports = Unset<members::imports>;
+  const SEALED: sealed::Sealed = sealed::Sealed;
+}
+
+pub struct SetImports<S: FileState = Empty>(PhantomData<fn() -> S>);
+
+impl<S: FileState> FileState for SetImports<S> {
+  type Imports = Set<members::imports>;
+  const SEALED: sealed::Sealed = sealed::Sealed;
+}
+
+impl<S: FileState> FileBuilder<S> {
+  pub fn imports(self, imports: &[&str]) -> FileBuilder<SetImports<S>>
+  where
+    S::Imports: IsUnset,
+  {
+    {
+      let file_imports = &mut self.arena.borrow_mut().files[self.id].imports;
+
+      for &import in imports {
+        file_imports.insert(import.into());
+      }
+    }
+
+    FileBuilder {
+      id: self.id,
+      arena: self.arena,
+      _phantom: PhantomData,
+    }
+  }
+
   pub fn get_data(&self) -> FileData {
     self.arena.borrow().files[self.id].clone()
   }

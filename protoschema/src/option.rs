@@ -14,6 +14,7 @@ impl Display for OptionValue {
     match &self {
       OptionValue::Bool(v) => write!(f, "{}", v),
       OptionValue::Int(v) => write!(f, "{}", v),
+      OptionValue::Uint(v) => write!(f, "{}", v),
       OptionValue::Float(v) => write!(f, "{}", v),
       OptionValue::String(v) => write!(f, "\"{}\"", v),
       OptionValue::List(values) => {
@@ -55,11 +56,12 @@ impl Display for OptionValue {
 pub enum OptionValue {
   Bool(bool),
   Int(i64),
+  Uint(u64),
   Float(f64),
-  String(String),
-  List(Vec<OptionValue>),
-  Message(BTreeMap<String, OptionValue>),
-  Identifier(String),
+  String(Box<str>),
+  List(Box<[OptionValue]>),
+  Message(BTreeMap<Box<str>, OptionValue>),
+  Identifier(Box<str>),
   Duration { seconds: i64, nanos: i32 },
   Timestamp { seconds: i64, nanos: i32 },
 }

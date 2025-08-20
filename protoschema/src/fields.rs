@@ -1,7 +1,7 @@
 use bon::Builder;
 pub(crate) use field_builder::*;
 
-use crate::{fields::string_validator_builder::IsComplete, FieldType, OptionValue, ProtoOption};
+use crate::{FieldType, ProtoOption};
 
 #[derive(Clone, Debug, Builder)]
 #[builder(derive(Clone))]
@@ -29,48 +29,13 @@ impl<S: field_builder::State> FieldBuilder<S> {
     self
   }
 
-  pub fn options(mut self, options: Vec<ProtoOption>) -> Self {
-    self.options = options;
+  pub fn options(mut self, options: &[ProtoOption]) -> Self {
+    self.options = options.to_vec();
     self
   }
 
-  pub fn import(mut self, import: &str) -> Self {
+  pub fn add_import(mut self, import: &str) -> Self {
     self.imports.push(import.into());
     self
   }
-}
-
-#[derive(Clone, Debug, Builder)]
-pub struct StringValidator {
-  pub min_len: usize,
-  pub max_len: usize,
-}
-
-impl From<StringValidator> for ProtoOption {
-  fn from(_value: StringValidator) -> Self {
-    ProtoOption {
-      name: "(buf.validate.field).string",
-      value: OptionValue::String("abc".to_string()),
-    }
-  }
-}
-
-pub trait IntoProtoOption {
-  fn into_option(self) -> ProtoOption;
-}
-
-impl IntoProtoOption for ProtoOption {
-  fn into_option(self) -> ProtoOption {
-    self
-  }
-}
-
-pub fn build_string_validator_option<F, S>(config_fn: F) -> ProtoOption
-where
-  F: FnOnce(StringValidatorBuilder) -> StringValidatorBuilder<S>,
-  S: IsComplete,
-{
-  let builder = StringValidator::builder();
-  let configured_builder = config_fn(builder);
-  configured_builder.build().into()
 }

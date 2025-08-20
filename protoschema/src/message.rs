@@ -271,7 +271,10 @@ impl<S: MessageState> MessageBuilder<S> {
         .map(|(tag, field)| {
           let field = field.clone().tag(*tag).build();
           let file_id = arena.messages[self.id].file_id;
-          arena.files[file_id].imports.extend(field.imports.clone());
+
+          for import in &field.imports {
+            arena.files[file_id].imports.insert(import.clone());
+          }
 
           field
         })

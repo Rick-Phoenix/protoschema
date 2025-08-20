@@ -3,15 +3,8 @@
 use askama::Template;
 use paste::paste;
 use protoschema::{
-  fields::{self, build_string_validator_option},
-  message_body, msg_field,
-  oneofs::OneofData,
-  parse_field_type, proto_enum,
-  schema::Package,
-  string, FieldType, OptionValue, ProtoOption,
+  message_body, msg_field, proto_enum, schema::Package, string, OptionValue, ProtoOption,
 };
-
-use crate::fields::Field;
 
 #[test]
 fn main_test() {
@@ -36,7 +29,7 @@ fn main_test() {
     reserved = [ 2, 2..4 ],
 
     1 => field.clone(),
-    2 => string!("abc").options(vec![opt.clone(), opt.clone(), opt.clone()]),
+    2 => string!("abc").options(&[opt.clone(), opt.clone(), opt.clone()]),
     3 => string!("abc", |v| v.min_len(5).max_len(15)),
 
     enum "my_enum" {
@@ -45,14 +38,14 @@ fn main_test() {
       reserved = [ 1, 2..4 ],
 
       1 => "UNSPECIFIED",
-    },
+    }
 
     oneof "my_oneof" {
       options = [ opt.clone() ],
 
       6 => field.clone(),
       7 => field.clone()
-    },
+    }
 
     10 => field.clone(),
 

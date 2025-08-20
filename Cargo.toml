@@ -24,3 +24,4 @@ askama = { version = "0.14.0", default-features = false, features = [
 chrono = "0.4.41"
 bon = "3.7.0"
 maplit = "1.0.2"
+regex = "1.11.1"

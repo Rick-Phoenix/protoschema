@@ -2,7 +2,7 @@
 macro_rules! parse_field_type {
   ($ty:ident) => {
     paste! {
-      FieldType::[< $ty:camel >]
+      $crate::FieldType::[< $ty:camel >]
     }
   };
 }
@@ -10,36 +10,29 @@ macro_rules! parse_field_type {
 #[macro_export]
 macro_rules! msg_field {
   ($msg:expr, $field_name:literal $(, [$($option_name:expr),*])? $(,)? ) => {
-    Field::builder()
+    $crate::fields::Field::builder()
       .name($field_name.into())
-      .field_type(FieldType::Message($msg.get_full_name().into()))
-      .import(&$msg.get_file())
+      .field_type($crate::FieldType::Message($msg.get_full_name().into()))
+      .add_import(&$msg.get_file())
   };
 }
 
 #[macro_export]
 macro_rules! string {
   ($field_name:literal, $validator:expr) => {
-    Field::builder()
+    $crate::fields::Field::builder()
       .name($field_name.into())
-      .field_type(parse_field_type!(string))
-      .option(build_string_validator_option($validator))
+      .field_type($crate::parse_field_type!(string))
+      .option($crate::validators::strings::build_string_validator_option(
+        $validator,
+      ))
+      .add_import("buf/validate/validate.proto")
   };
 
   ($field_name:literal) => {
-    Field::builder()
+    $crate::fields::Field::builder()
       .name($field_name.into())
-      .field_type(parse_field_type!(string))
-  };
-}
-
-#[macro_export]
-macro_rules! message {
-  ($file:expr, $name:literal, $($tokens:tt)*) => {
-    {
-      let msg = $file.new_message($name);
-      message_body!(msg, $($tokens)*)
-    }
+      .field_type($crate::parse_field_type!(string))
   };
 }
 
@@ -290,11 +283,11 @@ macro_rules! proto_enum_impl {
     @rest(reserved_names = $reserved_names:expr, $($rest:tt)*)
   ) => {
     $crate::proto_enum_impl! {
-      @builder( $enum ),
-      @options( $($options)* ),
-      @reserved( $($reserved)* ),
+      @builder($enum),
+      @options($($options)*),
+      @reserved($($reserved)*),
       @reserved_names($reserved_names),
-      @rest( $($rest)* )
+      @rest($($rest)*)
     }
   };
 
@@ -410,7 +403,7 @@ macro_rules! oneof {
     $($tag:literal => $field:expr),* $(,)?
   ) => {
     {
-      OneofData::builder()
+      $crate::oneofs::OneofData::builder()
         .name($name.to_string())
         .parent_message_id($msg.get_id())
         .options($options_expr.as_slice())
@@ -427,7 +420,7 @@ macro_rules! oneof {
     $($tag:literal => $field:expr),* $(,)?
   ) => {
     {
-      OneofData::builder()
+      $crate::oneofs::OneofData::builder()
         .name($name.to_string())
         .parent_message_id($msg.get_id())
         .fields(
