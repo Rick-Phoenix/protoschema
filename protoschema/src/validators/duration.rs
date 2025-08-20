@@ -2,12 +2,16 @@ use std::collections::BTreeMap;
 
 use bon::Builder;
 
-use crate::{field_type::Duration, OptionValue, ProtoOption};
+use crate::{
+  field_type::Duration,
+  validators::{validate_comparables, validate_lists},
+  OptionValue, ProtoOption,
+};
 
 #[derive(Clone, Debug, Builder)]
-pub struct DurationValidator {
-  pub in_: Option<Box<[Duration]>>,
-  pub not_in: Option<Box<[Duration]>>,
+pub struct DurationValidator<'a> {
+  pub in_: Option<&'a [Duration]>,
+  pub not_in: Option<&'a [Duration]>,
   pub const_: Option<Duration>,
   pub lt: Option<Duration>,
   pub lte: Option<Duration>,
@@ -16,6 +20,7 @@ pub struct DurationValidator {
   pub defined_only: Option<bool>,
 }
 
+#[track_caller]
 pub fn build_duration_validator_option<F, S>(config_fn: F) -> ProtoOption
 where
   F: FnOnce(DurationValidatorBuilder) -> DurationValidatorBuilder<S>,
@@ -34,6 +39,14 @@ where
       value: OptionValue::Message(values),
     };
   }
+
+  validate_comparables(validator.lt, validator.lte, validator.gt, validator.gte);
+  validate_lists(validator.in_, validator.not_in).unwrap_or_else(|invalid| {
+    panic!(
+      "The following values are present inside of 'in' and 'not_in': {:?}",
+      invalid
+    )
+  });
 
   insert_option!(validator, values, lt, duration);
   insert_option!(validator, values, lte, duration);

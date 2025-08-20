@@ -7,13 +7,13 @@ pub struct ImportedItemPath {
   pub name: String,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Timestamp {
   pub seconds: i64,
   pub nanos: i32,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Duration {
   pub seconds: i64,
   pub nanos: i32,

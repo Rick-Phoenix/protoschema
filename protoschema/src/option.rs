@@ -54,7 +54,7 @@ impl Display for OptionValue {
       OptionValue::Float(v) => write!(f, "{}", v),
       OptionValue::String(v) => write!(f, "\"{}\"", v),
       OptionValue::List(values) => {
-        write!(f, "[  ")?;
+        write!(f, "[ ")?;
         for (idx, item) in values.iter().enumerate() {
           write!(f, "{}", item)?;
           if idx != values.len() - 1 {

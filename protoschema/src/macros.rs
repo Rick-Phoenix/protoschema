@@ -17,24 +17,62 @@ macro_rules! msg_field {
   };
 }
 
-#[macro_export]
-macro_rules! string {
-  ($field_name:literal, $validator:expr) => {
-    $crate::fields::Field::builder()
-      .name($field_name.into())
-      .field_type($crate::parse_field_type!(string))
-      .option($crate::validators::strings::build_string_validator_option(
-        $validator,
-      ))
-      .add_import("buf/validate/validate.proto")
+macro_rules! field_validators {
+  ($proto_type:ident, $path:path) => {
+    field_validators_inner!(
+      $proto_type,
+      paste! { $crate::validators::$path::[< build_ $proto_type _validator_option >] }
+    );
   };
 
-  ($field_name:literal) => {
-    $crate::fields::Field::builder()
-      .name($field_name.into())
-      .field_type($crate::parse_field_type!(string))
+  ($proto_type:ident) => {
+    field_validators_inner!(
+      $proto_type,
+      paste! { $crate::validators::$proto_type::[< build_ $proto_type _validator_option >] }
+    );
   };
 }
+
+macro_rules! field_validators_inner {
+  ($proto_type:ident, $func_path:expr) => {
+    #[macro_export]
+    macro_rules! $proto_type {
+      ($field_name:literal, $validator:expr) => {
+        $crate::fields::Field::builder()
+          .name($field_name.into())
+          .field_type($crate::parse_field_type!($proto_type))
+          .option($func_path($validator))
+          .add_import("buf/validate/validate.proto")
+      };
+
+      ($field_name:literal) => {
+        $crate::fields::Field::builder()
+          .name($field_name.into())
+          .field_type($crate::parse_field_type!($proto_type))
+      };
+    }
+  };
+}
+
+field_validators!(string);
+field_validators!(any);
+field_validators!(duration);
+field_validators!(timestamp);
+field_validators!(bytes);
+field_validators!(bool);
+field_validators!(enum_, enums);
+field_validators!(int64, numeric);
+field_validators!(int32, numeric);
+field_validators!(sint64, numeric);
+field_validators!(sint32, numeric);
+field_validators!(sfixed64, numeric);
+field_validators!(sfixed32, numeric);
+field_validators!(uint64, numeric);
+field_validators!(uint32, numeric);
+field_validators!(fixed64, numeric);
+field_validators!(fixed32, numeric);
+field_validators!(double, numeric);
+field_validators!(float, numeric);
 
 #[macro_export]
 macro_rules! message_body {

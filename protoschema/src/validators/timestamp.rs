@@ -4,6 +4,7 @@ use bon::Builder;
 
 use crate::{
   field_type::{Duration, Timestamp},
+  validators::validate_comparables,
   OptionValue, ProtoOption,
 };
 
@@ -19,6 +20,7 @@ pub struct TimestampValidator {
   pub within: Option<Duration>,
 }
 
+#[track_caller]
 pub fn build_timestamp_validator_option<F, S>(config_fn: F) -> ProtoOption
 where
   F: FnOnce(TimestampValidatorBuilder) -> TimestampValidatorBuilder<S>,
@@ -37,6 +39,8 @@ where
       value: OptionValue::Message(values),
     };
   }
+
+  validate_comparables(validator.lt, validator.lte, validator.gt, validator.gte);
 
   insert_option!(validator, values, lt, timestamp);
   insert_option!(validator, values, lte, timestamp);

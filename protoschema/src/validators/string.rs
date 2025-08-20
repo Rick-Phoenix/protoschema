@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use bon::Builder;
 
-use crate::{OptionValue, ProtoOption};
+use crate::{validators::validate_lists, OptionValue, ProtoOption};
 
 #[derive(Clone, Debug, Builder)]
 pub struct StringValidator<'a> {
@@ -22,6 +22,66 @@ pub struct StringValidator<'a> {
   #[builder(setters(vis = "", name = well_known))]
   pub well_known: Option<WellKnown>,
   pub const_: Option<&'a str>,
+}
+
+#[track_caller]
+pub fn build_string_validator_option<F, S>(config_fn: F) -> ProtoOption
+where
+  F: FnOnce(StringValidatorBuilder) -> StringValidatorBuilder<S>,
+  S: string_validator_builder::IsComplete,
+{
+  let builder = StringValidator::builder();
+  let validator = config_fn(builder).build();
+  let name = "(buf.validate.field).string";
+
+  let mut values: BTreeMap<Box<str>, OptionValue> = BTreeMap::new();
+
+  if let Some(const_val) = validator.const_ {
+    values.insert("const".into(), OptionValue::String(const_val.into()));
+
+    return ProtoOption {
+      name,
+      value: OptionValue::Message(values),
+    };
+  }
+
+  validate_lists(validator.in_, validator.not_in).unwrap_or_else(|invalid| {
+    panic!(
+      "The following values are present inside of 'in' and 'not_in': {:?}",
+      invalid
+    )
+  });
+
+  if validator.len.is_none() {
+    insert_option!(validator, values, min_len, uint);
+    insert_option!(validator, values, max_len, uint);
+  } else {
+    insert_option!(validator, values, len, uint);
+  }
+
+  if validator.len_bytes.is_none() {
+    insert_option!(validator, values, min_bytes, uint);
+    insert_option!(validator, values, max_bytes, uint);
+  } else {
+    insert_option!(validator, values, len_bytes, uint);
+  }
+
+  insert_option!(validator, values, pattern, string);
+  insert_option!(validator, values, prefix, string);
+  insert_option!(validator, values, suffix, string);
+  insert_option!(validator, values, contains, string);
+  insert_option!(validator, values, not_contains, string);
+  insert_option!(validator, values, in_, [string]);
+  insert_option!(validator, values, not_in, [string]);
+
+  if let Some(v) = validator.well_known {
+    v.to_option(&mut values)
+  }
+
+  ProtoOption {
+    name,
+    value: OptionValue::Message(values),
+  }
 }
 
 #[derive(Clone, Debug, Copy)]
@@ -145,49 +205,5 @@ impl WellKnown {
         option_values.insert("strict".into(), OptionValue::Bool(true))
       }
     };
-  }
-}
-
-pub fn build_string_validator_option<F, S>(config_fn: F) -> ProtoOption
-where
-  F: FnOnce(StringValidatorBuilder) -> StringValidatorBuilder<S>,
-  S: string_validator_builder::IsComplete,
-{
-  let builder = StringValidator::builder();
-  let validator = config_fn(builder).build();
-  let name = "(buf.validate.field).string";
-
-  let mut values: BTreeMap<Box<str>, OptionValue> = BTreeMap::new();
-
-  if let Some(const_val) = validator.const_ {
-    values.insert("const".into(), OptionValue::String(const_val.into()));
-
-    return ProtoOption {
-      name,
-      value: OptionValue::Message(values),
-    };
-  }
-
-  insert_option!(validator, values, len, uint);
-  insert_option!(validator, values, min_len, uint);
-  insert_option!(validator, values, max_len, uint);
-  insert_option!(validator, values, len_bytes, uint);
-  insert_option!(validator, values, min_bytes, uint);
-  insert_option!(validator, values, max_bytes, uint);
-  insert_option!(validator, values, pattern, string);
-  insert_option!(validator, values, prefix, string);
-  insert_option!(validator, values, suffix, string);
-  insert_option!(validator, values, contains, string);
-  insert_option!(validator, values, not_contains, string);
-  insert_option!(validator, values, in_, [string]);
-  insert_option!(validator, values, not_in, [string]);
-
-  if let Some(v) = validator.well_known {
-    v.to_option(&mut values)
-  }
-
-  ProtoOption {
-    name,
-    value: OptionValue::Message(values),
   }
 }

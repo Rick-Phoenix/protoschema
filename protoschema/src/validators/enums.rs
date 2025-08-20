@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use bon::Builder;
 
-use crate::{OptionValue, ProtoOption};
+use crate::{validators::validate_lists, OptionValue, ProtoOption};
 
 #[derive(Clone, Debug, Builder)]
 pub struct EnumValidator<'a> {
@@ -12,6 +12,7 @@ pub struct EnumValidator<'a> {
   pub defined_only: Option<bool>,
 }
 
+#[track_caller]
 pub fn build_enum_validator_option<F, S>(config_fn: F) -> ProtoOption
 where
   F: FnOnce(EnumValidatorBuilder) -> EnumValidatorBuilder<S>,
@@ -30,6 +31,13 @@ where
       value: OptionValue::Message(values),
     };
   }
+
+  validate_lists(validator.in_, validator.not_in).unwrap_or_else(|invalid| {
+    panic!(
+      "The following values are present inside of 'in' and 'not_in': {:?}",
+      invalid
+    )
+  });
 
   insert_option!(validator, values, defined_only, bool);
   insert_option!(validator, values, in_, [i32]);

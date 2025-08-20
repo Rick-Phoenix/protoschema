@@ -4,6 +4,55 @@ use bon::Builder;
 
 use crate::{OptionValue, ProtoOption};
 
+macro_rules! get_list_check {
+  (f32, $in_list:expr, $not_in_list:expr) => {{
+    let hashable_in_list: Option<Vec<u32>> =
+      $in_list.map(|l| l.iter().map(|v| v.to_bits()).collect());
+
+    let hashable_not_in_list: Option<Vec<u32>> =
+      $not_in_list.map(|l| l.iter().map(|v| v.to_bits()).collect());
+
+    super::validate_lists(hashable_in_list.as_deref(), hashable_not_in_list.as_deref())
+      .unwrap_or_else(|invalid| {
+        panic!(
+          "The following values are present inside of 'in' and 'not_in': {:?}",
+          invalid
+            .iter()
+            .map(|v| f32::from_bits(*v))
+            .collect::<Vec<f32>>()
+        )
+      });
+  }};
+
+  (f64, $in_list:expr, $not_in_list:expr) => {{
+    let hashable_in_list: Option<Vec<u64>> =
+      $in_list.map(|l| l.iter().map(|v| v.to_bits()).collect());
+
+    let hashable_not_in_list: Option<Vec<u64>> =
+      $not_in_list.map(|l| l.iter().map(|v| v.to_bits()).collect());
+
+    super::validate_lists(hashable_in_list.as_deref(), hashable_not_in_list.as_deref())
+      .unwrap_or_else(|invalid| {
+        panic!(
+          "The following values are present inside of 'in' and 'not_in': {:?}",
+          invalid
+            .iter()
+            .map(|v| f64::from_bits(*v))
+            .collect::<Vec<f64>>()
+        )
+      });
+  }};
+
+  ($_:ty, $in_list:expr, $not_in_list:expr) => {{
+    super::validate_lists($in_list, $not_in_list).unwrap_or_else(|invalid| {
+      panic!(
+        "The following values are present inside of 'in' and 'not_in': {:?}",
+        invalid
+      )
+    });
+  }};
+}
+
 macro_rules! get_fields {
   (f64, $_:ident) => {
     #[derive(Clone, Debug, Builder)]
@@ -75,6 +124,7 @@ macro_rules! numeric_validator {
     paste::paste! {
       get_fields!($rust_type, $proto_type);
 
+      #[track_caller]
       pub fn [< build_ $proto_type _validator_option >]<F, S>(config_fn: F) -> ProtoOption
       where
         F: FnOnce([< $proto_type:camel ValidatorBuilder >]) -> [< $proto_type:camel ValidatorBuilder >]<S>,
@@ -94,6 +144,8 @@ macro_rules! numeric_validator {
           };
         }
 
+        super::validate_comparables(validator.lt, validator.lte, validator.gt, validator.gte);
+        get_list_check!($rust_type, validator.in_, validator.not_in);
         get_options!($option_value_variant, validator, values);
 
         ProtoOption {
@@ -115,5 +167,5 @@ numeric_validator!(uint64, u64, Uint);
 numeric_validator!(uint32, u32, Uint);
 numeric_validator!(fixed64, u64, Uint);
 numeric_validator!(fixed32, u32, Uint);
-numeric_validator!(float, f64, Float);
-numeric_validator!(double, f32, Float);
+numeric_validator!(float, f32, Float);
+numeric_validator!(double, f64, Float);
