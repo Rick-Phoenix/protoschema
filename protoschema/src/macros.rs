@@ -86,7 +86,7 @@ macro_rules! _internal_message_body {
       { $($enums)* };
 
       let fields_list = &[ $($fields)* ];
-      let oneofs_list: Vec<OneofData> = vec! [ $($oneofs)* ];
+      let oneofs_list = &[ $($oneofs)* ];
 
       let mut new_msg = $builder
         .fields(fields_list)

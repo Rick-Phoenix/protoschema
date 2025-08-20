@@ -11,7 +11,20 @@ pub struct OneofData {
   pub parent_message_id: usize,
   pub fields: Vec<Field>,
   #[builder(default)]
-  pub options: Vec<ProtoOption>,
+  #[builder(setters(vis = "", name = options_internal))]
+  pub options: Box<[ProtoOption]>,
+}
+
+impl<S: oneof_data_builder::State> OneofDataBuilder<S> {
+  pub fn options(
+    self,
+    options: &[ProtoOption],
+  ) -> OneofDataBuilder<oneof_data_builder::SetOptions<S>>
+  where
+    S::Options: IsUnset,
+  {
+    self.options_internal(options.into())
+  }
 }
 
 pub trait OneofState: ::core::marker::Sized {

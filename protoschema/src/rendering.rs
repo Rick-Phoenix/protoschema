@@ -25,7 +25,7 @@ pub struct MessageTemplate {
   pub parent_message_name: Option<Box<str>>,
   pub fields: Vec<Field>,
   pub messages: Vec<MessageTemplate>,
-  pub oneofs: Vec<OneofData>,
+  pub oneofs: Box<[OneofData]>,
   pub enums: Vec<EnumTemplate>,
 }
 
@@ -37,7 +37,7 @@ pub struct EnumTemplate {
   pub reserved_numbers: Box<[u32]>,
   pub reserved_ranges: Box<[Range<i32>]>,
   pub reserved_names: Box<[Box<str>]>,
-  pub options: Vec<ProtoOption>,
+  pub options: Box<[ProtoOption]>,
 }
 
 impl From<EnumData> for EnumTemplate {

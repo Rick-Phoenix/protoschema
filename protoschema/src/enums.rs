@@ -21,26 +21,11 @@ pub struct EnumData {
   pub reserved_numbers: Box<[u32]>,
   pub reserved_ranges: Box<[Range<i32>]>,
   pub reserved_names: Box<[Box<str>]>,
-  pub options: Vec<ProtoOption>,
+  pub options: Box<[ProtoOption]>,
 }
 
 impl<S: EnumState> EnumBuilder<S> {
-  pub fn option(self, option: ProtoOption) -> EnumBuilder<S> {
-    {
-      let mut arena = self.arena.borrow_mut();
-      let msg = &mut arena.enums[self.id];
-
-      msg.options.push(option)
-    }
-
-    EnumBuilder {
-      id: self.id,
-      arena: self.arena,
-      _phantom: PhantomData,
-    }
-  }
-
-  pub fn options(self, options: Vec<ProtoOption>) -> EnumBuilder<SetOptions<S>>
+  pub fn options(self, options: &[ProtoOption]) -> EnumBuilder<SetOptions<S>>
   where
     S::Options: IsUnset,
   {
@@ -48,7 +33,7 @@ impl<S: EnumState> EnumBuilder<S> {
       let mut arena = self.arena.borrow_mut();
       let msg = &mut arena.enums[self.id];
 
-      msg.options = options
+      msg.options = options.into()
     }
 
     EnumBuilder {

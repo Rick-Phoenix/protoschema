@@ -1,5 +1,6 @@
+#![allow(clippy::cloned_ref_to_slice_refs)]
+
 use askama::Template;
-use maplit::btreemap;
 use paste::paste;
 use protoschema::{
   fields::{self, build_string_validator_option},
@@ -27,10 +28,10 @@ fn main_test() {
 
   let field = msg_field!(msg, "my_msg_field");
 
-  let msg = message_body! {
+  message_body! {
     msg,
 
-    options = vec![ opt.clone() ],
+    options = &[ opt.clone(), opt.clone() ],
     reserved_names = [ "one", "two" ],
     reserved = [ 2, 2..4 ],
 
@@ -39,7 +40,7 @@ fn main_test() {
     3 => string!("abc", |v| v.min_len(5).max_len(15)),
 
     enum "my_enum" {
-      options = vec![ opt.clone() ],
+      options = &[ opt.clone() ],
       reserved_names = [ "one", "two" ],
       reserved = [ 1, 2..4 ],
 
@@ -47,7 +48,7 @@ fn main_test() {
     },
 
     oneof "my_oneof" {
-      options = vec![ opt.clone() ],
+      options = &[ opt.clone() ],
 
       6 => field.clone(),
       7 => field.clone()
@@ -59,7 +60,7 @@ fn main_test() {
 
   proto_enum!(
     file.new_enum("file_enum"),
-    options = vec![opt.clone()],
+    options = &[opt.clone()],
     1 => "UNSPECIFIED"
   );
 

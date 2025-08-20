@@ -55,11 +55,11 @@ pub struct MessageData {
   pub file_id: usize,
   pub parent_message: Option<usize>,
   pub fields: Vec<Field>,
-  pub oneofs: Vec<OneofData>,
+  pub oneofs: Box<[OneofData]>,
   pub reserved_numbers: Box<[u32]>,
   pub reserved_ranges: Box<[Range<u32>]>,
   pub reserved_names: Box<[Box<str>]>,
-  pub options: Vec<ProtoOption>,
+  pub options: Box<[ProtoOption]>,
   pub enums: Vec<usize>,
   pub messages: Vec<usize>,
   pub imports: HashSet<Box<str>>,
@@ -185,7 +185,7 @@ impl<S: MessageState> MessageBuilder<S> {
     }
   }
 
-  pub fn options(self, options: Vec<ProtoOption>) -> MessageBuilder<SetOptions<S>>
+  pub fn options(self, options: &[ProtoOption]) -> MessageBuilder<SetOptions<S>>
   where
     S::Options: IsUnset,
   {
@@ -193,7 +193,7 @@ impl<S: MessageState> MessageBuilder<S> {
       let mut arena = self.arena.borrow_mut();
       let msg = &mut arena.messages[self.id];
 
-      msg.options = options
+      msg.options = options.into()
     }
 
     MessageBuilder {
@@ -239,28 +239,14 @@ impl<S: MessageState> MessageBuilder<S> {
     }
   }
 
-  pub fn oneofs(self, oneofs: Vec<OneofData>) -> MessageBuilder<SetOneofs<S>>
+  pub fn oneofs(self, oneofs: &[OneofData]) -> MessageBuilder<SetOneofs<S>>
   where
     S::Oneofs: IsUnset,
   {
     {
       let mut arena = self.arena.borrow_mut();
 
-      arena.messages[self.id].oneofs = oneofs;
-    }
-
-    MessageBuilder {
-      id: self.id,
-      arena: self.arena,
-      _phantom: PhantomData,
-    }
-  }
-
-  pub fn oneof(self, oneof: OneofData) -> MessageBuilder<S> {
-    {
-      let mut arena = self.arena.borrow_mut();
-
-      arena.messages[self.id].oneofs.push(oneof);
+      arena.messages[self.id].oneofs = oneofs.into();
     }
 
     MessageBuilder {
