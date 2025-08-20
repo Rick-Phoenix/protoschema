@@ -42,3 +42,9 @@ pub struct Range {
   pub start: u32,
   pub end: u32,
 }
+
+pub(crate) fn from_str_slice(strings: &[&str]) -> Box<[Box<str>]> {
+  let mut vec = Vec::with_capacity(strings.len());
+  vec.extend(strings.iter().map(|&s| s.into()));
+  vec.into_boxed_slice()
+}

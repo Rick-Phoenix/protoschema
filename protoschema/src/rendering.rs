@@ -15,7 +15,7 @@ use crate::{
 pub struct FileTemplate {
   pub name: Box<str>,
   pub imports: HashSet<Box<str>>,
-  pub package: String,
+  pub package: Box<str>,
   pub messages: Vec<MessageTemplate>,
   pub enums: Vec<EnumTemplate>,
 }
@@ -23,9 +23,9 @@ pub struct FileTemplate {
 #[derive(Clone, Debug, Default, Template)]
 #[template(path = "message.proto.j2")]
 pub struct MessageTemplate {
-  pub name: String,
-  pub package: String,
-  pub parent_message_name: Option<String>,
+  pub name: Box<str>,
+  pub package: Box<str>,
+  pub parent_message_name: Option<Box<str>>,
   pub fields: Vec<Field>,
   pub messages: Vec<MessageTemplate>,
   pub oneofs: Vec<OneofData>,
@@ -35,11 +35,11 @@ pub struct MessageTemplate {
 #[derive(Clone, Debug, Default, Template)]
 #[template(path = "enum.proto.j2")]
 pub struct EnumTemplate {
-  pub name: String,
+  pub name: Box<str>,
   pub variants: BTreeMap<i32, String>,
   pub reserved_numbers: Box<[u32]>,
-  pub reserved_ranges: Vec<Range<i32>>,
-  pub reserved_names: Vec<String>,
+  pub reserved_ranges: Box<[Range<i32>]>,
+  pub reserved_names: Box<[Box<str>]>,
   pub options: Vec<ProtoOption>,
 }
 
@@ -57,7 +57,7 @@ impl From<EnumData> for EnumTemplate {
 }
 
 impl MessageData {
-  pub fn build_template(&self, package: &PackageData) -> MessageTemplate {
+  pub(crate) fn build_template(&self, package: &PackageData) -> MessageTemplate {
     let built_messages: Vec<MessageTemplate> = self
       .messages
       .iter()
@@ -70,7 +70,7 @@ impl MessageData {
 
     let parent_message_name = self
       .parent_message
-      .map(|id| package.messages[id].get_full_name(package));
+      .map(|id| package.messages[id].full_name.clone());
 
     let enums: Vec<EnumTemplate> = self
       .enums

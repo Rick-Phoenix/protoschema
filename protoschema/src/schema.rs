@@ -10,7 +10,7 @@ pub(crate) type Arena = Rc<RefCell<PackageData>>;
 
 #[derive(Default, Debug)]
 pub(crate) struct PackageData {
-  pub(crate) name: String,
+  pub(crate) name: Box<str>,
   pub(crate) files: Vec<FileData>,
   pub(crate) messages: Vec<MessageData>,
   pub(crate) enums: Vec<EnumData>,
@@ -59,7 +59,7 @@ impl Package {
   pub fn new(name: &str) -> Self {
     Package {
       arena: Rc::new(RefCell::new(PackageData {
-        name: name.to_string(),
+        name: name.into(),
         ..Default::default()
       })),
     }
@@ -97,7 +97,6 @@ impl FileBuilder {
   }
 
   pub fn new_enum(&self, name: &str) -> EnumBuilder {
-    let file = self.get_name();
     let mut arena = self.arena.borrow_mut();
     let package_name = arena.name.clone();
     let enum_id = arena.messages.len();
@@ -105,7 +104,7 @@ impl FileBuilder {
     arena.files[self.id].enums.push(enum_id);
 
     arena.enums.push(EnumData {
-      file,
+      file_id: self.id,
       name: name.into(),
       package: package_name,
       ..Default::default()
@@ -125,9 +124,12 @@ impl FileBuilder {
 
     arena.files[self.id].messages.push(msg_id);
 
+    let full_name = arena.get_full_message_name(name, None);
+
     arena.messages.push(MessageData {
       file_id: self.id,
       name: name.into(),
+      full_name,
       package: package_name,
       ..Default::default()
     });

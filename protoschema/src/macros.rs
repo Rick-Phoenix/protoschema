@@ -9,7 +9,7 @@ macro_rules! parse_field_type {
 
 #[macro_export]
 macro_rules! msg_field {
-  ($msg:ident, $field_name:ident $(, [$($option_name:expr),*])? $(,)? ) => {
+  ($msg:expr, $field_name:ident $(, [$($option_name:expr),*])? $(,)? ) => {
     Field::builder()
       .name(stringify!($field_name).into())
       .field_type(FieldType::Message($msg.get_full_name().into()))
@@ -51,7 +51,7 @@ macro_rules! string {
 
 #[macro_export]
 macro_rules! message {
-  ($file:ident, $name:literal, $($tokens:tt)*) => {
+  ($file:expr, $name:literal, $($tokens:tt)*) => {
     {
       let msg = $file.new_message($name);
       message_body!(msg, $($tokens)*)
@@ -61,7 +61,7 @@ macro_rules! message {
 
 #[macro_export]
 macro_rules! message_body {
-  ($msg_builder:ident, options = $options:expr, $($tokens:tt)*) => {
+  ($msg_builder:expr, options = $options:expr, $($tokens:tt)*) => {
     $crate::_internal_message_body! {
       @builder($msg_builder)
       @fields()
@@ -73,7 +73,7 @@ macro_rules! message_body {
     }.options($options)
   };
 
-  ($msg_builder:ident, $($tokens:tt)*) => {
+  ($msg_builder:expr, $($tokens:tt)*) => {
     $crate::_internal_message_body! {
       @builder($msg_builder)
       @fields()
@@ -90,7 +90,7 @@ macro_rules! message_body {
 macro_rules! _internal_message_body {
   // No tokens remaining, process items
   (
-    @builder($builder:ident)
+    @builder($builder:expr)
     @fields($($fields:tt)*)
     @oneofs($($oneofs:tt)*)
     @enums($($enums:tt)*)
@@ -122,7 +122,7 @@ macro_rules! _internal_message_body {
 
   // Reserved numbers
   (
-    @builder($builder:ident)
+    @builder($builder:expr)
     @fields($($fields:tt)*)
     @oneofs($($oneofs:tt)*)
     @enums($($enums:tt)*)
@@ -143,7 +143,7 @@ macro_rules! _internal_message_body {
 
   // Reserved names
   (
-    @builder($builder:ident)
+    @builder($builder:expr)
     @fields($($fields:tt)*)
     @oneofs($($oneofs:tt)*)
     @enums($($enums:tt)*)
@@ -164,7 +164,7 @@ macro_rules! _internal_message_body {
 
   // Handle enum
   (
-    @builder($builder:ident)
+    @builder($builder:expr)
     @fields($($fields:tt)*)
     @oneofs($($oneofs:tt)*)
     @enums($($enums:tt)*)
@@ -185,7 +185,7 @@ macro_rules! _internal_message_body {
 
   // Handle oneof
   (
-    @builder($builder:ident)
+    @builder($builder:expr)
     @fields($($fields:tt)*)
     @oneofs($($oneofs:tt)*)
     @enums($($enums:tt)*)
@@ -209,7 +209,7 @@ macro_rules! _internal_message_body {
 
   // Process normal field with trailing comma
   (
-    @builder($builder:ident)
+    @builder($builder:expr)
     @fields($($fields:tt)*)
     @oneofs($($oneofs:tt)*)
     @enums($($enums:tt)*)
@@ -230,7 +230,7 @@ macro_rules! _internal_message_body {
 
   // Process normal field
   (
-    @builder($builder:ident)
+    @builder($builder:expr)
     @fields($($fields:tt)*)
     @oneofs($($oneofs:tt)*)
     @enums($($enums:tt)*)
@@ -350,7 +350,7 @@ macro_rules! proto_enum_impl {
 #[macro_export]
 macro_rules! parse_reserved {
   (
-    @builder($builder:ident)
+    @builder($builder:expr)
     @ranges()
     @numbers()
     @rest($(,)?)
@@ -359,7 +359,7 @@ macro_rules! parse_reserved {
   };
 
   (
-    @builder($builder:ident)
+    @builder($builder:expr)
     @ranges($($start:literal..$end:literal),* $(,)?)
     @numbers()
     @rest($(,)?)
@@ -369,7 +369,7 @@ macro_rules! parse_reserved {
   };
 
   (
-    @builder($builder:ident)
+    @builder($builder:expr)
     @ranges()
     @numbers($($number:literal),* $(,)?)
     @rest($(,)?)
@@ -379,7 +379,7 @@ macro_rules! parse_reserved {
   };
 
   (
-    @builder($builder:ident)
+    @builder($builder:expr)
     @ranges($($start:literal..$end:literal),* $(,)?)
     @numbers($($number:literal),* $(,)?)
     @rest($(,)?)
@@ -390,7 +390,7 @@ macro_rules! parse_reserved {
   };
 
   (
-    @builder($builder:ident)
+    @builder($builder:expr)
     @ranges($($ranges:tt)*)
     @numbers($($numbers:tt)*)
     @rest($(,)? $start:literal..$end:literal $($rest:tt)* )
@@ -404,7 +404,7 @@ macro_rules! parse_reserved {
   };
 
   (
-    @builder($builder:ident)
+    @builder($builder:expr)
     @ranges($($ranges:tt)*)
     @numbers($($numbers:tt)*)
     @rest($(,)? $number:literal $($rest:tt)* )
@@ -421,7 +421,7 @@ macro_rules! parse_reserved {
 #[macro_export]
 macro_rules! oneof {
   (
-    $msg:ident,
+    $msg:expr,
     $name:expr,
     options = $options_expr:expr,
     $($tag:literal => $field:expr),* $(,)?
@@ -439,7 +439,7 @@ macro_rules! oneof {
   };
 
   (
-    $msg:ident,
+    $msg:expr,
     $name:expr,
     $($tag:literal => $field:expr),* $(,)?
   ) => {

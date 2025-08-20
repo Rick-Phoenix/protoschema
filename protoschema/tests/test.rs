@@ -57,7 +57,7 @@ fn main_test() {
 
   };
 
-  let new_enum2 = proto_enum!(
+  proto_enum!(
     file.new_enum("file_enum"),
     options = vec![opt.clone()],
     1 => "UNSPECIFIED"

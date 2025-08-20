@@ -7,6 +7,7 @@ use std::{
 use crate::{
   enums::{EnumBuilder, EnumData},
   fields::{self, Field, FieldBuilder},
+  from_str_slice,
   oneofs::OneofData,
   schema::{Arena, PackageData},
   sealed, Empty, IsSet, IsUnset, ProtoOption, Set, Unset,
@@ -19,44 +20,49 @@ pub struct MessageBuilder<S: MessageState = Empty> {
   pub(crate) _phantom: PhantomData<fn() -> S>,
 }
 
-impl MessageData {
-  pub fn get_full_name(&self, arena: &PackageData) -> String {
+impl PackageData {
+  pub fn get_full_message_name(
+    &self,
+    base_name: &str,
+    parent_message_id: Option<usize>,
+  ) -> Box<str> {
     let mut path = String::new();
 
-    match self.parent_message {
+    match parent_message_id {
       Some(id) => {
         let mut current_id = Some(id);
-        path.push_str(&self.name);
+        path.push_str(base_name);
 
         while let Some(id) = current_id {
-          let current_message = &arena.messages[id];
+          let current_message = &self.messages[id];
           path.insert(0, '.');
           path.insert_str(0, &current_message.name);
 
           current_id = current_message.parent_message;
         }
       }
-      None => path.push_str(&self.name),
+      None => path.push_str(base_name),
     }
 
     path.insert(0, '.');
-    path.insert_str(0, &self.package);
+    path.insert_str(0, &self.name);
 
-    path
+    path.into()
   }
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct MessageData {
-  pub name: String,
-  pub package: String,
+  pub name: Box<str>,
+  pub full_name: Box<str>,
+  pub package: Box<str>,
   pub file_id: usize,
   pub parent_message: Option<usize>,
   pub fields: Vec<Field>,
   pub oneofs: Vec<OneofData>,
   pub reserved_numbers: Box<[u32]>,
-  pub reserved_ranges: Vec<Range<u32>>,
-  pub reserved_names: Vec<String>,
+  pub reserved_ranges: Box<[Range<u32>]>,
+  pub reserved_names: Box<[Box<str>]>,
   pub options: Vec<ProtoOption>,
   pub enums: Vec<usize>,
   pub messages: Vec<usize>,
@@ -65,10 +71,10 @@ pub struct MessageData {
 
 impl<S: MessageState> MessageBuilder<S> {
   pub fn new_enum(&self, name: &str) -> EnumBuilder {
-    let file = self.get_file();
     let package = self.get_package();
     let mut arena = self.arena.borrow_mut();
 
+    let file_id = arena.messages[self.id].file_id;
     let parent_message_id = self.id;
     let new_enum_id = arena.enums.len();
 
@@ -77,7 +83,7 @@ impl<S: MessageState> MessageBuilder<S> {
     let new_enum = EnumData {
       name: name.into(),
       package,
-      file: file.clone(),
+      file_id,
       parent_message: Some(parent_message_id),
       ..Default::default()
     };
@@ -103,10 +109,13 @@ impl<S: MessageState> MessageBuilder<S> {
       .messages
       .push(child_message_id);
 
+    let full_name = arena.get_full_message_name(name, Some(parent_message_id));
+
     let new_msg = MessageData {
       name: name.into(),
       package,
       file_id,
+      full_name,
       parent_message: Some(parent_message_id),
       ..Default::default()
     };
@@ -136,20 +145,20 @@ impl<S: MessageState> MessageBuilder<S> {
     arena.messages[self.id].clone()
   }
 
-  pub fn get_name(&self) -> String {
+  pub fn get_name(&self) -> Box<str> {
     let arena = self.arena.borrow();
 
     arena.messages[self.id].name.clone()
   }
 
-  pub fn get_full_name(&self) -> String {
+  pub fn get_full_name(&self) -> Box<str> {
     let arena = self.arena.borrow();
 
     let msg = &arena.messages[self.id];
-    msg.get_full_name(&arena)
+    msg.full_name.clone()
   }
 
-  pub fn get_package(&self) -> String {
+  pub fn get_package(&self) -> Box<str> {
     let arena = self.arena.borrow();
 
     arena.messages[self.id].package.clone()
@@ -206,7 +215,7 @@ impl<S: MessageState> MessageBuilder<S> {
       let mut arena = self.arena.borrow_mut();
       let msg = &mut arena.messages[self.id];
 
-      msg.reserved_names = names.iter().map(|n| n.to_string()).collect::<Vec<String>>()
+      msg.reserved_names = from_str_slice(names)
     }
 
     MessageBuilder {
@@ -224,7 +233,7 @@ impl<S: MessageState> MessageBuilder<S> {
       let mut arena = self.arena.borrow_mut();
       let msg = &mut arena.messages[self.id];
 
-      msg.reserved_ranges = ranges.to_vec()
+      msg.reserved_ranges = ranges.into()
     }
 
     MessageBuilder {

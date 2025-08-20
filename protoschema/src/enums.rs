@@ -1,6 +1,8 @@
 use std::{collections::BTreeMap, marker::PhantomData, ops::Range};
 
-use crate::{schema::Arena, sealed, Empty, IsSet, IsUnset, ProtoOption, Set, Unset};
+use crate::{
+  from_str_slice, schema::Arena, sealed, Empty, IsSet, IsUnset, ProtoOption, Set, Unset,
+};
 
 #[derive(Clone, Debug)]
 pub struct EnumBuilder<S: EnumState = Empty> {
@@ -11,14 +13,14 @@ pub struct EnumBuilder<S: EnumState = Empty> {
 
 #[derive(Clone, Debug, Default)]
 pub struct EnumData {
-  pub name: String,
+  pub name: Box<str>,
   pub variants: BTreeMap<i32, String>,
-  pub file: String,
-  pub package: String,
+  pub file_id: usize,
+  pub package: Box<str>,
   pub parent_message: Option<usize>,
   pub reserved_numbers: Box<[u32]>,
-  pub reserved_ranges: Vec<Range<i32>>,
-  pub reserved_names: Vec<String>,
+  pub reserved_ranges: Box<[Range<i32>]>,
+  pub reserved_names: Box<[Box<str>]>,
   pub options: Vec<ProtoOption>,
 }
 
@@ -56,13 +58,13 @@ impl<S: EnumState> EnumBuilder<S> {
     }
   }
 
-  pub fn get_name(&self) -> String {
+  pub fn get_name(&self) -> Box<str> {
     let arena = self.arena.borrow();
 
     arena.enums[self.id].name.clone()
   }
 
-  pub fn get_package(&self) -> String {
+  pub fn get_package(&self) -> Box<str> {
     self.arena.borrow().name.clone()
   }
 
@@ -72,11 +74,7 @@ impl<S: EnumState> EnumBuilder<S> {
     let enum_ = &arena.enums[self.id];
 
     match enum_.parent_message {
-      Some(id) => format!(
-        "{}.{}",
-        arena.messages[id].get_full_name(&arena),
-        self.get_name()
-      ),
+      Some(id) => format!("{}.{}", arena.messages[id].full_name, self.get_name()),
       None => format!("{}.{}", self.get_package(), self.get_name()),
     }
   }
@@ -106,7 +104,7 @@ impl<S: EnumState> EnumBuilder<S> {
       let mut arena = self.arena.borrow_mut();
       let msg = &mut arena.enums[self.id];
 
-      msg.reserved_names = names.iter().map(|n| n.to_string()).collect::<Vec<String>>()
+      msg.reserved_names = from_str_slice(names)
     }
 
     EnumBuilder {
@@ -123,7 +121,7 @@ impl<S: EnumState> EnumBuilder<S> {
       let mut arena = self.arena.borrow_mut();
       let msg = &mut arena.enums[self.id];
 
-      msg.reserved_ranges = ranges.to_vec()
+      msg.reserved_ranges = ranges.into()
     }
 
     EnumBuilder {
