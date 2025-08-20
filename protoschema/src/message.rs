@@ -1,8 +1,4 @@
-use std::{
-  collections::{BTreeMap, HashSet},
-  marker::PhantomData,
-  ops::Range,
-};
+use std::{collections::HashSet, marker::PhantomData, ops::Range};
 
 use crate::{
   enums::{EnumBuilder, EnumData},
@@ -276,7 +272,7 @@ impl<S: MessageState> MessageBuilder<S> {
 
   pub fn fields(
     self,
-    fields: BTreeMap<u32, FieldBuilder<fields::SetFieldType<fields::SetName>>>,
+    fields: &[(u32, FieldBuilder<fields::SetFieldType<fields::SetName>>)],
   ) -> MessageBuilder<SetFields<S>>
   where
     S::Fields: IsUnset,
@@ -285,9 +281,9 @@ impl<S: MessageState> MessageBuilder<S> {
       let mut arena = self.arena.borrow_mut();
 
       let final_fields: Vec<Field> = fields
-        .into_iter()
+        .iter()
         .map(|(tag, field)| {
-          let field = field.tag(tag).build();
+          let field = field.clone().tag(*tag).build();
           let file_id = arena.messages[self.id].file_id;
           arena.files[file_id].imports.extend(field.imports.clone());
 

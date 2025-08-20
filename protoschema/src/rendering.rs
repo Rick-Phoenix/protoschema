@@ -1,7 +1,4 @@
-use std::{
-  collections::{BTreeMap, HashSet},
-  ops::Range,
-};
+use std::{collections::HashSet, ops::Range};
 
 use askama::Template;
 
@@ -36,7 +33,7 @@ pub struct MessageTemplate {
 #[template(path = "enum.proto.j2")]
 pub struct EnumTemplate {
   pub name: Box<str>,
-  pub variants: BTreeMap<i32, String>,
+  pub variants: Box<[(i32, Box<str>)]>,
   pub reserved_numbers: Box<[u32]>,
   pub reserved_ranges: Box<[Range<i32>]>,
   pub reserved_names: Box<[Box<str>]>,

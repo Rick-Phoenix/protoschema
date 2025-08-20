@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, marker::PhantomData, ops::Range};
+use std::{marker::PhantomData, ops::Range};
 
 use crate::{
   from_str_slice, schema::Arena, sealed, Empty, IsSet, IsUnset, ProtoOption, Set, Unset,
@@ -14,7 +14,7 @@ pub struct EnumBuilder<S: EnumState = Empty> {
 #[derive(Clone, Debug, Default)]
 pub struct EnumData {
   pub name: Box<str>,
-  pub variants: BTreeMap<i32, String>,
+  pub variants: Box<[(i32, Box<str>)]>,
   pub file_id: usize,
   pub package: Box<str>,
   pub parent_message: Option<usize>,
@@ -130,7 +130,7 @@ impl<S: EnumState> EnumBuilder<S> {
       _phantom: PhantomData,
     }
   }
-  pub fn variants(self, variants: BTreeMap<i32, String>) -> EnumBuilder<SetVariants<S>>
+  pub fn variants(self, variants: &[(i32, Box<str>)]) -> EnumBuilder<SetVariants<S>>
   where
     S::Variants: IsUnset,
   {
@@ -138,7 +138,7 @@ impl<S: EnumState> EnumBuilder<S> {
       let mut arena = self.arena.borrow_mut();
       let enum_ = &mut arena.enums[self.id];
 
-      enum_.variants = variants;
+      enum_.variants = variants.into();
     }
 
     EnumBuilder {

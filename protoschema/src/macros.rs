@@ -9,27 +9,11 @@ macro_rules! parse_field_type {
 
 #[macro_export]
 macro_rules! msg_field {
-  ($msg:expr, $field_name:ident $(, [$($option_name:expr),*])? $(,)? ) => {
+  ($msg:expr, $field_name:literal $(, [$($option_name:expr),*])? $(,)? ) => {
     Field::builder()
-      .name(stringify!($field_name).into())
+      .name($field_name.into())
       .field_type(FieldType::Message($msg.get_full_name().into()))
       .import(&$msg.get_file())
-  };
-}
-
-#[macro_export]
-macro_rules! field {
-  ($field_type:expr, $field_name:ident) => {
-    Field::builder()
-      .name(stringify!($field_name).into())
-      .field_type($field_type)
-  };
-
-  ($field_type:expr, $field_name:ident, $validator:expr) => {
-    Field::builder()
-      .name(stringify!($field_name).into())
-      .field_type($field_type)
-      .option(vec![$validator])
   };
 }
 
@@ -101,12 +85,12 @@ macro_rules! _internal_message_body {
     {
       { $($enums)* };
 
-      let fields_map = btreemap! { $($fields)* };
-      let oneofs_map: Vec<OneofData> = vec! [ $($oneofs)* ];
+      let fields_list = &[ $($fields)* ];
+      let oneofs_list: Vec<OneofData> = vec! [ $($oneofs)* ];
 
       let mut new_msg = $builder
-        .fields(fields_map)
-        .oneofs(oneofs_map)
+        .fields(fields_list)
+        .oneofs(oneofs_list)
       $(
         .reserved_names($names)
       )?;
@@ -219,7 +203,7 @@ macro_rules! _internal_message_body {
   ) => {
     $crate::_internal_message_body! {
       @builder($builder)
-      @fields($($fields)* $tag => $field,)
+      @fields($($fields)* ($tag, $field),)
       @oneofs($($oneofs)*)
       @enums($($enums)*)
       @reserved($($reserved)*)
@@ -240,7 +224,7 @@ macro_rules! _internal_message_body {
   ) => {
     $crate::_internal_message_body! {
       @builder($builder)
-      @fields($($fields)* $tag => $field)
+      @fields($($fields)* ($tag, $field))
       @oneofs($($oneofs)*)
       @enums($($enums)*)
       @reserved($($reserved)*)
@@ -334,7 +318,7 @@ macro_rules! proto_enum_impl {
       )?
 
       .variants(
-        btreemap! { $($tag => $variant.to_string()),* }
+        &[ $(($tag, $variant.into())),* ]
       );
 
       $crate::parse_reserved!{

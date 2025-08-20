@@ -1,4 +1,3 @@
-use askama::Template;
 use bon::Builder;
 pub(crate) use field_builder::*;
 
@@ -48,7 +47,7 @@ pub struct StringValidator {
 }
 
 impl From<StringValidator> for ProtoOption {
-  fn from(value: StringValidator) -> Self {
+  fn from(_value: StringValidator) -> Self {
     ProtoOption {
       name: "(buf.validate.field).string",
       value: OptionValue::String("abc".to_string()),

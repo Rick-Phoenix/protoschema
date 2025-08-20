@@ -25,7 +25,7 @@ fn main_test() {
 
   let msg = file.new_message("MyMsg");
 
-  let field = msg_field!(msg, mymsgfield);
+  let field = msg_field!(msg, "my_msg_field");
 
   let msg = message_body! {
     msg,
