@@ -124,6 +124,39 @@ macro_rules! numeric_validator {
     paste::paste! {
       get_fields!($rust_type, $proto_type);
 
+      impl<'a, S: [< $proto_type _validator_builder >]::State> From<[< $proto_type:camel ValidatorBuilder >]<'a, S>> for ProtoOption {
+        #[track_caller]
+        fn from(builder: [< $proto_type:camel ValidatorBuilder >]<S>) -> ProtoOption {
+          builder.build().into()
+        }
+      }
+
+      impl<'a> From<[< $proto_type:camel Validator >]<'a>> for ProtoOption {
+        #[track_caller]
+        fn from(validator: [< $proto_type:camel Validator >]) -> ProtoOption {
+          let name = concat!("(buf.validate.field).", stringify!($proto_type));
+
+          let mut values: BTreeMap<Box<str>, OptionValue> = BTreeMap::new();
+
+          if let Some(const_val) = validator.const_ {
+            values.insert("const".into(), OptionValue::from(const_val));
+            return ProtoOption {
+              name,
+              value: OptionValue::Message(values),
+            };
+          }
+
+          super::validate_comparables(validator.lt, validator.lte, validator.gt, validator.gte);
+          get_list_check!($rust_type, validator.in_, validator.not_in);
+          get_options!($option_value_variant, validator, values);
+
+          ProtoOption {
+            name,
+            value: OptionValue::Message(values),
+          }
+        }
+      }
+
       #[track_caller]
       pub fn [< build_ $proto_type _validator_option >]<F, S>(config_fn: F) -> ProtoOption
       where
@@ -132,26 +165,7 @@ macro_rules! numeric_validator {
       {
         let builder = [< $proto_type:camel Validator >]::builder();
         let validator = config_fn(builder).build();
-        let name = concat!("(buf.validate.field).", stringify!($proto_type));
-
-        let mut values: BTreeMap<Box<str>, OptionValue> = BTreeMap::new();
-
-        if let Some(const_val) = validator.const_ {
-          values.insert("const".into(), OptionValue::from(const_val));
-          return ProtoOption {
-            name,
-            value: OptionValue::Message(values),
-          };
-        }
-
-        super::validate_comparables(validator.lt, validator.lte, validator.gt, validator.gte);
-        get_list_check!($rust_type, validator.in_, validator.not_in);
-        get_options!($option_value_variant, validator, values);
-
-        ProtoOption {
-          name,
-          value: OptionValue::Message(values),
-        }
+        validator.into()
       }
     }
   };

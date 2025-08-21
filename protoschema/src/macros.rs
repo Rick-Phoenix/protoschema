@@ -17,40 +17,57 @@ macro_rules! msg_field {
   };
 }
 
+#[macro_export]
+macro_rules! get_func_path {
+  (repeated $proto_type:ident) => {
+    paste! { $crate::validators::repeated::[< build_repeated_ $proto_type _validator_option >] }
+  };
+
+  ($proto_type:ident, $path:path) => {
+    paste! { $crate::validators::$path::[< build_ $proto_type _validator_option >] }
+  };
+
+  ($proto_type:ident) => {
+    paste! { $crate::validators::$proto_type::[< build_ $proto_type _validator_option >] }
+  };
+}
+
 macro_rules! field_validators {
   ($proto_type:ident, $path:path) => {
     field_validators_inner!(
       $proto_type,
-      paste! { $crate::validators::$path::[< build_ $proto_type _validator_option >] }
+      paste! { $crate::validators::$path::[< build_ $proto_type _validator_option >] },
+      paste! { $crate::validators::repeated::[< build_repeated_ $proto_type _validator_option >] }
     );
   };
 
   ($proto_type:ident) => {
     field_validators_inner!(
       $proto_type,
-      paste! { $crate::validators::$proto_type::[< build_ $proto_type _validator_option >] }
+      paste! { $crate::validators::$proto_type::[< build_ $proto_type _validator_option >] },
+      paste! { $crate::validators::repeated::[< build_repeated_ $proto_type _validator_option >] }
     );
   };
 }
 
 macro_rules! field_validators_inner {
-  ($proto_type:ident, $func_path:expr) => {
+  ($proto_type:ident, $validator_func:expr, $repeated_validator:expr) => {
     #[macro_export]
     macro_rules! $proto_type {
       ($field_name:literal, $validator:expr) => {
         $crate::fields::Field::builder()
           .name($field_name.into())
           .field_type($crate::parse_field_type!($proto_type))
-          .option($func_path($validator))
+          .option($validator_func($validator))
           .add_import("buf/validate/validate.proto")
       };
 
-      (repeated $field_name:literal, $validator:expr ) => {
+      (repeated $field_name:literal, $validator:expr) => {
         $crate::fields::Field::builder()
           .name($field_name.into())
           .repeated()
           .field_type($crate::parse_field_type!($proto_type))
-          .option($crate::validators::repeated::build_repeated_string_validator_option($validator))
+          .option($repeated_validator($validator))
           .add_import("buf/validate/validate.proto")
       };
 

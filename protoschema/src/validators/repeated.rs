@@ -5,30 +5,25 @@ use maplit::btreemap;
 
 use crate::{
   validators::{
+    any::*,
+    booleans::*,
+    bytes::*,
+    duration::*,
+    enums::*,
+    numeric::*,
     string::{StringValidator, StringValidatorBuilder},
-    FieldValidator,
+    timestamp::*,
   },
   OptionValue, ProtoOption,
 };
 
 #[derive(Clone, Debug, Builder)]
 pub struct RepeatedValidator {
-  #[builder(setters(vis = "", name = items_internal))]
+  #[builder(into)]
   pub items: Option<ProtoOption>,
   pub min_items: Option<u64>,
   pub max_items: Option<u64>,
   pub unique: Option<bool>,
-}
-
-use repeated_validator_builder::{IsUnset, SetItems, State};
-
-impl<S: State> RepeatedValidatorBuilder<S> {
-  pub fn items<V: FieldValidator>(self, validator: V) -> RepeatedValidatorBuilder<SetItems<S>>
-  where
-    S::Items: IsUnset,
-  {
-    self.items_internal(validator.convert_to_proto_option())
-  }
 }
 
 impl RepeatedValidator {
@@ -83,6 +78,24 @@ macro_rules! repeated_validator {
 }
 
 repeated_validator!(string);
+repeated_validator!(any);
+repeated_validator!(duration);
+repeated_validator!(timestamp);
+repeated_validator!(bytes);
+repeated_validator!(bool);
+repeated_validator!(enum);
+repeated_validator!(int64);
+repeated_validator!(int32);
+repeated_validator!(sint64);
+repeated_validator!(sint32);
+repeated_validator!(sfixed64);
+repeated_validator!(sfixed32);
+repeated_validator!(uint64);
+repeated_validator!(uint32);
+repeated_validator!(fixed64);
+repeated_validator!(fixed32);
+repeated_validator!(double);
+repeated_validator!(float);
 
 #[track_caller]
 pub fn build_repeated_validator_option<F, S>(config_fn: F) -> ProtoOption

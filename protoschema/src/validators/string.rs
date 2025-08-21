@@ -2,10 +2,7 @@ use std::collections::BTreeMap;
 
 use bon::Builder;
 
-use crate::{
-  validators::{validate_lists, FieldValidator},
-  OptionValue, ProtoOption,
-};
+use crate::{validators::validate_lists, OptionValue, ProtoOption};
 
 #[derive(Clone, Debug, Builder)]
 #[builder(derive(Clone))]
@@ -28,17 +25,17 @@ pub struct StringValidator<'a> {
   pub const_: Option<&'a str>,
 }
 
-impl<'a, S: State> FieldValidator for StringValidatorBuilder<'a, S> {
-  fn convert_to_proto_option(&self) -> ProtoOption {
-    self.clone().build().convert_to_proto_option()
+impl<'a, S: State> From<StringValidatorBuilder<'a, S>> for ProtoOption {
+  #[track_caller]
+  fn from(value: StringValidatorBuilder<S>) -> ProtoOption {
+    value.build().into()
   }
 }
 
-impl<'a> FieldValidator for StringValidator<'a> {
+impl<'a> From<StringValidator<'a>> for ProtoOption {
   #[track_caller]
-  fn convert_to_proto_option(&self) -> ProtoOption {
+  fn from(validator: StringValidator) -> ProtoOption {
     let name = "(buf.validate.field).string";
-    let validator = self;
 
     let mut values: BTreeMap<Box<str>, OptionValue> = BTreeMap::new();
 
@@ -99,7 +96,7 @@ where
 {
   let builder = StringValidator::builder();
   let validator = config_fn(builder).build();
-  validator.convert_to_proto_option()
+  validator.into()
 }
 
 #[derive(Clone, Debug, Copy)]
