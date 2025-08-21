@@ -142,6 +142,7 @@ pub mod cel;
 pub mod duration;
 pub mod enums;
 pub mod map;
+pub mod message;
 pub mod numeric;
 pub mod repeated;
 pub mod string;

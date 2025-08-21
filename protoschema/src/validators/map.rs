@@ -11,6 +11,7 @@ use crate::{
     cel::CelRule,
     duration::*,
     enums::*,
+    message::{MessageValidator, MessageValidatorBuilder},
     numeric::*,
     string::{StringValidator, StringValidatorBuilder},
     timestamp::*,
@@ -48,25 +49,11 @@ impl<'a> From<MapValidator<'a>> for ProtoOption {
     insert_option!(validator, values, max_pairs, Uint);
 
     if let Some(keys_option) = validator.keys {
-      values.insert(
-        "keys".into(),
-        OptionValue::Message(btreemap! {
-          keys_option
-          .name
-          .into() => keys_option.value
-        }),
-      );
+      values.insert("keys".into(), keys_option.value);
     }
 
     if let Some(values_option) = validator.values {
-      values.insert(
-        "values".into(),
-        OptionValue::Message(btreemap! {
-          values_option
-          .name
-          .into() => values_option.value
-        }),
-      );
+      values.insert("values".into(), values_option.value);
     }
 
     let mut options_map: BTreeMap<Box<str>, OptionValue> = btreemap! {
@@ -89,8 +76,8 @@ macro_rules! map_validator {
       #[track_caller]
       pub fn [< build_map_ $keys_type _keys_ $values_type _values  _validator >]<'a, F, S>(config_fn: F) -> ProtoOption
       where
-        F: FnOnce(MapValidatorBuilder, [< $keys_type:camel ValidatorBuilder >], [< $values_type:camel ValidatorBuilder >]) -> MapValidatorBuilder<'a, S>,
-        S: map_validator_builder::IsComplete,
+        F: FnOnce(MapValidatorBuilder<'a>, [< $keys_type:camel ValidatorBuilder >], [< $values_type:camel ValidatorBuilder >]) -> MapValidatorBuilder<'a, S>,
+        S: map_validator_builder::State,
       {
         let map_validator_builder = MapValidator::builder();
         let keys_builder = [< $keys_type:camel Validator >]::builder();
@@ -122,6 +109,7 @@ map_validator!(int32, sint64);
 map_validator!(int32, duration);
 map_validator!(int32, timestamp);
 map_validator!(int32, any);
+map_validator!(int32, message);
 
 map_validator!(int64, double);
 map_validator!(int64, float);
@@ -142,6 +130,7 @@ map_validator!(int64, sint64);
 map_validator!(int64, duration);
 map_validator!(int64, timestamp);
 map_validator!(int64, any);
+map_validator!(int64, message);
 
 map_validator!(uint32, double);
 map_validator!(uint32, float);
@@ -162,6 +151,7 @@ map_validator!(uint32, sint64);
 map_validator!(uint32, duration);
 map_validator!(uint32, timestamp);
 map_validator!(uint32, any);
+map_validator!(uint32, message);
 
 map_validator!(uint64, double);
 map_validator!(uint64, float);
@@ -182,6 +172,7 @@ map_validator!(uint64, sint64);
 map_validator!(uint64, duration);
 map_validator!(uint64, timestamp);
 map_validator!(uint64, any);
+map_validator!(uint64, message);
 
 map_validator!(sint32, double);
 map_validator!(sint32, float);
@@ -202,6 +193,7 @@ map_validator!(sint32, sint64);
 map_validator!(sint32, duration);
 map_validator!(sint32, timestamp);
 map_validator!(sint32, any);
+map_validator!(sint32, message);
 
 map_validator!(sint64, double);
 map_validator!(sint64, float);
@@ -222,6 +214,7 @@ map_validator!(sint64, sint64);
 map_validator!(sint64, duration);
 map_validator!(sint64, timestamp);
 map_validator!(sint64, any);
+map_validator!(sint64, message);
 
 map_validator!(fixed32, double);
 map_validator!(fixed32, float);
@@ -242,6 +235,7 @@ map_validator!(fixed32, sint64);
 map_validator!(fixed32, duration);
 map_validator!(fixed32, timestamp);
 map_validator!(fixed32, any);
+map_validator!(fixed32, message);
 
 map_validator!(fixed64, double);
 map_validator!(fixed64, float);
@@ -262,6 +256,7 @@ map_validator!(fixed64, sint64);
 map_validator!(fixed64, duration);
 map_validator!(fixed64, timestamp);
 map_validator!(fixed64, any);
+map_validator!(fixed64, message);
 
 map_validator!(sfixed32, double);
 map_validator!(sfixed32, float);
@@ -282,6 +277,7 @@ map_validator!(sfixed32, sint64);
 map_validator!(sfixed32, duration);
 map_validator!(sfixed32, timestamp);
 map_validator!(sfixed32, any);
+map_validator!(sfixed32, message);
 
 map_validator!(sfixed64, double);
 map_validator!(sfixed64, float);
@@ -302,6 +298,7 @@ map_validator!(sfixed64, sint64);
 map_validator!(sfixed64, duration);
 map_validator!(sfixed64, timestamp);
 map_validator!(sfixed64, any);
+map_validator!(sfixed64, message);
 
 map_validator!(bool, double);
 map_validator!(bool, float);
@@ -322,6 +319,7 @@ map_validator!(bool, sint64);
 map_validator!(bool, duration);
 map_validator!(bool, timestamp);
 map_validator!(bool, any);
+map_validator!(bool, message);
 
 map_validator!(string, double);
 map_validator!(string, float);
@@ -342,3 +340,4 @@ map_validator!(string, sint64);
 map_validator!(string, duration);
 map_validator!(string, timestamp);
 map_validator!(string, any);
+map_validator!(string, message);

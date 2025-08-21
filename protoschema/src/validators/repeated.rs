@@ -11,6 +11,7 @@ use crate::{
     cel::CelRule,
     duration::*,
     enums::*,
+    message::{MessageValidator, MessageValidatorBuilder},
     numeric::*,
     string::{StringValidator, StringValidatorBuilder},
     timestamp::*,
@@ -49,15 +50,8 @@ impl<'a> From<RepeatedValidator<'a>> for ProtoOption {
     insert_option!(validator, values, min_items, Uint);
     insert_option!(validator, values, max_items, Uint);
 
-    if let Some(items_option) = &validator.items {
-      values.insert(
-        "items".into(),
-        OptionValue::Message(btreemap! {
-          items_option
-          .name
-          .into() => items_option.value.clone()
-        }),
-      );
+    if let Some(items_option) = validator.items {
+      values.insert("items".into(), items_option.value);
     }
 
     let mut options_map: BTreeMap<Box<str>, OptionValue> = btreemap! {
@@ -76,14 +70,13 @@ impl<'a> From<RepeatedValidator<'a>> for ProtoOption {
 
 macro_rules! repeated_validator {
   ($validator_type:ident) => {
-    paste::paste! {
+    $crate::paste! {
       #[track_caller]
-      pub fn [< build_repeated_  $validator_type  _validator_option >]<'a, F, S>(config_fn: F) -> ProtoOption
+      pub fn [< build_repeated_  $validator_type  _validator_option >]<'a, F, S: repeated_validator_builder::State>(config_fn: F) -> ProtoOption
       where
-        F: FnOnce(RepeatedValidatorBuilder, [< $validator_type:camel ValidatorBuilder >]) -> RepeatedValidatorBuilder<'a, S>,
-        S: repeated_validator_builder::IsComplete,
+        F: FnOnce(RepeatedValidatorBuilder<'a>, [< $validator_type:camel ValidatorBuilder >]) -> RepeatedValidatorBuilder<'a, S>,
       {
-        let repeated_validator_builder = RepeatedValidator::builder();
+        let repeated_validator_builder: RepeatedValidatorBuilder<'a> = RepeatedValidator::builder();
         let items_builder = [< $validator_type:camel Validator >]::builder();
         let validator = config_fn(repeated_validator_builder, items_builder).build();
 
@@ -112,3 +105,4 @@ repeated_validator!(fixed64);
 repeated_validator!(fixed32);
 repeated_validator!(double);
 repeated_validator!(float);
+repeated_validator!(message);

@@ -2,8 +2,8 @@
 
 use askama::Template;
 use protoschema::{
-  enum_field, enum_map, message_body, msg_field, proto_enum, schema::Package, string, OptionValue,
-  ProtoOption,
+  enum_field, enum_map, message_body, msg_field, msg_map, proto_enum, schema::Package, string,
+  OptionValue, ProtoOption,
 };
 
 #[test]
@@ -18,8 +18,9 @@ fn main_test() {
   };
 
   let msg = file.new_message("MyMsg");
+  let msg2 = file.new_message("MyMsg2");
 
-  let field = msg_field!(msg, "my_msg_field");
+  let field = msg_field!(repeated msg, "my_msg_field", |r, i| r.items(i.cel(&[])));
 
   let example_enum = proto_enum!(
     file.new_enum("file_enum"),
@@ -35,8 +36,10 @@ fn main_test() {
     reserved = [ 2, 2..4 ],
 
     2 => string!("abc").options(&[opt.clone(), opt.clone(), opt.clone()]),
+    3 => string!(repeated "abc", |r, i| r.items(i.min_len(4))),
     6 => enum_map!("abc", <string, example_enum>, |m, k, v| m.min_pairs(3).keys(k.min_len(15)).values(v.defined_only(true))),
     7 => enum_field!(example_enum, "enum_field", |v| v.defined_only(true)),
+    9 => msg_map!("abc", <string, msg2>, |m, k, v| m.min_pairs(15).keys(k.min_len(25)).values(v.cel(&[]))),
 
     enum "my_enum" {
       options = [ opt.clone() ],
