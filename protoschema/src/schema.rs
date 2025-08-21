@@ -4,7 +4,9 @@ use crate::{
   enums::{EnumBuilder, EnumData},
   message::{MessageBuilder, MessageData},
   rendering::{EnumTemplate, FileTemplate, MessageTemplate},
-  sealed, Empty, IsUnset, Set, Unset,
+  sealed,
+  services::{ServiceBuilder, ServiceData},
+  Empty, IsUnset, Set, Unset,
 };
 
 pub(crate) type Arena = Rc<RefCell<PackageData>>;
@@ -15,6 +17,7 @@ pub(crate) struct PackageData {
   pub(crate) files: Vec<FileData>,
   pub(crate) messages: Vec<MessageData>,
   pub(crate) enums: Vec<EnumData>,
+  pub(crate) services: Vec<ServiceData>,
 }
 
 #[derive(Clone)]
@@ -142,6 +145,27 @@ impl<S: FileState> FileBuilder<S> {
     self.arena.borrow().files[self.id].name.to_string()
   }
 
+  pub fn new_service(&self, name: &str) -> ServiceBuilder {
+    let mut arena = self.arena.borrow_mut();
+    let package_name = arena.name.clone();
+    let service_id = arena.services.len();
+
+    arena.files[self.id].services.push(service_id);
+
+    arena.services.push(ServiceData {
+      file_id: self.id,
+      name: name.into(),
+      package: package_name,
+      ..Default::default()
+    });
+
+    ServiceBuilder {
+      id: service_id,
+      arena: self.arena.clone(),
+      _phantom: PhantomData,
+    }
+  }
+
   pub fn new_enum(&self, name: &str) -> EnumBuilder {
     let mut arena = self.arena.borrow_mut();
     let package_name = arena.name.clone();
@@ -195,4 +219,5 @@ pub struct FileData {
   pub messages: Vec<usize>,
   pub enums: Vec<usize>,
   pub imports: HashSet<Box<str>>,
+  pub services: Vec<usize>,
 }

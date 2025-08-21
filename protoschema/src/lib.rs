@@ -33,9 +33,12 @@ mod message;
 pub mod oneofs;
 pub mod rendering;
 pub mod schema;
+pub mod services;
 pub mod validators;
+
 #[macro_use]
 mod macros;
+
 mod field_type;
 #[macro_use]
 mod option;
