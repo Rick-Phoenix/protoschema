@@ -1,7 +1,33 @@
+use std::fmt::Display;
+
 use bon::Builder;
 pub(crate) use field_builder::*;
 
 use crate::{FieldType, ProtoOption};
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
+pub enum FieldKind {
+  #[default]
+  Normal,
+  Repeated,
+  Optional,
+}
+
+impl Display for FieldKind {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    match self {
+      Self::Normal => {
+        write!(f, "")
+      }
+      Self::Repeated => {
+        write!(f, "repeated ")
+      }
+      Self::Optional => {
+        write!(f, "optional ")
+      }
+    }
+  }
+}
 
 #[derive(Clone, Debug, Builder)]
 #[builder(derive(Clone))]
@@ -14,6 +40,8 @@ pub struct Field {
   pub field_type: FieldType,
   pub name: Box<str>,
   pub tag: u32,
+  #[builder(default)]
+  pub kind: FieldKind,
 }
 
 impl<S: field_builder::State> FieldBuilder<S> {
