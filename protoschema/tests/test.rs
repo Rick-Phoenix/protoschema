@@ -3,7 +3,8 @@
 use askama::Template;
 use paste::paste;
 use protoschema::{
-  double, message_body, msg_field, proto_enum, schema::Package, string, OptionValue, ProtoOption,
+  double, map, message_body, msg_field, proto_enum, schema::Package, string, OptionValue,
+  ProtoOption,
 };
 
 #[test]
@@ -32,6 +33,7 @@ fn main_test() {
     2 => string!("abc").options(&[opt.clone(), opt.clone(), opt.clone()]),
     3 => string!(repeated "abc", |r, i| r.min_items(15).items(i.min_len(5).max_len(15).email())),
     5 => double!(repeated "abc", |r, i| r.min_items(10).items(i.lt(100.1))),
+    6 => map!("abc", <string, int32>, |m, k, v| m.min_pairs(3).keys(k.min_len(15)).values(v.lt(4))),
 
     enum "my_enum" {
       options = [ opt.clone() ],

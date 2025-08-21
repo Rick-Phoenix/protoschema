@@ -10,6 +10,47 @@ pub struct ImportedItemPath {
 }
 
 #[derive(Debug, Clone)]
+pub enum MapKey {
+  Int32,
+  Int64,
+  Uint32,
+  Uint64,
+  Sint32,
+  Sint64,
+  Fixed32,
+  Fixed64,
+  Sfixed32,
+  Sfixed64,
+  Bool,
+  String,
+}
+
+impl MapKey {
+  pub fn name(&self) -> &str {
+    match self {
+      Self::Int64 => "int64",
+      Self::Uint64 => "uint64",
+      Self::Int32 => "int32",
+      Self::Fixed64 => "fixed64",
+      Self::Fixed32 => "fixed32",
+      Self::Bool => "bool",
+      Self::String => "string",
+      Self::Uint32 => "uint32",
+      Self::Sfixed32 => "sfixed32",
+      Self::Sfixed64 => "sfixed64",
+      Self::Sint32 => "sint32",
+      Self::Sint64 => "sint64",
+    }
+  }
+}
+
+impl Display for MapKey {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{}", self.name())
+  }
+}
+
+#[derive(Debug, Clone)]
 pub enum FieldType {
   Double,
   Float,
@@ -33,6 +74,7 @@ pub enum FieldType {
   Any,
   FieldMask,
   Empty,
+  Map(MapKey, Box<FieldType>),
 }
 
 impl Display for FieldType {
@@ -64,30 +106,31 @@ impl FieldType {
     }
   }
 
-  pub fn name(&self) -> &str {
+  pub fn name(&self) -> Box<str> {
     match self {
-      FieldType::Double => "double",
-      FieldType::Float => "float",
-      FieldType::Int64 => "int64",
-      FieldType::Uint64 => "uint64",
-      FieldType::Int32 => "int32",
-      FieldType::Fixed64 => "fixed64",
-      FieldType::Fixed32 => "fixed32",
-      FieldType::Bool => "bool",
-      FieldType::String => "string",
-      FieldType::Bytes => "bytes",
-      FieldType::Uint32 => "uint32",
-      FieldType::Enum(name) => name,
-      FieldType::Sfixed32 => "sfixed32",
-      FieldType::Sfixed64 => "sfixed64",
-      FieldType::Sint32 => "sint32",
-      FieldType::Sint64 => "sint64",
-      FieldType::Message(name) => name,
-      FieldType::Duration => "google.protobuf.Duration",
-      FieldType::Timestamp => "google.protobuf.Timestamp",
-      FieldType::Any => "google.protobuf.Any",
-      FieldType::FieldMask => "google.protobuf.FieldMask",
-      FieldType::Empty => "google.protobuf.Empty",
+      FieldType::Double => "double".into(),
+      FieldType::Float => "float".into(),
+      FieldType::Int64 => "int64".into(),
+      FieldType::Uint64 => "uint64".into(),
+      FieldType::Int32 => "int32".into(),
+      FieldType::Fixed64 => "fixed64".into(),
+      FieldType::Fixed32 => "fixed32".into(),
+      FieldType::Bool => "bool".into(),
+      FieldType::String => "string".into(),
+      FieldType::Bytes => "bytes".into(),
+      FieldType::Uint32 => "uint32".into(),
+      FieldType::Enum(name) => name.clone(),
+      FieldType::Sfixed32 => "sfixed32".into(),
+      FieldType::Sfixed64 => "sfixed64".into(),
+      FieldType::Sint32 => "sint32".into(),
+      FieldType::Sint64 => "sint64".into(),
+      FieldType::Message(name) => name.clone(),
+      FieldType::Duration => "google.protobuf.Duration".into(),
+      FieldType::Timestamp => "google.protobuf.Timestamp".into(),
+      FieldType::Any => "google.protobuf.Any".into(),
+      FieldType::FieldMask => "google.protobuf.FieldMask".into(),
+      FieldType::Empty => "google.protobuf.Empty".into(),
+      FieldType::Map(key, value) => format!("map<{}, {}>", key, value).into(),
     }
   }
 }

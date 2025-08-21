@@ -2,8 +2,10 @@
 
 use std::marker::PhantomData;
 
+pub use paste::paste;
+
 pub use crate::{
-  field_type::FieldType,
+  field_type::{FieldType, MapKey},
   option::{OptionValue, ProtoOption},
 };
 

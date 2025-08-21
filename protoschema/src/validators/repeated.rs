@@ -26,11 +26,10 @@ pub struct RepeatedValidator {
   pub unique: Option<bool>,
 }
 
-impl RepeatedValidator {
+impl From<RepeatedValidator> for ProtoOption {
   #[track_caller]
-  pub fn convert_to_proto_option(&self) -> ProtoOption {
+  fn from(validator: RepeatedValidator) -> ProtoOption {
     let name = "(buf.validate.field).repeated";
-    let validator = self;
 
     let mut values: BTreeMap<Box<str>, OptionValue> = BTreeMap::new();
 
@@ -71,7 +70,7 @@ macro_rules! repeated_validator {
         let items_builder = [< $validator_type:camel Validator >]::builder();
         let validator = config_fn(repeated_validator_builder, items_builder).build();
 
-        validator.convert_to_proto_option()
+        validator.into()
       }
     }
   };
@@ -96,15 +95,3 @@ repeated_validator!(fixed64);
 repeated_validator!(fixed32);
 repeated_validator!(double);
 repeated_validator!(float);
-
-#[track_caller]
-pub fn build_repeated_validator_option<F, S>(config_fn: F) -> ProtoOption
-where
-  F: FnOnce(RepeatedValidatorBuilder) -> RepeatedValidatorBuilder<S>,
-  S: repeated_validator_builder::IsComplete,
-{
-  let builder = RepeatedValidator::builder();
-  let validator = config_fn(builder).build();
-
-  validator.convert_to_proto_option()
-}
