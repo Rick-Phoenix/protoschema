@@ -77,6 +77,19 @@ fn get_option_name(raw_name: &str) -> Box<str> {
 
 #[macro_use]
 pub mod macros {
+  macro_rules! insert_cel_rule {
+    ($validator:ident, $values:ident) => {
+      if let Some(cel_rules) = $validator.cel {
+        let rule_values: Vec<OptionValue> =
+          cel_rules.iter().cloned().map(OptionValue::from).collect();
+        $values.insert(
+          "cel".into(),
+          OptionValue::List(rule_values.into_boxed_slice()),
+        );
+      }
+    };
+  }
+
   macro_rules! insert_option {
     (
       $validator:ident,
@@ -125,6 +138,7 @@ pub mod macros {
 pub mod any;
 pub mod booleans;
 pub mod bytes;
+pub mod cel;
 pub mod duration;
 pub mod enums;
 pub mod map;

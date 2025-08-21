@@ -1,8 +1,12 @@
 use std::collections::BTreeMap;
 
 use bon::Builder;
+use maplit::btreemap;
 
-use crate::{validators::validate_lists, OptionValue, ProtoOption};
+use crate::{
+  validators::{cel::CelRule, validate_lists},
+  OptionValue, ProtoOption,
+};
 
 #[derive(Clone, Debug, Builder)]
 pub struct EnumValidator<'a> {
@@ -10,6 +14,8 @@ pub struct EnumValidator<'a> {
   pub not_in: Option<&'a [i32]>,
   pub const_: Option<i32>,
   pub defined_only: Option<bool>,
+  pub cel: Option<&'a [CelRule]>,
+  pub required: Option<bool>,
 }
 
 use enum_validator_builder::State;
@@ -24,7 +30,7 @@ impl<'a, S: State> From<EnumValidatorBuilder<'a, S>> for ProtoOption {
 impl<'a> From<EnumValidator<'a>> for ProtoOption {
   #[track_caller]
   fn from(validator: EnumValidator) -> Self {
-    let name = "(buf.validate.field).enum";
+    let name = "(buf.validate.field)";
 
     let mut values: BTreeMap<Box<str>, OptionValue> = BTreeMap::new();
 
@@ -47,9 +53,16 @@ impl<'a> From<EnumValidator<'a>> for ProtoOption {
     insert_option!(validator, values, in_, [i32]);
     insert_option!(validator, values, not_in, [i32]);
 
+    let mut options_map: BTreeMap<Box<str>, OptionValue> = btreemap! {
+      "enum".into() => OptionValue::Message(values)
+    };
+
+    insert_cel_rule!(validator, options_map);
+    insert_option!(validator, options_map, required, bool);
+
     ProtoOption {
       name,
-      value: OptionValue::Message(values),
+      value: OptionValue::Message(options_map),
     }
   }
 }

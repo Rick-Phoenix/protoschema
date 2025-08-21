@@ -1,13 +1,57 @@
 use std::collections::BTreeMap;
 
 use bon::Builder;
+use maplit::btreemap;
 
-use crate::{validators::validate_lists, OptionValue, ProtoOption};
+use crate::{
+  validators::{cel::CelRule, validate_lists},
+  OptionValue, ProtoOption,
+};
 
 #[derive(Clone, Debug, Builder)]
 pub struct AnyValidator<'a> {
   pub in_: Option<&'a [&'a str]>,
   pub not_in: Option<&'a [&'a str]>,
+  pub cel: Option<&'a [CelRule]>,
+  pub required: Option<bool>,
+}
+
+impl<'a, S: any_validator_builder::State> From<AnyValidatorBuilder<'a, S>> for ProtoOption {
+  #[track_caller]
+  fn from(value: AnyValidatorBuilder<'a, S>) -> Self {
+    value.build().into()
+  }
+}
+
+impl<'a> From<AnyValidator<'a>> for ProtoOption {
+  #[track_caller]
+  fn from(validator: AnyValidator<'a>) -> Self {
+    let name = "(buf.validate.field)";
+
+    let mut values: BTreeMap<Box<str>, OptionValue> = BTreeMap::new();
+
+    validate_lists(validator.in_, validator.not_in).unwrap_or_else(|invalid| {
+      panic!(
+        "The following values are present inside of 'in' and 'not_in': {:?}",
+        invalid
+      )
+    });
+
+    insert_option!(validator, values, in_, [string]);
+    insert_option!(validator, values, not_in, [string]);
+
+    let mut options_map: BTreeMap<Box<str>, OptionValue> = btreemap! {
+      "any".into() => OptionValue::Message(values)
+    };
+
+    insert_cel_rule!(validator, options_map);
+    insert_option!(validator, options_map, required, bool);
+
+    ProtoOption {
+      name,
+      value: OptionValue::Message(options_map),
+    }
+  }
 }
 
 #[track_caller]
@@ -18,22 +62,5 @@ where
 {
   let builder = AnyValidator::builder();
   let validator = config_fn(builder).build();
-  let name = "(buf.validate.field).any";
-
-  let mut values: BTreeMap<Box<str>, OptionValue> = BTreeMap::new();
-
-  validate_lists(validator.in_, validator.not_in).unwrap_or_else(|invalid| {
-    panic!(
-      "The following values are present inside of 'in' and 'not_in': {:?}",
-      invalid
-    )
-  });
-
-  insert_option!(validator, values, in_, [string]);
-  insert_option!(validator, values, not_in, [string]);
-
-  ProtoOption {
-    name,
-    value: OptionValue::Message(values),
-  }
+  validator.into()
 }

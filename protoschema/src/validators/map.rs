@@ -8,6 +8,7 @@ use crate::{
     any::*,
     booleans::*,
     bytes::*,
+    cel::CelRule,
     duration::*,
     enums::*,
     numeric::*,
@@ -18,19 +19,28 @@ use crate::{
 };
 
 #[derive(Clone, Debug, Builder)]
-pub struct MapValidator {
+pub struct MapValidator<'a> {
   #[builder(into)]
   pub keys: Option<ProtoOption>,
   #[builder(into)]
   pub values: Option<ProtoOption>,
   pub min_pairs: Option<u64>,
   pub max_pairs: Option<u64>,
+  pub cel: Option<&'a [CelRule]>,
+  pub required: Option<bool>,
 }
 
-impl From<MapValidator> for ProtoOption {
+impl<'a, S: map_validator_builder::State> From<MapValidatorBuilder<'a, S>> for ProtoOption {
+  #[track_caller]
+  fn from(value: MapValidatorBuilder<'a, S>) -> Self {
+    value.build().into()
+  }
+}
+
+impl<'a> From<MapValidator<'a>> for ProtoOption {
   #[track_caller]
   fn from(validator: MapValidator) -> Self {
-    let name = "(buf.validate.field).map";
+    let name = "(buf.validate.field)";
 
     let mut values: BTreeMap<Box<str>, OptionValue> = BTreeMap::new();
 
@@ -43,8 +53,6 @@ impl From<MapValidator> for ProtoOption {
         OptionValue::Message(btreemap! {
           keys_option
           .name
-          .strip_prefix("(buf.validate.field).")
-          .expect("error during prefix stripping for keys rules")
           .into() => keys_option.value
         }),
       );
@@ -56,16 +64,21 @@ impl From<MapValidator> for ProtoOption {
         OptionValue::Message(btreemap! {
           values_option
           .name
-          .strip_prefix("(buf.validate.field).")
-          .expect("error during prefix stripping for values rules")
           .into() => values_option.value
         }),
       );
     }
 
+    let mut options_map: BTreeMap<Box<str>, OptionValue> = btreemap! {
+      "map".into() => OptionValue::Message(values)
+    };
+
+    insert_cel_rule!(validator, options_map);
+    insert_option!(validator, options_map, required, bool);
+
     ProtoOption {
       name,
-      value: OptionValue::Message(values),
+      value: OptionValue::Message(options_map),
     }
   }
 }
@@ -74,9 +87,9 @@ macro_rules! map_validator {
   ($keys_type:ident, $values_type:ident) => {
     $crate::paste! {
       #[track_caller]
-      pub fn [< build_map_ $keys_type _keys_ $values_type _values  _validator >]<F, S>(config_fn: F) -> ProtoOption
+      pub fn [< build_map_ $keys_type _keys_ $values_type _values  _validator >]<'a, F, S>(config_fn: F) -> ProtoOption
       where
-        F: FnOnce(MapValidatorBuilder, [< $keys_type:camel ValidatorBuilder >], [< $values_type:camel ValidatorBuilder >]) -> MapValidatorBuilder<S>,
+        F: FnOnce(MapValidatorBuilder, [< $keys_type:camel ValidatorBuilder >], [< $values_type:camel ValidatorBuilder >]) -> MapValidatorBuilder<'a, S>,
         S: map_validator_builder::IsComplete,
       {
         let map_validator_builder = MapValidator::builder();

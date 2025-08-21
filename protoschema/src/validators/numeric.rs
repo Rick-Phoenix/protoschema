@@ -1,8 +1,9 @@
 use std::collections::BTreeMap;
 
 use bon::Builder;
+use maplit::btreemap;
 
-use crate::{OptionValue, ProtoOption};
+use crate::{validators::cel::CelRule, OptionValue, ProtoOption};
 
 macro_rules! get_list_check {
   (f32, $in_list:expr, $not_in_list:expr) => {{
@@ -65,6 +66,8 @@ macro_rules! get_fields {
       pub in_: Option<&'a [f64]>,
       pub not_in: Option<&'a [f64]>,
       pub finite: Option<bool>,
+      pub cel: Option<&'a [CelRule]>,
+      pub required: Option<bool>,
     }
   };
 
@@ -79,6 +82,8 @@ macro_rules! get_fields {
       pub in_: Option<&'a [f32]>,
       pub not_in: Option<&'a [f32]>,
       pub finite: Option<bool>,
+      pub cel: Option<&'a [CelRule]>,
+      pub required: Option<bool>,
     }
   };
 
@@ -93,6 +98,8 @@ macro_rules! get_fields {
         pub gte: Option<$rust_type>,
         pub in_: Option<&'a [$rust_type]>,
         pub not_in: Option<&'a [$rust_type]>,
+        pub cel: Option<&'a [CelRule]>,
+        pub required: Option<bool>
       }
     }
   };
@@ -134,7 +141,7 @@ macro_rules! numeric_validator {
       impl<'a> From<[< $proto_type:camel Validator >]<'a>> for ProtoOption {
         #[track_caller]
         fn from(validator: [< $proto_type:camel Validator >]) -> ProtoOption {
-          let name = concat!("(buf.validate.field).", stringify!($proto_type));
+          let name = "(buf.validate.field)";
 
           let mut values: BTreeMap<Box<str>, OptionValue> = BTreeMap::new();
 
@@ -150,9 +157,16 @@ macro_rules! numeric_validator {
           get_list_check!($rust_type, validator.in_, validator.not_in);
           get_options!($option_value_variant, validator, values);
 
+          let mut options_map: BTreeMap<Box<str>, OptionValue> = btreemap! {
+            stringify!($proto_type).into() => OptionValue::Message(values)
+          };
+
+          insert_cel_rule!(validator, options_map);
+          insert_option!(validator, options_map, required, bool);
+
           ProtoOption {
             name,
-            value: OptionValue::Message(values),
+            value: OptionValue::Message(options_map),
           }
         }
       }

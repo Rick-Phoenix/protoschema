@@ -1,10 +1,11 @@
 use std::collections::BTreeMap;
 
 use bon::Builder;
+use maplit::btreemap;
 
 use crate::{
   field_type::Duration,
-  validators::{validate_comparables, validate_lists},
+  validators::{cel::CelRule, validate_comparables, validate_lists},
   OptionValue, ProtoOption,
 };
 
@@ -18,6 +19,61 @@ pub struct DurationValidator<'a> {
   pub gt: Option<Duration>,
   pub gte: Option<Duration>,
   pub defined_only: Option<bool>,
+  pub cel: Option<&'a [CelRule]>,
+  pub required: Option<bool>,
+}
+
+impl<'a, S: duration_validator_builder::State> From<DurationValidatorBuilder<'a, S>>
+  for ProtoOption
+{
+  #[track_caller]
+  fn from(value: DurationValidatorBuilder<'a, S>) -> Self {
+    value.build().into()
+  }
+}
+
+impl<'a> From<DurationValidator<'a>> for ProtoOption {
+  #[track_caller]
+  fn from(validator: DurationValidator<'a>) -> Self {
+    let name = "(buf.validate.field)";
+
+    let mut values: BTreeMap<Box<str>, OptionValue> = BTreeMap::new();
+
+    if let Some(const_val) = validator.const_ {
+      values.insert("const".into(), OptionValue::Duration(const_val));
+      return ProtoOption {
+        name,
+        value: OptionValue::Message(values),
+      };
+    }
+
+    validate_comparables(validator.lt, validator.lte, validator.gt, validator.gte);
+    validate_lists(validator.in_, validator.not_in).unwrap_or_else(|invalid| {
+      panic!(
+        "The following values are present inside of 'in' and 'not_in': {:?}",
+        invalid
+      )
+    });
+
+    insert_option!(validator, values, lt, duration);
+    insert_option!(validator, values, lte, duration);
+    insert_option!(validator, values, gt, duration);
+    insert_option!(validator, values, gte, duration);
+    insert_option!(validator, values, in_, [duration]);
+    insert_option!(validator, values, not_in, [duration]);
+
+    let mut options_map: BTreeMap<Box<str>, OptionValue> = btreemap! {
+      "duration".into() => OptionValue::Message(values)
+    };
+
+    insert_cel_rule!(validator, options_map);
+    insert_option!(validator, options_map, required, bool);
+
+    ProtoOption {
+      name,
+      value: OptionValue::Message(options_map),
+    }
+  }
 }
 
 #[track_caller]
@@ -28,35 +84,5 @@ where
 {
   let builder = DurationValidator::builder();
   let validator = config_fn(builder).build();
-  let name = "(buf.validate.field).duration";
-
-  let mut values: BTreeMap<Box<str>, OptionValue> = BTreeMap::new();
-
-  if let Some(const_val) = validator.const_ {
-    values.insert("const".into(), OptionValue::Duration(const_val));
-    return ProtoOption {
-      name,
-      value: OptionValue::Message(values),
-    };
-  }
-
-  validate_comparables(validator.lt, validator.lte, validator.gt, validator.gte);
-  validate_lists(validator.in_, validator.not_in).unwrap_or_else(|invalid| {
-    panic!(
-      "The following values are present inside of 'in' and 'not_in': {:?}",
-      invalid
-    )
-  });
-
-  insert_option!(validator, values, lt, duration);
-  insert_option!(validator, values, lte, duration);
-  insert_option!(validator, values, gt, duration);
-  insert_option!(validator, values, gte, duration);
-  insert_option!(validator, values, in_, [duration]);
-  insert_option!(validator, values, not_in, [duration]);
-
-  ProtoOption {
-    name,
-    value: OptionValue::Message(values),
-  }
+  validator.into()
 }

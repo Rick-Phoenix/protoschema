@@ -1,8 +1,12 @@
 use std::collections::BTreeMap;
 
 use bon::Builder;
+use maplit::btreemap;
 
-use crate::{validators::validate_lists, OptionValue, ProtoOption};
+use crate::{
+  validators::{cel::CelRule, validate_lists},
+  OptionValue, ProtoOption,
+};
 
 #[derive(Clone, Debug, Builder)]
 #[builder(derive(Clone))]
@@ -23,6 +27,8 @@ pub struct StringValidator<'a> {
   #[builder(setters(vis = "", name = well_known))]
   pub well_known: Option<WellKnown>,
   pub const_: Option<&'a str>,
+  pub cel: Option<&'a [CelRule]>,
+  pub required: Option<bool>,
 }
 
 impl<'a, S: State> From<StringValidatorBuilder<'a, S>> for ProtoOption {
@@ -35,7 +41,7 @@ impl<'a, S: State> From<StringValidatorBuilder<'a, S>> for ProtoOption {
 impl<'a> From<StringValidator<'a>> for ProtoOption {
   #[track_caller]
   fn from(validator: StringValidator) -> ProtoOption {
-    let name = "(buf.validate.field).string";
+    let name = "(buf.validate.field)";
 
     let mut values: BTreeMap<Box<str>, OptionValue> = BTreeMap::new();
 
@@ -81,9 +87,16 @@ impl<'a> From<StringValidator<'a>> for ProtoOption {
       v.to_option(&mut values)
     }
 
+    let mut options_map: BTreeMap<Box<str>, OptionValue> = btreemap! {
+      "string".into() => OptionValue::Message(values)
+    };
+
+    insert_cel_rule!(validator, options_map);
+    insert_option!(validator, options_map, required, bool);
+
     ProtoOption {
       name,
-      value: OptionValue::Message(values),
+      value: OptionValue::Message(options_map),
     }
   }
 }

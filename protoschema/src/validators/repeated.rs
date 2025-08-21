@@ -8,6 +8,7 @@ use crate::{
     any::*,
     booleans::*,
     bytes::*,
+    cel::CelRule,
     duration::*,
     enums::*,
     numeric::*,
@@ -18,18 +19,29 @@ use crate::{
 };
 
 #[derive(Clone, Debug, Builder)]
-pub struct RepeatedValidator {
+pub struct RepeatedValidator<'a> {
   #[builder(into)]
   pub items: Option<ProtoOption>,
   pub min_items: Option<u64>,
   pub max_items: Option<u64>,
   pub unique: Option<bool>,
+  pub cel: Option<&'a [CelRule]>,
+  pub required: Option<bool>,
 }
 
-impl From<RepeatedValidator> for ProtoOption {
+impl<'a, S: repeated_validator_builder::State> From<RepeatedValidatorBuilder<'a, S>>
+  for ProtoOption
+{
+  #[track_caller]
+  fn from(value: RepeatedValidatorBuilder<'a, S>) -> Self {
+    value.build().into()
+  }
+}
+
+impl<'a> From<RepeatedValidator<'a>> for ProtoOption {
   #[track_caller]
   fn from(validator: RepeatedValidator) -> ProtoOption {
-    let name = "(buf.validate.field).repeated";
+    let name = "(buf.validate.field)";
 
     let mut values: BTreeMap<Box<str>, OptionValue> = BTreeMap::new();
 
@@ -43,16 +55,21 @@ impl From<RepeatedValidator> for ProtoOption {
         OptionValue::Message(btreemap! {
           items_option
           .name
-          .strip_prefix("(buf.validate.field).")
-          .expect("error during prefix stripping for items rules")
           .into() => items_option.value.clone()
         }),
       );
     }
 
+    let mut options_map: BTreeMap<Box<str>, OptionValue> = btreemap! {
+      "repeated".into() => OptionValue::Message(values)
+    };
+
+    insert_cel_rule!(validator, options_map);
+    insert_option!(validator, options_map, required, bool);
+
     ProtoOption {
       name,
-      value: OptionValue::Message(values),
+      value: OptionValue::Message(options_map),
     }
   }
 }
@@ -61,9 +78,9 @@ macro_rules! repeated_validator {
   ($validator_type:ident) => {
     paste::paste! {
       #[track_caller]
-      pub fn [< build_repeated_  $validator_type  _validator_option >]<F, S>(config_fn: F) -> ProtoOption
+      pub fn [< build_repeated_  $validator_type  _validator_option >]<'a, F, S>(config_fn: F) -> ProtoOption
       where
-        F: FnOnce(RepeatedValidatorBuilder, [< $validator_type:camel ValidatorBuilder >]) -> RepeatedValidatorBuilder<S>,
+        F: FnOnce(RepeatedValidatorBuilder, [< $validator_type:camel ValidatorBuilder >]) -> RepeatedValidatorBuilder<'a, S>,
         S: repeated_validator_builder::IsComplete,
       {
         let repeated_validator_builder = RepeatedValidator::builder();
