@@ -151,6 +151,7 @@ impl<S: FileState> FileBuilder<S> {
 
     arena.enums.push(EnumData {
       file_id: self.id,
+      full_name: name.into(),
       name: name.into(),
       package: package_name,
       ..Default::default()

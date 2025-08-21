@@ -36,9 +36,9 @@ fn main_test() {
     reserved = [ 2, 2..4 ],
 
     2 => string!("abc").options(&[opt.clone(), opt.clone(), opt.clone()]),
-    3 => string!(repeated "abc", |r, i| r.items(i.min_len(4))),
-    6 => enum_map!("abc", <string, example_enum>, |m, k, v| m.min_pairs(3).keys(k.min_len(15)).values(v.defined_only(true))),
-    7 => enum_field!(example_enum, "enum_field", |v| v.defined_only(true)),
+    3 => string!(repeated "abc", |r, i| r.items(i.min_len(4).ignore_if_zero_value())),
+    6 => enum_map!("abc", <string, example_enum>, |m, k, v| m.min_pairs(3).keys(k.min_len(15)).values(v.defined_only())),
+    7 => enum_field!(example_enum, "enum_field", |v| v.defined_only()),
     9 => msg_map!("abc", <string, msg2>, |m, k, v| m.min_pairs(15).keys(k.min_len(25)).values(v.cel(&[]))),
 
     enum "my_enum" {

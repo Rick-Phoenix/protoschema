@@ -5,7 +5,7 @@ use maplit::btreemap;
 
 use crate::{
   field_type::Duration,
-  validators::{cel::CelRule, validate_comparables, validate_lists},
+  validators::{cel::CelRule, validate_comparables, validate_lists, Ignore},
   OptionValue, ProtoOption,
 };
 
@@ -18,10 +18,14 @@ pub struct DurationValidator<'a> {
   pub lte: Option<Duration>,
   pub gt: Option<Duration>,
   pub gte: Option<Duration>,
-  pub defined_only: Option<bool>,
   pub cel: Option<&'a [CelRule]>,
+  #[builder(with = || true)]
   pub required: Option<bool>,
+  #[builder(setters(vis = "", name = ignore))]
+  pub ignore: Option<Ignore>,
 }
+
+impl_ignore!(DurationValidatorBuilder);
 
 impl<'a, S: duration_validator_builder::State> From<DurationValidatorBuilder<'a, S>>
   for ProtoOption

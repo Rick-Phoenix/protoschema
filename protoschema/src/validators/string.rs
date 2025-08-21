@@ -4,7 +4,7 @@ use bon::Builder;
 use maplit::btreemap;
 
 use crate::{
-  validators::{cel::CelRule, validate_lists},
+  validators::{cel::CelRule, validate_lists, Ignore},
   OptionValue, ProtoOption,
 };
 
@@ -28,7 +28,10 @@ pub struct StringValidator<'a> {
   pub well_known: Option<WellKnown>,
   pub const_: Option<&'a str>,
   pub cel: Option<&'a [CelRule]>,
+  #[builder(with = || true)]
   pub required: Option<bool>,
+  #[builder(setters(vis = "", name = ignore))]
+  pub ignore: Option<Ignore>,
 }
 
 impl<'a, S: State> From<StringValidatorBuilder<'a, S>> for ProtoOption {
@@ -151,6 +154,8 @@ macro_rules! well_known_impl {
     }
   };
 }
+
+impl_ignore!(StringValidatorBuilder);
 
 impl<'a, S: State> StringValidatorBuilder<'a, S> {
   well_known_impl!(Email);

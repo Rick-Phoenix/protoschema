@@ -3,7 +3,12 @@ use std::marker::PhantomData;
 use bon::Builder;
 pub(crate) use oneof_data_builder::*;
 
-use crate::{fields::Field, sealed, Empty, IsSet, ProtoOption, Set, Unset};
+use crate::{fields::Field, sealed, Empty, IsSet, OptionValue, ProtoOption, Set, Unset};
+
+pub const ONEOF_REQUIRED: ProtoOption = ProtoOption {
+  name: "(buf.validate.oneof).required",
+  value: OptionValue::Bool(true),
+};
 
 #[derive(Clone, Debug, Builder)]
 pub struct OneofData {

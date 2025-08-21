@@ -5,7 +5,7 @@ use maplit::btreemap;
 
 use crate::{
   field_type::{Duration, Timestamp},
-  validators::{cel::CelRule, validate_comparables},
+  validators::{cel::CelRule, validate_comparables, Ignore},
   OptionValue, ProtoOption,
 };
 
@@ -14,14 +14,21 @@ pub struct TimestampValidator<'a> {
   pub const_: Option<Timestamp>,
   pub lt: Option<Timestamp>,
   pub lte: Option<Timestamp>,
+  #[builder(with = || true)]
   pub lt_now: Option<bool>,
   pub gt: Option<Timestamp>,
   pub gte: Option<Timestamp>,
+  #[builder(with = || true)]
   pub gt_now: Option<bool>,
   pub within: Option<Duration>,
   pub cel: Option<&'a [CelRule]>,
+  #[builder(with = || true)]
   pub required: Option<bool>,
+  #[builder(setters(vis = "", name = ignore))]
+  pub ignore: Option<Ignore>,
 }
+
+impl_ignore!(TimestampValidatorBuilder);
 
 impl<'a, S: timestamp_validator_builder::State> From<TimestampValidatorBuilder<'a, S>>
   for ProtoOption

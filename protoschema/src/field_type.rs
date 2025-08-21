@@ -94,15 +94,14 @@ fn strip_common_prefix<'a>(s1: &'a str, s2: &'a str) -> &'a str {
 }
 
 impl FieldType {
-  pub fn render_name<T: AsRef<str> + Display>(&self, prefix: T) -> String {
+  pub fn render_name<T: AsRef<str> + Display>(&self, prefix: T) -> Box<str> {
     match self {
       FieldType::Message(name) => {
-        strip_common_prefix(name, &format!("{}.", prefix.as_ref())).to_string()
+        strip_common_prefix(name, &format!("{}.", prefix.as_ref())).into()
       }
-      FieldType::Enum(name) => {
-        strip_common_prefix(name, &format!("{}.", prefix.as_ref())).to_string()
-      }
-      _ => self.name().to_string(),
+      FieldType::Enum(name) => strip_common_prefix(name, &format!("{}.", prefix.as_ref())).into(),
+      FieldType::Map(key, val) => format!("map<{}, {}>", key, val.render_name(prefix)).into(),
+      _ => self.name(),
     }
   }
 

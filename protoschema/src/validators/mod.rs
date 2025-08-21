@@ -1,5 +1,26 @@
 use std::{collections::HashSet, fmt::Debug, hash::Hash};
 
+use proto_types::protovalidate::Ignore;
+
+macro_rules! impl_ignore {
+  ($builder:ident) => {
+    $crate::paste! {
+      impl <'a, S: [< $builder:snake >]::State> $builder<'a, S>
+      where
+        S::Ignore: [< $builder:snake >]::IsUnset,
+      {
+        pub fn ignore_if_zero_value(self) -> $builder<'a, [< $builder:snake >]::SetIgnore<S>> {
+          self.ignore(Ignore::IfZeroValue)
+        }
+
+        pub fn ignore_always(self) -> $builder<'a, [< $builder:snake >]::SetIgnore<S>> {
+          self.ignore(Ignore::Always)
+        }
+      }
+    }
+  };
+}
+
 #[track_caller]
 fn validate_comparables<T>(lt: Option<T>, lte: Option<T>, gt: Option<T>, gte: Option<T>)
 where

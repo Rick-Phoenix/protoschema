@@ -67,12 +67,13 @@ pub struct MessageData {
 
 impl<S: MessageState> MessageBuilder<S> {
   pub fn get_type(&self) -> FieldType {
-    let name = self.get_name();
+    let name = self.get_full_name();
     FieldType::Message(name)
   }
 
   pub fn new_enum(&self, name: &str) -> EnumBuilder {
     let package = self.get_package();
+    let parent_message_full_name = self.get_full_name();
     let mut arena = self.arena.borrow_mut();
 
     let file_id = arena.messages[self.id].file_id;
@@ -83,6 +84,7 @@ impl<S: MessageState> MessageBuilder<S> {
 
     let new_enum = EnumData {
       name: name.into(),
+      full_name: format!("{}.{}", parent_message_full_name, name).into(),
       package,
       file_id,
       parent_message: Some(parent_message_id),

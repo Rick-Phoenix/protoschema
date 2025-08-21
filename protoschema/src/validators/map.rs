@@ -15,6 +15,7 @@ use crate::{
     numeric::*,
     string::{StringValidator, StringValidatorBuilder},
     timestamp::*,
+    Ignore,
   },
   OptionValue, ProtoOption,
 };
@@ -28,8 +29,13 @@ pub struct MapValidator<'a> {
   pub min_pairs: Option<u64>,
   pub max_pairs: Option<u64>,
   pub cel: Option<&'a [CelRule]>,
+  #[builder(with = || true)]
   pub required: Option<bool>,
+  #[builder(setters(vis = "", name = ignore))]
+  pub ignore: Option<Ignore>,
 }
+
+impl_ignore!(MapValidatorBuilder);
 
 impl<'a, S: map_validator_builder::State> From<MapValidatorBuilder<'a, S>> for ProtoOption {
   #[track_caller]

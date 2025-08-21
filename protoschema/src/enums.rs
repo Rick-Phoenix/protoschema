@@ -14,6 +14,7 @@ pub struct EnumBuilder<S: EnumState = Empty> {
 #[derive(Clone, Debug, Default)]
 pub struct EnumData {
   pub name: Box<str>,
+  pub full_name: Box<str>,
   pub variants: Box<[(i32, Box<str>)]>,
   pub file_id: usize,
   pub package: Box<str>,
@@ -26,7 +27,7 @@ pub struct EnumData {
 
 impl<S: EnumState> EnumBuilder<S> {
   pub fn get_type(&self) -> FieldType {
-    let name = self.get_name();
+    let name = self.get_full_name();
     FieldType::Enum(name)
   }
 
@@ -64,15 +65,8 @@ impl<S: EnumState> EnumBuilder<S> {
     self.arena.borrow().name.clone()
   }
 
-  pub fn get_full_name(&self) -> String {
-    let arena = self.arena.borrow();
-
-    let enum_ = &arena.enums[self.id];
-
-    match enum_.parent_message {
-      Some(id) => format!("{}.{}", arena.messages[id].full_name, self.get_name()),
-      None => format!("{}.{}", self.get_package(), self.get_name()),
-    }
+  pub fn get_full_name(&self) -> Box<str> {
+    self.arena.borrow().enums[self.id].full_name.clone()
   }
 
   pub fn reserved_numbers(self, numbers: &[u32]) -> EnumBuilder<SetReservedNumbers<S>>

@@ -4,7 +4,7 @@ use bon::Builder;
 use maplit::btreemap;
 
 use crate::{
-  validators::{cel::CelRule, validate_lists},
+  validators::{cel::CelRule, validate_lists, Ignore},
   OptionValue, ProtoOption,
 };
 
@@ -48,8 +48,13 @@ pub struct BytesValidator<'a> {
   pub well_known: Option<WellKnown>,
   pub const_: Option<&'a [u8]>,
   pub cel: Option<&'a [CelRule]>,
+  #[builder(with = || true)]
   pub required: Option<bool>,
+  #[builder(setters(vis = "", name = ignore))]
+  pub ignore: Option<Ignore>,
 }
+
+impl_ignore!(BytesValidatorBuilder);
 
 impl<'a, S: bytes_validator_builder::State> From<BytesValidatorBuilder<'a, S>> for ProtoOption {
   #[track_caller]

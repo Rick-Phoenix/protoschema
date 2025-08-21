@@ -15,6 +15,7 @@ use crate::{
     numeric::*,
     string::{StringValidator, StringValidatorBuilder},
     timestamp::*,
+    Ignore,
   },
   OptionValue, ProtoOption,
 };
@@ -25,10 +26,16 @@ pub struct RepeatedValidator<'a> {
   pub items: Option<ProtoOption>,
   pub min_items: Option<u64>,
   pub max_items: Option<u64>,
+  #[builder(with = || true)]
   pub unique: Option<bool>,
   pub cel: Option<&'a [CelRule]>,
+  #[builder(with = || true)]
   pub required: Option<bool>,
+  #[builder(setters(vis = "", name = ignore))]
+  pub ignore: Option<Ignore>,
 }
+
+impl_ignore!(RepeatedValidatorBuilder);
 
 impl<'a, S: repeated_validator_builder::State> From<RepeatedValidatorBuilder<'a, S>>
   for ProtoOption

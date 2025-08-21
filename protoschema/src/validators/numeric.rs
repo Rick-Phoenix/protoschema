@@ -3,7 +3,10 @@ use std::collections::BTreeMap;
 use bon::Builder;
 use maplit::btreemap;
 
-use crate::{validators::cel::CelRule, OptionValue, ProtoOption};
+use crate::{
+  validators::{cel::CelRule, Ignore},
+  OptionValue, ProtoOption,
+};
 
 macro_rules! get_list_check {
   (f32, $in_list:expr, $not_in_list:expr) => {{
@@ -65,9 +68,13 @@ macro_rules! get_fields {
       pub gte: Option<f64>,
       pub in_: Option<&'a [f64]>,
       pub not_in: Option<&'a [f64]>,
+      #[builder(with = || true)]
       pub finite: Option<bool>,
       pub cel: Option<&'a [CelRule]>,
+      #[builder(with = || true)]
       pub required: Option<bool>,
+      #[builder(setters(vis = "", name = ignore))]
+      pub ignore: Option<Ignore>,
     }
   };
 
@@ -81,9 +88,13 @@ macro_rules! get_fields {
       pub gte: Option<f32>,
       pub in_: Option<&'a [f32]>,
       pub not_in: Option<&'a [f32]>,
+      #[builder(with = || true)]
       pub finite: Option<bool>,
       pub cel: Option<&'a [CelRule]>,
+      #[builder(with = || true)]
       pub required: Option<bool>,
+      #[builder(setters(vis = "", name = ignore))]
+      pub ignore: Option<Ignore>,
     }
   };
 
@@ -99,7 +110,9 @@ macro_rules! get_fields {
         pub in_: Option<&'a [$rust_type]>,
         pub not_in: Option<&'a [$rust_type]>,
         pub cel: Option<&'a [CelRule]>,
-        pub required: Option<bool>
+        pub required: Option<bool>,
+        #[builder(setters(vis = "", name = ignore))]
+        pub ignore: Option<Ignore>,
       }
     }
   };
@@ -130,6 +143,8 @@ macro_rules! numeric_validator {
   ($proto_type:ident, $rust_type:ty, $option_value_variant:ident) => {
     paste::paste! {
       get_fields!($rust_type, $proto_type);
+
+      impl_ignore!([< $proto_type:camel ValidatorBuilder >]);
 
       impl<'a, S: [< $proto_type _validator_builder >]::State> From<[< $proto_type:camel ValidatorBuilder >]<'a, S>> for ProtoOption {
         #[track_caller]

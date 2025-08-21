@@ -2,13 +2,21 @@ use std::collections::BTreeMap;
 
 use bon::Builder;
 
-use crate::{validators::cel::CelRule, OptionValue, ProtoOption};
+use crate::{
+  validators::{cel::CelRule, Ignore},
+  OptionValue, ProtoOption,
+};
 
 #[derive(Debug, Clone, Builder)]
 pub struct MessageValidator<'a> {
   pub cel: Option<&'a [CelRule]>,
+  #[builder(with = || true)]
   pub required: Option<bool>,
+  #[builder(setters(vis = "", name = ignore))]
+  pub ignore: Option<Ignore>,
 }
+
+impl_ignore!(MessageValidatorBuilder);
 
 impl<'a, S: message_validator_builder::State> From<MessageValidatorBuilder<'a, S>> for ProtoOption {
   #[track_caller]

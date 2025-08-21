@@ -8,6 +8,7 @@ use crate::{OptionValue, ProtoOption};
 #[derive(Clone, Debug, Builder)]
 pub struct BoolValidator {
   pub const_: Option<bool>,
+  #[builder(with = || true)]
   pub required: Option<bool>,
 }
 

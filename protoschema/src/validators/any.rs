@@ -4,7 +4,7 @@ use bon::Builder;
 use maplit::btreemap;
 
 use crate::{
-  validators::{cel::CelRule, validate_lists},
+  validators::{cel::CelRule, validate_lists, Ignore},
   OptionValue, ProtoOption,
 };
 
@@ -13,8 +13,13 @@ pub struct AnyValidator<'a> {
   pub in_: Option<&'a [&'a str]>,
   pub not_in: Option<&'a [&'a str]>,
   pub cel: Option<&'a [CelRule]>,
+  #[builder(with = || true)]
   pub required: Option<bool>,
+  #[builder(setters(vis = "", name = ignore))]
+  pub ignore: Option<Ignore>,
 }
+
+impl_ignore!(AnyValidatorBuilder);
 
 impl<'a, S: any_validator_builder::State> From<AnyValidatorBuilder<'a, S>> for ProtoOption {
   #[track_caller]

@@ -4,7 +4,7 @@ use bon::Builder;
 use maplit::btreemap;
 
 use crate::{
-  validators::{cel::CelRule, validate_lists},
+  validators::{cel::CelRule, validate_lists, Ignore},
   OptionValue, ProtoOption,
 };
 
@@ -13,10 +13,16 @@ pub struct EnumValidator<'a> {
   pub in_: Option<&'a [i32]>,
   pub not_in: Option<&'a [i32]>,
   pub const_: Option<i32>,
+  #[builder(with = || true)]
   pub defined_only: Option<bool>,
   pub cel: Option<&'a [CelRule]>,
+  #[builder(with = || true)]
   pub required: Option<bool>,
+  #[builder(setters(vis = "", name = ignore))]
+  pub ignore: Option<Ignore>,
 }
+
+impl_ignore!(EnumValidatorBuilder);
 
 use enum_validator_builder::State;
 
