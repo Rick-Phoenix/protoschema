@@ -145,7 +145,7 @@ impl<S: FileState> FileBuilder<S> {
   pub fn new_enum(&self, name: &str) -> EnumBuilder {
     let mut arena = self.arena.borrow_mut();
     let package_name = arena.name.clone();
-    let enum_id = arena.messages.len();
+    let enum_id = arena.enums.len();
 
     arena.files[self.id].enums.push(enum_id);
 

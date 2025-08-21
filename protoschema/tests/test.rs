@@ -1,9 +1,8 @@
 #![allow(clippy::cloned_ref_to_slice_refs)]
 
 use askama::Template;
-use paste::paste;
 use protoschema::{
-  double, map, message_body, msg_field, proto_enum, schema::Package, string, OptionValue,
+  enum_field, enum_map, message_body, msg_field, proto_enum, schema::Package, string, OptionValue,
   ProtoOption,
 };
 
@@ -22,6 +21,12 @@ fn main_test() {
 
   let field = msg_field!(msg, "my_msg_field");
 
+  let example_enum = proto_enum!(
+    file.new_enum("file_enum"),
+    options = [opt.clone()],
+    1 => "UNSPECIFIED"
+  );
+
   message_body! {
     msg,
 
@@ -29,11 +34,9 @@ fn main_test() {
     reserved_names = [ "one", "two" ],
     reserved = [ 2, 2..4 ],
 
-    1 => field.clone(),
     2 => string!("abc").options(&[opt.clone(), opt.clone(), opt.clone()]),
-    3 => string!(repeated "abc", |r, i| r.min_items(15).items(i.min_len(5).max_len(15).email())),
-    5 => double!(repeated "abc", |r, i| r.min_items(10).items(i.lt(100.1))),
-    6 => map!("abc", <string, int32>, |m, k, v| m.min_pairs(3).keys(k.min_len(15)).values(v.lt(4))),
+    6 => enum_map!("abc", <string, example_enum>, |m, k, v| m.min_pairs(3).keys(k.min_len(15)).values(v.defined_only(true))),
+    7 => enum_field!(example_enum, "enum_field", |v| v.defined_only(true)),
 
     enum "my_enum" {
       options = [ opt.clone() ],
@@ -53,12 +56,6 @@ fn main_test() {
     10 => field.clone(),
 
   };
-
-  proto_enum!(
-    file.new_enum("file_enum"),
-    options = [opt.clone()],
-    1 => "UNSPECIFIED"
-  );
 
   let file_renders = &package.build_templates()[0];
 

@@ -6,7 +6,7 @@ use crate::{
   from_str_slice,
   oneofs::OneofData,
   schema::{Arena, PackageData},
-  sealed, Empty, IsSet, IsUnset, ProtoOption, Set, Unset,
+  sealed, Empty, FieldType, IsSet, IsUnset, ProtoOption, Set, Unset,
 };
 
 #[derive(Clone, Debug)]
@@ -66,6 +66,11 @@ pub struct MessageData {
 }
 
 impl<S: MessageState> MessageBuilder<S> {
+  pub fn get_type(&self) -> FieldType {
+    let name = self.get_name();
+    FieldType::Message(name)
+  }
+
   pub fn new_enum(&self, name: &str) -> EnumBuilder {
     let package = self.get_package();
     let mut arena = self.arena.borrow_mut();

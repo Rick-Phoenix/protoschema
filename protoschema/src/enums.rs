@@ -1,7 +1,7 @@
 use std::{marker::PhantomData, ops::Range};
 
 use crate::{
-  from_str_slice, schema::Arena, sealed, Empty, IsSet, IsUnset, ProtoOption, Set, Unset,
+  from_str_slice, schema::Arena, sealed, Empty, FieldType, IsSet, IsUnset, ProtoOption, Set, Unset,
 };
 
 #[derive(Clone, Debug)]
@@ -25,6 +25,17 @@ pub struct EnumData {
 }
 
 impl<S: EnumState> EnumBuilder<S> {
+  pub fn get_type(&self) -> FieldType {
+    let name = self.get_name();
+    FieldType::Enum(name)
+  }
+
+  pub fn get_file(&self) -> Box<str> {
+    let arena = self.arena.borrow();
+    let file_id = arena.enums[self.id].file_id;
+    arena.files[file_id].name.clone()
+  }
+
   pub fn options(self, options: &[ProtoOption]) -> EnumBuilder<SetOptions<S>>
   where
     S::Options: IsUnset,

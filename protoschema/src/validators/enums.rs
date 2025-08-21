@@ -12,6 +12,48 @@ pub struct EnumValidator<'a> {
   pub defined_only: Option<bool>,
 }
 
+use enum_validator_builder::State;
+
+impl<'a, S: State> From<EnumValidatorBuilder<'a, S>> for ProtoOption {
+  #[track_caller]
+  fn from(value: EnumValidatorBuilder<S>) -> Self {
+    value.build().into()
+  }
+}
+
+impl<'a> From<EnumValidator<'a>> for ProtoOption {
+  #[track_caller]
+  fn from(validator: EnumValidator) -> Self {
+    let name = "(buf.validate.field).enum";
+
+    let mut values: BTreeMap<Box<str>, OptionValue> = BTreeMap::new();
+
+    if let Some(const_val) = validator.const_ {
+      values.insert("const".into(), OptionValue::Int(const_val as i64));
+      return ProtoOption {
+        name,
+        value: OptionValue::Message(values),
+      };
+    }
+
+    validate_lists(validator.in_, validator.not_in).unwrap_or_else(|invalid| {
+      panic!(
+        "The following values are present inside of 'in' and 'not_in': {:?}",
+        invalid
+      )
+    });
+
+    insert_option!(validator, values, defined_only, bool);
+    insert_option!(validator, values, in_, [i32]);
+    insert_option!(validator, values, not_in, [i32]);
+
+    ProtoOption {
+      name,
+      value: OptionValue::Message(values),
+    }
+  }
+}
+
 #[track_caller]
 pub fn build_enum_validator_option<F, S>(config_fn: F) -> ProtoOption
 where
@@ -20,31 +62,5 @@ where
 {
   let builder = EnumValidator::builder();
   let validator = config_fn(builder).build();
-  let name = "(buf.validate.field).enum";
-
-  let mut values: BTreeMap<Box<str>, OptionValue> = BTreeMap::new();
-
-  if let Some(const_val) = validator.const_ {
-    values.insert("const".into(), OptionValue::Int(const_val as i64));
-    return ProtoOption {
-      name,
-      value: OptionValue::Message(values),
-    };
-  }
-
-  validate_lists(validator.in_, validator.not_in).unwrap_or_else(|invalid| {
-    panic!(
-      "The following values are present inside of 'in' and 'not_in': {:?}",
-      invalid
-    )
-  });
-
-  insert_option!(validator, values, defined_only, bool);
-  insert_option!(validator, values, in_, [i32]);
-  insert_option!(validator, values, not_in, [i32]);
-
-  ProtoOption {
-    name,
-    value: OptionValue::Message(values),
-  }
+  validator.into()
 }

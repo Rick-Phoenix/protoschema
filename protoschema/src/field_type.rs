@@ -134,3 +134,32 @@ impl FieldType {
     }
   }
 }
+
+impl From<&str> for FieldType {
+  #[track_caller]
+  fn from(value: &str) -> Self {
+    match value {
+      "double" => Self::Double,
+      "float" => Self::Float,
+      "int64" => Self::Int64,
+      "int32" => Self::Int32,
+      "uint64" => Self::Uint64,
+      "uint32" => Self::Uint32,
+      "fixed64" => Self::Fixed64,
+      "fixed32" => Self::Fixed32,
+      "bool" => Self::Bool,
+      "string" => Self::String,
+      "bytes" => Self::Bytes,
+      "sfixed32" => Self::Sfixed32,
+      "sfixed64" => Self::Sfixed64,
+      "sint32" => Self::Sint32,
+      "sint64" => Self::Sint64,
+      "duration" => Self::Duration,
+      "timestamp" => Self::Timestamp,
+      "any" => Self::Any,
+      "fieldmask" => Self::FieldMask,
+      "empty" => Self::Empty,
+      _ => panic!("Invalid protobuf type"),
+    }
+  }
+}

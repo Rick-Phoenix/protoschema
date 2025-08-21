@@ -15,6 +15,9 @@ paste = { workspace = true }
 maplit = { workspace = true }
 regex = { workspace = true }
 proto-types = { workspace = true }
+crabtime = { workspace = true }
+unstringify = { workspace = true }
+quote = { workspace = true }
 
 [package.metadata.docs.rs]
 all-features = true
