@@ -36,15 +36,25 @@ pub struct Field {
   pub options: Vec<ProtoOption>,
   #[builder(field)]
   pub imports: Vec<Box<str>>,
+  #[builder(field)]
+  pub kind: FieldKind,
   #[builder(setters(vis = "", name = field_type_internal))]
   pub field_type: FieldType,
   pub name: Box<str>,
   pub tag: u32,
-  #[builder(default)]
-  pub kind: FieldKind,
 }
 
 impl<S: field_builder::State> FieldBuilder<S> {
+  pub fn repeated(mut self) -> FieldBuilder<S> {
+    self.kind = FieldKind::Repeated;
+    self
+  }
+
+  pub fn optional(mut self) -> FieldBuilder<S> {
+    self.kind = FieldKind::Optional;
+    self
+  }
+
   pub fn field_type(self, field_type: FieldType) -> FieldBuilder<SetFieldType<S>>
   where
     S::FieldType: field_builder::IsUnset,

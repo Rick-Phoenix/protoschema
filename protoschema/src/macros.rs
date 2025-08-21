@@ -45,6 +45,15 @@ macro_rules! field_validators_inner {
           .add_import("buf/validate/validate.proto")
       };
 
+      (repeated $field_name:literal, $validator:expr ) => {
+        $crate::fields::Field::builder()
+          .name($field_name.into())
+          .repeated()
+          .field_type($crate::parse_field_type!($proto_type))
+          .option($crate::validators::repeated::build_repeated_string_validator_option($validator))
+          .add_import("buf/validate/validate.proto")
+      };
+
       ($field_name:literal) => {
         $crate::fields::Field::builder()
           .name($field_name.into())

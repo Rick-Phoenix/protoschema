@@ -1,5 +1,11 @@
 use std::{collections::HashSet, fmt::Debug, hash::Hash};
 
+use crate::ProtoOption;
+
+pub trait FieldValidator {
+  fn convert_to_proto_option(&self) -> ProtoOption;
+}
+
 #[track_caller]
 fn validate_comparables<T>(lt: Option<T>, lte: Option<T>, gt: Option<T>, gte: Option<T>)
 where
@@ -127,6 +133,8 @@ pub mod booleans;
 pub mod bytes;
 pub mod duration;
 pub mod enums;
+pub mod map;
 pub mod numeric;
+pub mod repeated;
 pub mod string;
 pub mod timestamp;
