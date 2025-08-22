@@ -4,6 +4,15 @@ use askama::Template;
 
 use crate::field_type::{Duration, Timestamp};
 
+pub mod common_options {
+  use crate::{OptionValue, ProtoOption};
+
+  pub const ONEOF_REQUIRED: ProtoOption = ProtoOption {
+    name: "(buf.validate.oneof).required",
+    value: OptionValue::Bool(true),
+  };
+}
+
 #[derive(Template, Clone, Debug)]
 #[template(path = "opt.proto.j2")]
 pub struct ProtoOption {
@@ -91,7 +100,7 @@ impl Display for OptionValue {
 #[macro_export]
 macro_rules! proto_str_list {
   ($($val:expr),* $(,)?) => {
-    ::protoschema::OptionValue::List(vec![
+    $crate::OptionValue::List(vec![
       $(
         OptionValue::String($val.to_string())
       ),*

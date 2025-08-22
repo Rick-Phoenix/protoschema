@@ -1,9 +1,11 @@
 use std::marker::PhantomData;
 
+use askama::Template;
 use bon::Builder;
 
 use crate::{
-  message::MessageBuilder, schema::Arena, sealed, Empty, IsSet, IsUnset, ProtoOption, Set, Unset,
+  field_type::strip_common_prefix, message::MessageBuilder, schema::Arena, sealed, Empty, IsSet,
+  IsUnset, ProtoOption, Set, Unset,
 };
 
 #[derive(Clone, Debug)]
@@ -11,6 +13,7 @@ pub struct ServiceBuilder<S: ServiceState = Empty> {
   pub(crate) id: usize,
   pub(crate) arena: Arena,
   pub(crate) _phantom: PhantomData<fn() -> S>,
+  pub(crate) file_id: usize,
 }
 
 #[derive(Clone, Debug, Builder)]
@@ -18,16 +21,29 @@ pub struct ServiceBuilder<S: ServiceState = Empty> {
 pub struct ServiceHandler {
   #[builder(start_fn)]
   name: Box<str>,
+  #[builder(field)]
+  imports: Vec<Box<str>>,
   #[builder(setters(vis = "", name = options_internal))]
-  options: Option<Box<[ProtoOption]>>,
-  #[builder(setters(vis = "", name = request_id_internal))]
-  request_id: usize,
-  #[builder(setters(vis = "", name = response_id_internal))]
-  response_id: usize,
+  #[builder(default)]
+  options: Box<[ProtoOption]>,
+  #[builder(setters(vis = "", name = request_internal))]
+  request: Box<str>,
+  #[builder(setters(vis = "", name = response_internal))]
+  response: Box<str>,
+}
+
+impl ServiceHandler {
+  pub fn render_request(&self, package: &str) -> Box<str> {
+    strip_common_prefix(&self.request, &format!("{}.", package)).into()
+  }
+
+  pub fn render_response(&self, package: &str) -> Box<str> {
+    strip_common_prefix(&self.response, &format!("{}.", package)).into()
+  }
 }
 
 use service_handler_builder::{
-  IsUnset as HandlerIsUnset, SetOptions as HandlerSetOptions, SetRequestId, SetResponseId,
+  IsUnset as HandlerIsUnset, SetOptions as HandlerSetOptions, SetRequest, SetResponse,
   State as HandlerState,
 };
 
@@ -39,35 +55,58 @@ impl<S: HandlerState> ServiceHandlerBuilder<S> {
     self.options_internal(options.into())
   }
 
-  pub fn request(self, message: &MessageBuilder) -> ServiceHandlerBuilder<SetRequestId<S>>
-  where
-    S::RequestId: HandlerIsUnset,
-  {
-    self.request_id_internal(message.get_id())
+  pub fn add_import(mut self, import: &str) -> ServiceHandlerBuilder<S> {
+    self.imports.push(import.into());
+    self
   }
 
-  pub fn response(self, message: &MessageBuilder) -> ServiceHandlerBuilder<SetResponseId<S>>
+  pub fn request(self, message: &MessageBuilder) -> ServiceHandlerBuilder<SetRequest<S>>
   where
-    S::ResponseId: HandlerIsUnset,
+    S::Request: HandlerIsUnset,
   {
-    self.response_id_internal(message.get_id())
+    self
+      .add_import(&message.get_file())
+      .request_internal(message.get_full_name())
+  }
+
+  pub fn response(self, message: &MessageBuilder) -> ServiceHandlerBuilder<SetResponse<S>>
+  where
+    S::Response: HandlerIsUnset,
+  {
+    self
+      .add_import(&message.get_file())
+      .response_internal(message.get_full_name())
   }
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Template)]
+#[template(path = "service.proto.j2")]
 pub struct ServiceData {
+  pub imports: Vec<Box<str>>,
   pub name: Box<str>,
   pub handlers: Box<[ServiceHandler]>,
-  pub file_id: usize,
   pub package: Box<str>,
   pub options: Box<[ProtoOption]>,
 }
 
 impl<S: ServiceState> ServiceBuilder<S> {
+  pub fn get_data(self) -> ServiceData {
+    self.arena.borrow().services[self.id].clone()
+  }
+
   pub fn get_file(&self) -> Box<str> {
     let arena = self.arena.borrow();
-    let file_id = arena.services[self.id].file_id;
-    arena.files[file_id].name.clone()
+    arena.files[self.file_id].name.clone()
+  }
+
+  pub fn get_name(&self) -> Box<str> {
+    let arena = self.arena.borrow();
+
+    arena.services[self.id].name.clone()
+  }
+
+  pub fn get_package(&self) -> Box<str> {
+    self.arena.borrow().name.clone()
   }
 
   pub fn handlers(self, handlers: &[ServiceHandler]) -> ServiceBuilder<SetHandlers<S>>
@@ -76,14 +115,20 @@ impl<S: ServiceState> ServiceBuilder<S> {
   {
     {
       let mut arena = self.arena.borrow_mut();
-      let service = &mut arena.services[self.id];
 
-      service.handlers = handlers.into()
+      for handler in handlers {
+        handler.imports.iter().for_each(|i| {
+          arena.files[self.file_id].imports.insert(i.clone());
+        });
+      }
+
+      arena.services[self.id].handlers = handlers.into()
     }
 
     ServiceBuilder {
       id: self.id,
       arena: self.arena,
+      file_id: self.file_id,
       _phantom: PhantomData,
     }
   }
@@ -102,18 +147,9 @@ impl<S: ServiceState> ServiceBuilder<S> {
     ServiceBuilder {
       id: self.id,
       arena: self.arena,
+      file_id: self.file_id,
       _phantom: PhantomData,
     }
-  }
-
-  pub fn get_name(&self) -> Box<str> {
-    let arena = self.arena.borrow();
-
-    arena.services[self.id].name.clone()
-  }
-
-  pub fn get_package(&self) -> Box<str> {
-    self.arena.borrow().name.clone()
   }
 }
 

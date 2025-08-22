@@ -6,9 +6,14 @@ import "{{ import }}";
 
 
 {%- for enum_ in enums %}
-  {{ enum_ }}
+{{ enum_ }}
 {%- endfor -%}
 
 {%- for msg in messages %}
-  {{ msg }}
+{{ msg }}
 {%- endfor -%}
+
+{%- for service in services %}
+{{ service }}
+{%- endfor -%}
+

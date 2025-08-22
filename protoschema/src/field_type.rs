@@ -2,14 +2,7 @@ use std::fmt::Display;
 
 pub use proto_types::{Duration, Timestamp};
 
-#[derive(Debug, Clone)]
-pub struct ImportedItemPath {
-  pub package: String,
-  pub file: String,
-  pub name: String,
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum MapKey {
   Int32,
   Int64,
@@ -50,7 +43,7 @@ impl Display for MapKey {
   }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum FieldType {
   Double,
   Float,
@@ -83,7 +76,7 @@ impl Display for FieldType {
   }
 }
 
-fn strip_common_prefix<'a>(s1: &'a str, s2: &'a str) -> &'a str {
+pub(crate) fn strip_common_prefix<'a>(s1: &'a str, s2: &'a str) -> &'a str {
   let zipped_chars = s1.chars().zip(s2.chars());
 
   let prefix_len = zipped_chars.take_while(|(c1, c2)| c1 == c2).count();

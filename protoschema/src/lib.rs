@@ -6,7 +6,7 @@ pub use paste::paste;
 
 pub use crate::{
   field_type::{FieldType, MapKey},
-  option::{OptionValue, ProtoOption},
+  options::{OptionValue, ProtoOption},
 };
 
 mod sealed {
@@ -29,6 +29,7 @@ pub struct Empty;
 
 pub mod enums;
 pub mod fields;
+pub mod files;
 mod message;
 pub mod oneofs;
 pub mod rendering;
@@ -41,7 +42,7 @@ mod macros;
 
 mod field_type;
 #[macro_use]
-mod option;
+mod options;
 
 #[derive(Clone, Debug)]
 pub struct Range {

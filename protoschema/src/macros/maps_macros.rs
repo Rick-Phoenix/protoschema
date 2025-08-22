@@ -9,7 +9,7 @@ macro_rules! map_impl {
         Box::new($crate::parse_field_type!($value_type))
       ))
       $(
-        .option($crate::validators::map:: [< build_map_ $key_type _keys_ $values_type_name _values_ validator >]($validator))
+        .add_option($crate::validators::map:: [< build_map_ $key_type _keys_ $values_type_name _values_ validator >]($validator))
         .add_import("buf/validate/validate.proto")
       )?
     }

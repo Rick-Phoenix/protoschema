@@ -1,4 +1,4 @@
-{% macro get_opts(opts) %}
+{% macro field_opts(opts) %}
 {%- if !opts.is_empty() -%}
 [{%- for opt in opts -%}
   {{ opt.name }} = {{ opt.value }}{%- if !loop.last -%}, {% endif -%}

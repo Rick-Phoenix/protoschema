@@ -3,8 +3,8 @@ use std::{collections::HashSet, ops::Range};
 use askama::Template;
 
 use crate::{
-  enums::EnumData, fields::Field, message::MessageData, oneofs::OneofData, schema::PackageData,
-  ProtoOption,
+  enums::EnumData, fields::Field, files::FileData, message::MessageData, oneofs::OneofData,
+  schema::PackageData, services::ServiceData, ProtoOption,
 };
 
 #[derive(Debug, Clone, Template, Default)]
@@ -15,6 +15,7 @@ pub struct FileTemplate {
   pub package: Box<str>,
   pub messages: Vec<MessageTemplate>,
   pub enums: Vec<EnumTemplate>,
+  pub services: Vec<ServiceData>,
 }
 
 #[derive(Clone, Debug, Default, Template)]
@@ -49,6 +50,37 @@ impl From<EnumData> for EnumTemplate {
       reserved_ranges: value.reserved_ranges,
       reserved_names: value.reserved_names,
       options: value.options,
+    }
+  }
+}
+
+impl FileData {
+  pub(crate) fn build_template(&self, package: &PackageData) -> FileTemplate {
+    let file_messages: Vec<MessageTemplate> = self
+      .messages
+      .iter()
+      .map(|id| package.messages[*id].build_template(package))
+      .collect();
+
+    let built_enums: Vec<EnumTemplate> = self
+      .enums
+      .iter()
+      .map(|id| package.enums[*id].clone().into())
+      .collect();
+
+    let services: Vec<ServiceData> = self
+      .services
+      .iter()
+      .map(|id| package.services[*id].clone())
+      .collect();
+
+    FileTemplate {
+      name: self.name.clone(),
+      package: package.name.clone(),
+      messages: file_messages,
+      imports: self.imports.clone(),
+      enums: built_enums,
+      services,
     }
   }
 }

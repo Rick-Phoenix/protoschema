@@ -1,7 +1,8 @@
 use std::{marker::PhantomData, ops::Range};
 
 use crate::{
-  from_str_slice, schema::Arena, sealed, Empty, FieldType, IsSet, IsUnset, ProtoOption, Set, Unset,
+  from_str_slice, rendering::EnumTemplate, schema::Arena, sealed, Empty, FieldType, IsSet, IsUnset,
+  ProtoOption, Set, Unset,
 };
 
 #[derive(Clone, Debug)]
@@ -26,6 +27,12 @@ pub struct EnumData {
 }
 
 impl<S: EnumState> EnumBuilder<S> {
+  pub fn get_data(&self) -> EnumTemplate {
+    let arena = self.arena.borrow();
+    arena.enums[self.id].clone().into()
+  }
+
+  // Getters
   pub fn get_type(&self) -> FieldType {
     let name = self.get_full_name();
     FieldType::Enum(name)
@@ -35,6 +42,39 @@ impl<S: EnumState> EnumBuilder<S> {
     let arena = self.arena.borrow();
     let file_id = arena.enums[self.id].file_id;
     arena.files[file_id].name.clone()
+  }
+
+  pub fn get_name(&self) -> Box<str> {
+    let arena = self.arena.borrow();
+
+    arena.enums[self.id].name.clone()
+  }
+
+  pub fn get_package(&self) -> Box<str> {
+    self.arena.borrow().name.clone()
+  }
+
+  pub fn get_full_name(&self) -> Box<str> {
+    self.arena.borrow().enums[self.id].full_name.clone()
+  }
+
+  // Setters
+  pub fn variants(self, variants: &[(i32, Box<str>)]) -> EnumBuilder<SetVariants<S>>
+  where
+    S::Variants: IsUnset,
+  {
+    {
+      let mut arena = self.arena.borrow_mut();
+      let enum_ = &mut arena.enums[self.id];
+
+      enum_.variants = variants.into();
+    }
+
+    EnumBuilder {
+      id: self.id,
+      arena: self.arena,
+      _phantom: PhantomData,
+    }
   }
 
   pub fn options(self, options: &[ProtoOption]) -> EnumBuilder<SetOptions<S>>
@@ -55,18 +95,22 @@ impl<S: EnumState> EnumBuilder<S> {
     }
   }
 
-  pub fn get_name(&self) -> Box<str> {
-    let arena = self.arena.borrow();
+  pub fn reserved_names(self, names: &[&str]) -> EnumBuilder<SetReservedNames<S>>
+  where
+    S::ReservedNames: IsUnset,
+  {
+    {
+      let mut arena = self.arena.borrow_mut();
+      let msg = &mut arena.enums[self.id];
 
-    arena.enums[self.id].name.clone()
-  }
+      msg.reserved_names = from_str_slice(names)
+    }
 
-  pub fn get_package(&self) -> Box<str> {
-    self.arena.borrow().name.clone()
-  }
-
-  pub fn get_full_name(&self) -> Box<str> {
-    self.arena.borrow().enums[self.id].full_name.clone()
+    EnumBuilder {
+      id: self.id,
+      arena: self.arena,
+      _phantom: PhantomData,
+    }
   }
 
   pub fn reserved_numbers(self, numbers: &[u32]) -> EnumBuilder<SetReservedNumbers<S>>
@@ -86,23 +130,7 @@ impl<S: EnumState> EnumBuilder<S> {
       _phantom: PhantomData,
     }
   }
-  pub fn reserved_names(self, names: &[&str]) -> EnumBuilder<SetReservedNames<S>>
-  where
-    S::ReservedNames: IsUnset,
-  {
-    {
-      let mut arena = self.arena.borrow_mut();
-      let msg = &mut arena.enums[self.id];
 
-      msg.reserved_names = from_str_slice(names)
-    }
-
-    EnumBuilder {
-      id: self.id,
-      arena: self.arena,
-      _phantom: PhantomData,
-    }
-  }
   pub fn reserved_ranges(self, ranges: &[Range<i32>]) -> EnumBuilder<SetReservedRanges<S>>
   where
     S::ReservedRanges: IsUnset,
@@ -112,23 +140,6 @@ impl<S: EnumState> EnumBuilder<S> {
       let msg = &mut arena.enums[self.id];
 
       msg.reserved_ranges = ranges.into()
-    }
-
-    EnumBuilder {
-      id: self.id,
-      arena: self.arena,
-      _phantom: PhantomData,
-    }
-  }
-  pub fn variants(self, variants: &[(i32, Box<str>)]) -> EnumBuilder<SetVariants<S>>
-  where
-    S::Variants: IsUnset,
-  {
-    {
-      let mut arena = self.arena.borrow_mut();
-      let enum_ = &mut arena.enums[self.id];
-
-      enum_.variants = variants.into();
     }
 
     EnumBuilder {

@@ -62,7 +62,7 @@ impl<S: field_builder::State> FieldBuilder<S> {
     self.field_type_internal(field_type)
   }
 
-  pub fn option(mut self, option: ProtoOption) -> Self {
+  pub fn add_option(mut self, option: ProtoOption) -> Self {
     self.options.push(option);
     self
   }

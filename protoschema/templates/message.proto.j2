@@ -1,4 +1,4 @@
-{% import "opt.proto.j2" as render_field_options %}
+{% import "opt.proto.j2" as opts %}
 
 {% macro render_options(options) %}
 {% for option in options %}
@@ -9,7 +9,7 @@
 {% macro render_field(field, package) %}
   {{ field.kind }}{{ field.field_type.render_name(parent_message_name.as_ref().unwrap_or(package)) }} {{ field.name }} = {{ field.tag }}
   {%- if !field.options.is_empty() -%}
-     {{ " " }}{% call render_field_options::get_opts(&field.options) %}
+     {{ " " }}{% call opts::field_opts(&field.options) %}
   {%- endif -%};
 {% endmacro %}
 

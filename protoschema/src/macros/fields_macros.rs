@@ -18,7 +18,7 @@ macro_rules! repeated_field {
       .repeated()
       .field_type($field_type)
       $(
-        .option($crate::validators::repeated::[< build_repeated_ $proto_type _validator_option >]($validator))
+        .add_option($crate::validators::repeated::[< build_repeated_ $proto_type _validator_option >]($validator))
         .add_import("buf/validate/validate.proto")
       )?
     }
@@ -34,7 +34,7 @@ macro_rules! field {
       .field_type($field_type)
       $(.$optional())?
       $(
-        .option($crate::validators::$module_name::[< build_ $proto_type _validator_option >]($validator))
+        .add_option($crate::validators::$module_name::[< build_ $proto_type _validator_option >]($validator))
         .add_import("buf/validate/validate.proto")
       )?
     }
