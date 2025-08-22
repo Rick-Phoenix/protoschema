@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, sync::Arc};
 
 pub use proto_types::{Duration, Timestamp};
 
@@ -56,12 +56,12 @@ pub enum FieldType {
   String,
   Bytes,
   Uint32,
-  Enum(Box<str>),
+  Enum(Arc<str>),
   Sfixed32,
   Sfixed64,
   Sint32,
   Sint64,
-  Message(Box<str>),
+  Message(Arc<str>),
   Duration,
   Timestamp,
   Any,
@@ -94,35 +94,35 @@ impl FieldType {
       }
       FieldType::Enum(name) => strip_common_prefix(name, &format!("{}.", prefix.as_ref())).into(),
       FieldType::Map(key, val) => format!("map<{}, {}>", key, val.render_name(prefix)).into(),
-      _ => self.name(),
+      _ => self.name().into(),
     }
   }
 
-  pub fn name(&self) -> Box<str> {
+  pub fn name(&self) -> &str {
     match self {
-      FieldType::Double => "double".into(),
-      FieldType::Float => "float".into(),
-      FieldType::Int64 => "int64".into(),
-      FieldType::Uint64 => "uint64".into(),
-      FieldType::Int32 => "int32".into(),
-      FieldType::Fixed64 => "fixed64".into(),
-      FieldType::Fixed32 => "fixed32".into(),
-      FieldType::Bool => "bool".into(),
-      FieldType::String => "string".into(),
-      FieldType::Bytes => "bytes".into(),
-      FieldType::Uint32 => "uint32".into(),
-      FieldType::Enum(name) => name.clone(),
-      FieldType::Sfixed32 => "sfixed32".into(),
-      FieldType::Sfixed64 => "sfixed64".into(),
-      FieldType::Sint32 => "sint32".into(),
-      FieldType::Sint64 => "sint64".into(),
-      FieldType::Message(name) => name.clone(),
-      FieldType::Duration => "google.protobuf.Duration".into(),
-      FieldType::Timestamp => "google.protobuf.Timestamp".into(),
-      FieldType::Any => "google.protobuf.Any".into(),
-      FieldType::FieldMask => "google.protobuf.FieldMask".into(),
-      FieldType::Empty => "google.protobuf.Empty".into(),
-      FieldType::Map(key, value) => format!("map<{}, {}>", key, value).into(),
+      FieldType::Double => "double",
+      FieldType::Float => "float",
+      FieldType::Int64 => "int64",
+      FieldType::Uint64 => "uint64",
+      FieldType::Int32 => "int32",
+      FieldType::Fixed64 => "fixed64",
+      FieldType::Fixed32 => "fixed32",
+      FieldType::Bool => "bool",
+      FieldType::String => "string",
+      FieldType::Bytes => "bytes",
+      FieldType::Uint32 => "uint32",
+      FieldType::Enum(name) => name.as_ref(),
+      FieldType::Sfixed32 => "sfixed32",
+      FieldType::Sfixed64 => "sfixed64",
+      FieldType::Sint32 => "sint32",
+      FieldType::Sint64 => "sint64",
+      FieldType::Message(name) => name.as_ref(),
+      FieldType::Duration => "google.protobuf.Duration",
+      FieldType::Timestamp => "google.protobuf.Timestamp",
+      FieldType::Any => "google.protobuf.Any",
+      FieldType::FieldMask => "google.protobuf.FieldMask",
+      FieldType::Empty => "google.protobuf.Empty",
+      FieldType::Map(_, _) => "map",
     }
   }
 }

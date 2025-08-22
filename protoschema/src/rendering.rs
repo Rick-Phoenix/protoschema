@@ -1,31 +1,31 @@
-use std::{collections::HashSet, ops::Range};
+use std::{ops::Range, sync::Arc};
 
 use askama::Template;
 
 use crate::{
-  enums::EnumData, extensions::Extension, fields::Field, files::FileData, message::MessageData,
-  oneofs::OneofData, schema::PackageData, services::ServiceData, ProtoOption,
+  enums::EnumData, extensions::ExtensionData, fields::FieldData, files::FileData,
+  message::MessageData, oneofs::OneofData, schema::PackageData, services::ServiceData, ProtoOption,
 };
 
 #[derive(Debug, Clone, Template, Default)]
 #[template(path = "file.proto.j2")]
 pub struct FileTemplate {
-  pub name: Box<str>,
-  pub imports: HashSet<Box<str>>,
-  pub package: Box<str>,
+  pub name: Arc<str>,
+  pub imports: Vec<Arc<str>>,
+  pub package: Arc<str>,
   pub messages: Vec<MessageTemplate>,
   pub enums: Vec<EnumTemplate>,
   pub services: Vec<ServiceData>,
-  pub extensions: Vec<Extension>,
+  pub extensions: Vec<ExtensionData>,
 }
 
 #[derive(Clone, Debug, Default, Template)]
 #[template(path = "message.proto.j2")]
 pub struct MessageTemplate {
-  pub name: Box<str>,
-  pub package: Box<str>,
-  pub parent_message_name: Option<Box<str>>,
-  pub fields: Vec<Field>,
+  pub name: Arc<str>,
+  pub package: Arc<str>,
+  pub parent_message_name: Option<Arc<str>>,
+  pub fields: Box<[FieldData]>,
   pub messages: Vec<MessageTemplate>,
   pub oneofs: Box<[OneofData]>,
   pub enums: Vec<EnumTemplate>,
@@ -34,7 +34,7 @@ pub struct MessageTemplate {
 #[derive(Clone, Debug, Default, Template)]
 #[template(path = "enum.proto.j2")]
 pub struct EnumTemplate {
-  pub name: Box<str>,
+  pub name: Arc<str>,
   pub variants: Box<[(i32, Box<str>)]>,
   pub reserved_numbers: Box<[u32]>,
   pub reserved_ranges: Box<[Range<i32>]>,
@@ -75,11 +75,13 @@ impl FileData {
       .map(|id| package.services[*id].clone())
       .collect();
 
+    let imports: Vec<Arc<str>> = self.imports.iter().cloned().collect();
+
     FileTemplate {
       name: self.name.clone(),
       package: package.name.clone(),
       messages: file_messages,
-      imports: self.imports.clone(),
+      imports,
       extensions: self.extensions.clone(),
       enums: built_enums,
       services,

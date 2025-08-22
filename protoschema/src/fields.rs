@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, sync::Arc};
 
 use bon::Builder;
 pub(crate) use field_builder::*;
@@ -35,12 +35,21 @@ pub struct Field {
   #[builder(field)]
   pub options: Vec<ProtoOption>,
   #[builder(field)]
-  pub imports: Vec<Box<str>>,
+  pub imports: Vec<Arc<str>>,
   #[builder(field)]
   pub kind: FieldKind,
   #[builder(setters(vis = "", name = field_type_internal))]
   pub field_type: FieldType,
-  pub name: Box<str>,
+  pub name: Arc<str>,
+  pub tag: u32,
+}
+
+#[derive(Clone, Debug)]
+pub struct FieldData {
+  pub options: Box<[ProtoOption]>,
+  pub kind: FieldKind,
+  pub field_type: FieldType,
+  pub name: Arc<str>,
   pub tag: u32,
 }
 

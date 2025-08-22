@@ -77,7 +77,7 @@ fn main_test() {
 
   };
 
-  extension!(file, "google.protobuf.MessageOptions" {
+  extension!(file, msg2 {
     15 => string!("abc").options(&[opt.clone(), opt.clone(), opt.clone()])
   });
 

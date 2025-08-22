@@ -28,3 +28,4 @@ regex = "1.11.1"
 proto-types = { version = "0.1" }
 crabtime = "1.1.3"
 unstringify = "0.1.4"
+thiserror = "2.0.16"

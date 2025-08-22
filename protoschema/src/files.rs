@@ -1,34 +1,32 @@
-use std::{collections::HashSet, marker::PhantomData};
+use std::{collections::HashSet, marker::PhantomData, sync::Arc};
 
 use crate::{
   enums::{EnumBuilder, EnumData},
-  extensions::Extension,
+  extensions::{Extension, ExtensionData},
+  fields::FieldData,
   message::{MessageBuilder, MessageData},
   rendering::FileTemplate,
   schema::Arena,
-  sealed,
   services::{ServiceBuilder, ServiceData},
-  Empty, IsUnset, Set, Unset,
 };
 
 #[derive(Clone, Debug, Default)]
 pub struct FileData {
-  pub name: Box<str>,
+  pub name: Arc<str>,
   pub messages: Vec<usize>,
   pub enums: Vec<usize>,
-  pub imports: HashSet<Box<str>>,
+  pub imports: HashSet<Arc<str>>,
   pub services: Vec<usize>,
-  pub extensions: Vec<Extension>,
+  pub extensions: Vec<ExtensionData>,
 }
 
 #[derive(Debug, Clone)]
-pub struct FileBuilder<S: FileState = Empty> {
+pub struct FileBuilder {
   pub(crate) id: usize,
   pub(crate) arena: Arena,
-  pub(crate) _phantom: PhantomData<S>,
 }
 
-impl<S: FileState> FileBuilder<S> {
+impl FileBuilder {
   pub fn get_data(&self) -> FileTemplate {
     let arena = self.arena.borrow();
     arena.files[self.id].build_template(&arena)
@@ -48,7 +46,6 @@ impl<S: FileState> FileBuilder<S> {
     let full_name = arena.get_full_message_name(name, None);
 
     arena.messages.push(MessageData {
-      file_id: self.id,
       name: name.into(),
       full_name,
       package: package_name,
@@ -58,6 +55,7 @@ impl<S: FileState> FileBuilder<S> {
     MessageBuilder {
       id: msg_id,
       arena: self.arena.clone(),
+      file_id: self.id,
       _phantom: PhantomData,
     }
   }
@@ -105,28 +103,48 @@ impl<S: FileState> FileBuilder<S> {
     }
   }
 
-  pub fn add_extension(self, extension: Extension) -> FileBuilder<S> {
+  pub fn add_extension(self, extension: Extension) -> FileBuilder {
     {
       let mut arena = self.arena.borrow_mut();
 
-      extension.imports.iter().for_each(|i| {
-        arena.files[self.id].imports.insert(i.clone());
-      });
+      arena.files[self.id]
+        .imports
+        .insert(extension.import_path.clone());
 
-      arena.files[self.id].extensions.push(extension)
+      let built_fields: Vec<FieldData> = extension
+        .fields
+        .into_iter()
+        .map(|f| {
+          f.imports.into_iter().for_each(|i| {
+            arena.files[self.id].imports.insert(i);
+          });
+
+          FieldData {
+            name: f.name,
+            field_type: f.field_type,
+            kind: f.kind,
+            options: f.options.into_boxed_slice(),
+            tag: f.tag,
+          }
+        })
+        .collect();
+
+      let ext_data = ExtensionData {
+        target: extension.target,
+        import_path: extension.import_path,
+        fields: built_fields.into_boxed_slice(),
+      };
+
+      arena.files[self.id].extensions.push(ext_data)
     }
 
     FileBuilder {
       id: self.id,
       arena: self.arena,
-      _phantom: PhantomData,
     }
   }
 
-  pub fn imports(self, imports: &[&str]) -> FileBuilder<SetImports<S>>
-  where
-    S::Imports: IsUnset,
-  {
+  pub fn add_imports(self, imports: &[&str]) -> FileBuilder {
     {
       let file_imports = &mut self.arena.borrow_mut().files[self.id].imports;
 
@@ -138,30 +156,6 @@ impl<S: FileState> FileBuilder<S> {
     FileBuilder {
       id: self.id,
       arena: self.arena,
-      _phantom: PhantomData,
     }
   }
-}
-
-#[allow(non_camel_case_types)]
-mod members {
-  pub struct imports;
-}
-
-pub trait FileState: Sized {
-  type Imports;
-  #[doc(hidden)]
-  const SEALED: sealed::Sealed;
-}
-
-impl FileState for Empty {
-  type Imports = Unset<members::imports>;
-  const SEALED: sealed::Sealed = sealed::Sealed;
-}
-
-pub struct SetImports<S: FileState = Empty>(PhantomData<fn() -> S>);
-
-impl<S: FileState> FileState for SetImports<S> {
-  type Imports = Set<members::imports>;
-  const SEALED: sealed::Sealed = sealed::Sealed;
 }

@@ -205,12 +205,11 @@ macro_rules! oneof {
     $($tag:literal => $field:expr),* $(,)?
   ) => {
     {
-      $crate::oneofs::OneofData::builder()
-        .name($name.to_string())
-        .parent_message_id($msg.get_id())
+      $crate::oneofs::Oneof::builder()
+        .name($name.into())
         .options($options_expr.as_slice())
         .fields(
-          vec! [ $($field.tag($tag).build()),* ]
+          vec! [ $($field.tag($tag).build()),* ].into_boxed_slice()
         )
         .build()
     }
@@ -223,10 +222,9 @@ macro_rules! oneof {
   ) => {
     {
       $crate::oneofs::OneofData::builder()
-        .name($name.to_string())
-        .parent_message_id($msg.get_id())
+        .name($name.into())
         .fields(
-          vec! [ $($field.tag($tag).build()),* ]
+          vec! [ $($field.tag($tag).build()),* ].into_boxed_slice()
         )
         .build()
     }

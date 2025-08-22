@@ -27,7 +27,9 @@ impl<T> IsUnset for Unset<T> {}
 #[derive(Debug, Clone)]
 pub struct Empty;
 
+pub mod common_resources;
 pub mod enums;
+pub mod errors;
 pub mod extensions;
 pub mod fields;
 pub mod files;

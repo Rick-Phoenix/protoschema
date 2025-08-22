@@ -1,4 +1,4 @@
-use std::{marker::PhantomData, ops::Range};
+use std::{marker::PhantomData, ops::Range, sync::Arc};
 
 use crate::{
   from_str_slice, rendering::EnumTemplate, schema::Arena, sealed, Empty, FieldType, IsSet, IsUnset,
@@ -14,11 +14,11 @@ pub struct EnumBuilder<S: EnumState = Empty> {
 
 #[derive(Clone, Debug, Default)]
 pub struct EnumData {
-  pub name: Box<str>,
-  pub full_name: Box<str>,
+  pub name: Arc<str>,
+  pub full_name: Arc<str>,
   pub variants: Box<[(i32, Box<str>)]>,
   pub file_id: usize,
-  pub package: Box<str>,
+  pub package: Arc<str>,
   pub parent_message: Option<usize>,
   pub reserved_numbers: Box<[u32]>,
   pub reserved_ranges: Box<[Range<i32>]>,
@@ -38,23 +38,23 @@ impl<S: EnumState> EnumBuilder<S> {
     FieldType::Enum(name)
   }
 
-  pub fn get_file(&self) -> Box<str> {
+  pub fn get_file(&self) -> Arc<str> {
     let arena = self.arena.borrow();
     let file_id = arena.enums[self.id].file_id;
     arena.files[file_id].name.clone()
   }
 
-  pub fn get_name(&self) -> Box<str> {
+  pub fn get_name(&self) -> Arc<str> {
     let arena = self.arena.borrow();
 
     arena.enums[self.id].name.clone()
   }
 
-  pub fn get_package(&self) -> Box<str> {
+  pub fn get_package(&self) -> Arc<str> {
     self.arena.borrow().name.clone()
   }
 
-  pub fn get_full_name(&self) -> Box<str> {
+  pub fn get_full_name(&self) -> Arc<str> {
     self.arena.borrow().enums[self.id].full_name.clone()
   }
 

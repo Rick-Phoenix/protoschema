@@ -1,10 +1,10 @@
-use std::{collections::HashSet, marker::PhantomData, ops::Range};
+use std::{collections::HashSet, marker::PhantomData, ops::Range, sync::Arc};
 
 use crate::{
   enums::{EnumBuilder, EnumData},
-  fields::{self, Field, FieldBuilder},
+  fields::{self, FieldBuilder, FieldData},
   from_str_slice,
-  oneofs::OneofData,
+  oneofs::{Oneof, OneofData},
   rendering::MessageTemplate,
   schema::{Arena, PackageData},
   sealed, Empty, FieldType, IsSet, IsUnset, ProtoOption, Set, Unset,
@@ -14,6 +14,7 @@ use crate::{
 pub struct MessageBuilder<S: MessageState = Empty> {
   pub(crate) id: usize,
   pub(crate) arena: Arena,
+  pub(crate) file_id: usize,
   pub(crate) _phantom: PhantomData<fn() -> S>,
 }
 
@@ -22,7 +23,7 @@ impl PackageData {
     &self,
     base_name: &str,
     parent_message_id: Option<usize>,
-  ) -> Box<str> {
+  ) -> Arc<str> {
     let mut path = String::new();
 
     match parent_message_id {
@@ -50,12 +51,11 @@ impl PackageData {
 
 #[derive(Clone, Debug, Default)]
 pub struct MessageData {
-  pub name: Box<str>,
-  pub full_name: Box<str>,
-  pub package: Box<str>,
-  pub file_id: usize,
+  pub name: Arc<str>,
+  pub full_name: Arc<str>,
+  pub package: Arc<str>,
   pub parent_message: Option<usize>,
-  pub fields: Vec<Field>,
+  pub fields: Box<[FieldData]>,
   pub oneofs: Box<[OneofData]>,
   pub reserved_numbers: Box<[u32]>,
   pub reserved_ranges: Box<[Range<u32>]>,
@@ -78,7 +78,7 @@ impl<S: MessageState> MessageBuilder<S> {
   }
 
   pub fn get_file_id(&self) -> usize {
-    self.arena.borrow().messages[self.id].file_id
+    self.file_id
   }
 
   pub fn get_data(self) -> MessageTemplate
@@ -89,30 +89,29 @@ impl<S: MessageState> MessageBuilder<S> {
     arena.messages[self.id].build_template(&arena)
   }
 
-  pub fn get_name(&self) -> Box<str> {
+  pub fn get_name(&self) -> Arc<str> {
     let arena = self.arena.borrow();
 
     arena.messages[self.id].name.clone()
   }
 
-  pub fn get_full_name(&self) -> Box<str> {
+  pub fn get_full_name(&self) -> Arc<str> {
     let arena = self.arena.borrow();
 
     let msg = &arena.messages[self.id];
     msg.full_name.clone()
   }
 
-  pub fn get_package(&self) -> Box<str> {
+  pub fn get_package(&self) -> Arc<str> {
     let arena = self.arena.borrow();
 
     arena.messages[self.id].package.clone()
   }
 
-  pub fn get_file(&self) -> Box<str> {
+  pub fn get_file(&self) -> Arc<str> {
     let arena = self.arena.borrow();
 
-    let file_id = arena.messages[self.id].file_id;
-    arena.files[file_id].name.clone()
+    arena.files[self.file_id].name.clone()
   }
 
   // Setters
@@ -133,7 +132,6 @@ impl<S: MessageState> MessageBuilder<S> {
     let new_msg = MessageData {
       name: name.into(),
       package,
-      file_id,
       full_name,
       parent_message: Some(parent_message_id),
       ..Default::default()
@@ -144,6 +142,7 @@ impl<S: MessageState> MessageBuilder<S> {
     MessageBuilder {
       id: child_message_id,
       arena: self.arena.clone(),
+      file_id,
       _phantom: PhantomData,
     }
   }
@@ -153,7 +152,7 @@ impl<S: MessageState> MessageBuilder<S> {
     let parent_message_full_name = self.get_full_name();
     let mut arena = self.arena.borrow_mut();
 
-    let file_id = arena.messages[self.id].file_id;
+    let file_id = self.file_id;
     let parent_message_id = self.id;
     let new_enum_id = arena.enums.len();
 
@@ -187,43 +186,80 @@ impl<S: MessageState> MessageBuilder<S> {
     {
       let mut arena = self.arena.borrow_mut();
 
-      let final_fields: Vec<Field> = fields
+      let final_fields: Vec<FieldData> = fields
         .iter()
         .map(|(tag, field)| {
           let field = field.clone().tag(*tag).build();
-          let file_id = arena.messages[self.id].file_id;
+          let file_id = self.file_id;
 
           for import in &field.imports {
             arena.files[file_id].imports.insert(import.clone());
           }
 
-          field
+          FieldData {
+            name: field.name.clone(),
+            tag: field.tag,
+            options: field.options.into_boxed_slice(),
+            kind: field.kind,
+            field_type: field.field_type,
+          }
         })
         .collect();
 
-      arena.messages[self.id].fields = final_fields
+      arena.messages[self.id].fields = final_fields.into_boxed_slice()
     }
 
     MessageBuilder {
       id: self.id,
       arena: self.arena,
+      file_id: self.file_id,
       _phantom: PhantomData,
     }
   }
 
-  pub fn oneofs(self, oneofs: &[OneofData]) -> MessageBuilder<SetOneofs<S>>
+  pub fn oneofs(self, oneofs: &[Oneof]) -> MessageBuilder<SetOneofs<S>>
   where
     S::Oneofs: IsUnset,
   {
     {
       let mut arena = self.arena.borrow_mut();
 
-      arena.messages[self.id].oneofs = oneofs.into();
+      let oneofs_data: Vec<OneofData> = oneofs
+        .iter()
+        .map(|of| {
+          let built_fields: Vec<FieldData> = of
+            .fields
+            .iter()
+            .map(|f| {
+              f.imports.iter().for_each(|i| {
+                arena.files[self.file_id].imports.insert(i.clone());
+              });
+
+              FieldData {
+                name: f.name.clone(),
+                tag: f.tag,
+                options: f.options.clone().into_boxed_slice(),
+                kind: f.kind,
+                field_type: f.field_type.clone(),
+              }
+            })
+            .collect();
+
+          OneofData {
+            name: of.name.clone(),
+            options: of.options.clone(),
+            fields: built_fields.into_boxed_slice(),
+          }
+        })
+        .collect();
+
+      arena.messages[self.id].oneofs = oneofs_data.into_boxed_slice();
     }
 
     MessageBuilder {
       id: self.id,
       arena: self.arena,
+      file_id: self.file_id,
       _phantom: PhantomData,
     }
   }
@@ -242,6 +278,7 @@ impl<S: MessageState> MessageBuilder<S> {
     MessageBuilder {
       id: self.id,
       arena: self.arena,
+      file_id: self.file_id,
       _phantom: PhantomData,
     }
   }
@@ -260,6 +297,7 @@ impl<S: MessageState> MessageBuilder<S> {
     MessageBuilder {
       id: self.id,
       arena: self.arena,
+      file_id: self.file_id,
       _phantom: PhantomData,
     }
   }
@@ -278,6 +316,7 @@ impl<S: MessageState> MessageBuilder<S> {
     MessageBuilder {
       id: self.id,
       arena: self.arena,
+      file_id: self.file_id,
       _phantom: PhantomData,
     }
   }
@@ -296,6 +335,7 @@ impl<S: MessageState> MessageBuilder<S> {
     MessageBuilder {
       id: self.id,
       arena: self.arena,
+      file_id: self.file_id,
       _phantom: PhantomData,
     }
   }

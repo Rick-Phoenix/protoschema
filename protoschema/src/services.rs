@@ -1,4 +1,4 @@
-use std::marker::PhantomData;
+use std::{marker::PhantomData, sync::Arc};
 
 use askama::Template;
 use bon::Builder;
@@ -22,14 +22,14 @@ pub struct ServiceHandler {
   #[builder(start_fn)]
   name: Box<str>,
   #[builder(field)]
-  imports: Vec<Box<str>>,
+  imports: Vec<Arc<str>>,
   #[builder(setters(vis = "", name = options_internal))]
   #[builder(default)]
   options: Box<[ProtoOption]>,
   #[builder(setters(vis = "", name = request_internal))]
-  request: Box<str>,
+  request: Arc<str>,
   #[builder(setters(vis = "", name = response_internal))]
-  response: Box<str>,
+  response: Arc<str>,
 }
 
 impl ServiceHandler {
@@ -85,7 +85,7 @@ pub struct ServiceData {
   pub imports: Vec<Box<str>>,
   pub name: Box<str>,
   pub handlers: Box<[ServiceHandler]>,
-  pub package: Box<str>,
+  pub package: Arc<str>,
   pub options: Box<[ProtoOption]>,
 }
 
@@ -94,7 +94,7 @@ impl<S: ServiceState> ServiceBuilder<S> {
     self.arena.borrow().services[self.id].clone()
   }
 
-  pub fn get_file(&self) -> Box<str> {
+  pub fn get_file(&self) -> Arc<str> {
     let arena = self.arena.borrow();
     arena.files[self.file_id].name.clone()
   }
@@ -105,7 +105,7 @@ impl<S: ServiceState> ServiceBuilder<S> {
     arena.services[self.id].name.clone()
   }
 
-  pub fn get_package(&self) -> Box<str> {
+  pub fn get_package(&self) -> Arc<str> {
     self.arena.borrow().name.clone()
   }
 

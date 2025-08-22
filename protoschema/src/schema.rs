@@ -1,4 +1,4 @@
-use std::{cell::RefCell, marker::PhantomData, rc::Rc};
+use std::{cell::RefCell, rc::Rc, sync::Arc};
 
 use crate::{
   enums::EnumData,
@@ -12,7 +12,7 @@ pub(crate) type Arena = Rc<RefCell<PackageData>>;
 
 #[derive(Default, Debug)]
 pub(crate) struct PackageData {
-  pub(crate) name: Box<str>,
+  pub(crate) name: Arc<str>,
   pub(crate) files: Vec<FileData>,
   pub(crate) messages: Vec<MessageData>,
   pub(crate) enums: Vec<EnumData>,
@@ -25,7 +25,7 @@ pub struct Package {
 }
 
 impl Package {
-  pub fn get_name(&self) -> Box<str> {
+  pub fn get_name(&self) -> Arc<str> {
     self.data.borrow().name.clone()
   }
 
@@ -49,7 +49,6 @@ impl Package {
     FileBuilder {
       id: file_id,
       arena: self.data.clone(),
-      _phantom: PhantomData,
     }
   }
 
