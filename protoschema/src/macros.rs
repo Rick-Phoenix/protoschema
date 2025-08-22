@@ -75,6 +75,107 @@ macro_rules! field {
   };
 }
 
+macro_rules! field_impl {
+  ($proto_type:ident, $module_name:ident $(, $import_path:literal)?) => {
+    #[macro_export]
+    macro_rules! $proto_type {
+      (repeated $name:literal, $validator:expr) => {
+        $crate::repeated_field!(
+          $name,
+          $crate::parse_field_type!(stringify!($proto_type)),
+          $proto_type,
+          $validator
+        )
+        $(
+          .add_import($import_path)
+        )?
+      };
+
+      (repeated $name:literal) => {
+        $crate::repeated_field!(
+          $name,
+          $crate::parse_field_type!(stringify!($proto_type)),
+          $proto_type
+        )
+        $(
+          .add_import($import_path)
+        )?
+      };
+
+      (optional $name:literal, $validator:expr) => {
+        $crate::field!(
+          optional
+          $name,
+          $crate::parse_field_type!(stringify!($proto_type)),
+          $proto_type,
+          $module_name,
+          $validator
+        )
+        $(
+          .add_import($import_path)
+        )?
+      };
+
+      (optional $name:literal) => {
+        $crate::field!(
+          optional
+          $name,
+          $crate::parse_field_type!(stringify!($proto_type)),
+          $proto_type,
+          $module_name
+        )
+        $(
+          .add_import($import_path)
+        )?
+      };
+
+      ($name:literal, $validator:expr) => {
+        $crate::field!(
+          $name,
+          $crate::parse_field_type!(stringify!($proto_type)),
+          $proto_type,
+          $module_name,
+          $validator
+        )
+        $(
+          .add_import($import_path)
+        )?
+      };
+
+      ($name:literal) => {
+        $crate::field!(
+          $name,
+          $crate::parse_field_type!(stringify!($proto_type)),
+          $proto_type,
+          $module_name
+        )
+        $(
+          .add_import($import_path)
+        )?
+      };
+    }
+  };
+}
+
+field_impl!(string, string);
+field_impl!(any, any, "google/protobuf/any.proto");
+field_impl!(duration, duration, "google/protobuf/duration.proto");
+field_impl!(timestamp, timestamp, "google/protobuf/timestamp.proto");
+field_impl!(bytes, bytes);
+field_impl!(bool, booleans);
+field_impl!(int64, numeric);
+field_impl!(int32, numeric);
+field_impl!(sint64, numeric);
+field_impl!(sint32, numeric);
+field_impl!(sfixed64, numeric);
+field_impl!(sfixed32, numeric);
+field_impl!(uint64, numeric);
+field_impl!(uint32, numeric);
+field_impl!(fixed64, numeric);
+field_impl!(fixed32, numeric);
+field_impl!(double, numeric);
+field_impl!(float, numeric);
+
 #[macro_export]
 macro_rules! enum_field {
   (repeated $enum_ident:expr, $name:literal $(, $validator:expr)?) => {
@@ -135,167 +236,51 @@ macro_rules! msg_field {
 }
 
 #[macro_export]
-macro_rules! get_func_path {
-  (repeated $proto_type:ident) => {
-    $crate::paste! { $crate::validators::repeated::[< build_repeated_ $proto_type _validator_option >] }
-  };
-
-  ($proto_type:ident, $path:path) => {
-    $crate::paste! { $crate::validators::$path::[< build_ $proto_type _validator_option >] }
-  };
-
-  ($proto_type:ident) => {
-    $crate::paste! { $crate::validators::$proto_type::[< build_ $proto_type _validator_option >] }
-  };
-}
-
-macro_rules! proto_field {
-  ($proto_type:ident, $path:path) => {
-    proto_field_inner!(
-      $proto_type,
-      $crate::paste! { $crate::validators::$path::[< build_ $proto_type _validator_option >] },
-      $crate::paste! { $crate::validators::repeated::[< build_repeated_ $proto_type _validator_option >] }
-    );
-  };
-
-  ($proto_type:ident) => {
-    proto_field_inner!(
-      $proto_type,
-      $crate::paste! { $crate::validators::$proto_type::[< build_ $proto_type _validator_option >] },
-      $crate::paste! { $crate::validators::repeated::[< build_repeated_ $proto_type _validator_option >] }
-    );
-  };
-}
-
-macro_rules! proto_field_inner {
-  ($proto_type:ident, $validator_func:expr, $repeated_validator:expr) => {
-    #[macro_export]
-    macro_rules! $proto_type {
-      ($field_name:literal, $validator:expr) => {
-        $crate::fields::Field::builder()
-          .name($field_name.into())
-          .field_type($crate::parse_field_type!(stringify!($proto_type)))
-          .option($validator_func($validator))
-          .add_import("buf/validate/validate.proto")
-      };
-
-      (repeated $field_name:literal, $validator:expr) => {
-        $crate::fields::Field::builder()
-          .name($field_name.into())
-          .repeated()
-          .field_type($crate::parse_field_type!(stringify!($proto_type)))
-          .option($repeated_validator($validator))
-          .add_import("buf/validate/validate.proto")
-      };
-
-      ($field_name:literal) => {
-        $crate::fields::Field::builder()
-          .name($field_name.into())
-          .field_type($crate::parse_field_type!(stringify!($proto_type)))
-      };
+macro_rules! map_impl {
+  ($name:literal, <$key_type:ident, $value_type:ident>, $values_type_name:ident $(, $validator:expr)?) => {
+    $crate::paste! {
+      $crate::fields::Field::builder()
+      .name($name.into())
+      .field_type($crate::FieldType::Map(
+        $crate::MapKey:: [<  $key_type:camel >],
+        Box::new($crate::parse_field_type!($value_type))
+      ))
+      $(
+        .option($crate::validators::map:: [< build_map_ $key_type _keys_ $values_type_name _values_ validator >]($validator))
+        .add_import("buf/validate/validate.proto")
+      )?
     }
   };
 }
 
 #[macro_export]
 macro_rules! map {
-  ($name:literal, <$key_type:ident, $value_type:ident>) => {
-    $crate::paste! {
-      $crate::fields::Field::builder()
-      .name($name.into())
-      .field_type($crate::FieldType::Map(
-        $crate::MapKey:: [<  $key_type:camel >],
-        Box::new($crate::parse_field_type!($value_type))
-      ))
-    }
-  };
-
-  ($name:literal, <$key_type:ident, $value_type:ident>, $validator:expr) => {
-    $crate::paste! {
-      $crate::fields::Field::builder()
-      .name($name.into())
-      .field_type($crate::FieldType::Map(
-        $crate::MapKey:: [<  $key_type:camel >],
-        Box::new($crate::parse_field_type!($value_type))
-      ))
-      .option($crate::validators::map:: [< build_map_ $key_type _keys_ $value_type _values_ validator >]($validator))
-      .add_import("buf/validate/validate.proto")
-    }
+  ($name:literal, <$key_type:ident, $value_type:ident> $(, $validator:expr)?) => {
+    $crate::map_impl!(
+      $name, <$key_type, $value_type>, $value_type $(, $validator)?
+    )
   };
 }
 
 #[macro_export]
 macro_rules! enum_map {
-  ($name:literal, <$key_type:ident, $value_type:ident>) => {
-    $crate::paste! {
-      $crate::fields::Field::builder()
-      .name($name.into())
-      .field_type($crate::FieldType::Map(
-        $crate::MapKey:: [<  $key_type:camel >],
-        Box::new($crate::parse_field_type!($value_type))
-      ))
-    }
-  };
-
-  ($name:literal, <$key_type:ident, $value_type:ident>, $validator:expr) => {
-    $crate::paste! {
-      $crate::fields::Field::builder()
-      .name($name.into())
-      .field_type($crate::FieldType::Map(
-        $crate::MapKey:: [<  $key_type:camel >],
-        Box::new($crate::parse_field_type!($value_type))
-      ))
-      .option($crate::validators::map:: [< build_map_ $key_type _keys_ enum _values_ validator >]($validator))
-      .add_import("buf/validate/validate.proto")
-    }
+  ($name:literal, <$key_type:ident, $enum_ident:ident> $(, $validator:expr)?) => {
+    $crate::map_impl!(
+      $name, <$key_type, $enum_ident>, enum $(, $validator)?
+    )
+    .add_import(&$enum_ident.get_file())
   };
 }
 
 #[macro_export]
 macro_rules! msg_map {
-  ($name:literal, <$key_type:ident, $value_type:ident>) => {
-    $crate::paste! {
-      $crate::fields::Field::builder()
-      .name($name.into())
-      .field_type($crate::FieldType::Map(
-        $crate::MapKey:: [<  $key_type:camel >],
-        Box::new($value_type.get_type())
-      ))
-    }
-  };
-
-  ($name:literal, <$key_type:ident, $value_type:ident>, $validator:expr) => {
-    $crate::paste! {
-      $crate::fields::Field::builder()
-      .name($name.into())
-      .field_type($crate::FieldType::Map(
-        $crate::MapKey:: [<  $key_type:camel >],
-        Box::new($value_type.get_type())
-      ))
-      .option($crate::validators::map:: [< build_map_ $key_type _keys_ message _values_ validator >]($validator))
-      .add_import("buf/validate/validate.proto")
-    }
+  ($name:literal, <$key_type:ident, $message_ident:ident> $(, $validator:expr)?) => {
+    $crate::map_impl!(
+      $name, <$key_type, $message_ident>, message $(, $validator)?
+    )
+    .add_import(&$message_ident.get_file())
   };
 }
-
-proto_field!(string);
-proto_field!(any);
-proto_field!(duration);
-proto_field!(timestamp);
-proto_field!(bytes);
-proto_field!(bool);
-proto_field!(int64, numeric);
-proto_field!(int32, numeric);
-proto_field!(sint64, numeric);
-proto_field!(sint32, numeric);
-proto_field!(sfixed64, numeric);
-proto_field!(sfixed32, numeric);
-proto_field!(uint64, numeric);
-proto_field!(uint32, numeric);
-proto_field!(fixed64, numeric);
-proto_field!(fixed32, numeric);
-proto_field!(double, numeric);
-proto_field!(float, numeric);
 
 #[macro_export]
 macro_rules! message_body {
