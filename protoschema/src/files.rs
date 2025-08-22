@@ -2,6 +2,7 @@ use std::{collections::HashSet, marker::PhantomData};
 
 use crate::{
   enums::{EnumBuilder, EnumData},
+  extensions::Extension,
   message::{MessageBuilder, MessageData},
   rendering::FileTemplate,
   schema::Arena,
@@ -17,6 +18,7 @@ pub struct FileData {
   pub enums: Vec<usize>,
   pub imports: HashSet<Box<str>>,
   pub services: Vec<usize>,
+  pub extensions: Vec<Extension>,
 }
 
 #[derive(Debug, Clone)]
@@ -99,6 +101,24 @@ impl<S: FileState> FileBuilder<S> {
       id: service_id,
       arena: self.arena.clone(),
       file_id: self.id,
+      _phantom: PhantomData,
+    }
+  }
+
+  pub fn add_extension(self, extension: Extension) -> FileBuilder<S> {
+    {
+      let mut arena = self.arena.borrow_mut();
+
+      extension.imports.iter().for_each(|i| {
+        arena.files[self.id].imports.insert(i.clone());
+      });
+
+      arena.files[self.id].extensions.push(extension)
+    }
+
+    FileBuilder {
+      id: self.id,
+      arena: self.arena,
       _phantom: PhantomData,
     }
   }

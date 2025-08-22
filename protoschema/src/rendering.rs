@@ -3,8 +3,8 @@ use std::{collections::HashSet, ops::Range};
 use askama::Template;
 
 use crate::{
-  enums::EnumData, fields::Field, files::FileData, message::MessageData, oneofs::OneofData,
-  schema::PackageData, services::ServiceData, ProtoOption,
+  enums::EnumData, extensions::Extension, fields::Field, files::FileData, message::MessageData,
+  oneofs::OneofData, schema::PackageData, services::ServiceData, ProtoOption,
 };
 
 #[derive(Debug, Clone, Template, Default)]
@@ -16,6 +16,7 @@ pub struct FileTemplate {
   pub messages: Vec<MessageTemplate>,
   pub enums: Vec<EnumTemplate>,
   pub services: Vec<ServiceData>,
+  pub extensions: Vec<Extension>,
 }
 
 #[derive(Clone, Debug, Default, Template)]
@@ -79,6 +80,7 @@ impl FileData {
       package: package.name.clone(),
       messages: file_messages,
       imports: self.imports.clone(),
+      extensions: self.extensions.clone(),
       enums: built_enums,
       services,
     }

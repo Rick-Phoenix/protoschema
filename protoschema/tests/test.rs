@@ -2,8 +2,8 @@
 
 use askama::Template;
 use protoschema::{
-  enum_field, enum_map, message_body, msg_field, msg_map, proto_enum, schema::Package, services,
-  string, OptionValue, ProtoOption,
+  enum_field, enum_map, extension, message_body, msg_field, msg_map, proto_enum, schema::Package,
+  services, string, OptionValue, ProtoOption,
 };
 
 #[test]
@@ -76,6 +76,10 @@ fn main_test() {
     10 => field.clone(),
 
   };
+
+  extension!(file, "google.protobuf.MessageOptions" {
+    15 => string!("abc").options(&[opt.clone(), opt.clone(), opt.clone()])
+  });
 
   let file_renders = &package.build_templates()[0];
 

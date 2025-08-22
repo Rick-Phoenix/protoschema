@@ -28,6 +28,7 @@ impl<T> IsUnset for Unset<T> {}
 pub struct Empty;
 
 pub mod enums;
+pub mod extensions;
 pub mod fields;
 pub mod files;
 mod message;

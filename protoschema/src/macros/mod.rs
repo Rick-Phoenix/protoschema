@@ -1,4 +1,5 @@
 mod enums_macros;
+mod extensions_macros;
 mod fields_macros;
 mod maps_macros;
 mod parse_reserved;

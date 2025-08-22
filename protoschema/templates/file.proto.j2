@@ -4,6 +4,19 @@ import "{{ import }}";
 {% endif %}
 {% endfor %}
 
+{% import "opt.proto.j2" as opts %}
+
+{%- for extension in extensions %}
+extend {{ extension.target }} {
+  {%- for field in extension.fields %}
+  {{ field.kind }}{{ field.field_type.render_name(package) }} {{ field.name }} = {{ field.tag }}
+  {%- if !field.options.is_empty() -%}
+     {{ " " }}{% call opts::field_opts(&field.options) %}
+  {%- endif -%};
+  {%- endfor %}
+}
+{%- endfor %}
+
 
 {%- for enum_ in enums %}
 {{ enum_ }}
