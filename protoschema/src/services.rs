@@ -1,5 +1,7 @@
 use std::marker::PhantomData;
 
+use bon::Builder;
+
 use crate::{
   message::MessageBuilder, schema::Arena, sealed, Empty, IsSet, IsUnset, ProtoOption, Set, Unset,
 };
@@ -11,20 +13,44 @@ pub struct ServiceBuilder<S: ServiceState = Empty> {
   pub(crate) _phantom: PhantomData<fn() -> S>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Builder)]
+#[builder(start_fn = new)]
 pub struct ServiceHandler {
+  #[builder(start_fn)]
   name: Box<str>,
+  #[builder(setters(vis = "", name = options_internal))]
+  options: Option<Box<[ProtoOption]>>,
+  #[builder(setters(vis = "", name = request_id_internal))]
   request_id: usize,
+  #[builder(setters(vis = "", name = response_id_internal))]
   response_id: usize,
 }
 
-impl ServiceHandler {
-  pub fn new(name: &str, request: &MessageBuilder, response: &MessageBuilder) -> Self {
-    ServiceHandler {
-      name: name.into(),
-      request_id: request.get_id(),
-      response_id: response.get_id(),
-    }
+use service_handler_builder::{
+  IsUnset as HandlerIsUnset, SetOptions as HandlerSetOptions, SetRequestId, SetResponseId,
+  State as HandlerState,
+};
+
+impl<S: HandlerState> ServiceHandlerBuilder<S> {
+  pub fn options(self, options: &[ProtoOption]) -> ServiceHandlerBuilder<HandlerSetOptions<S>>
+  where
+    S::Options: HandlerIsUnset,
+  {
+    self.options_internal(options.into())
+  }
+
+  pub fn request(self, message: &MessageBuilder) -> ServiceHandlerBuilder<SetRequestId<S>>
+  where
+    S::RequestId: HandlerIsUnset,
+  {
+    self.request_id_internal(message.get_id())
+  }
+
+  pub fn response(self, message: &MessageBuilder) -> ServiceHandlerBuilder<SetResponseId<S>>
+  where
+    S::ResponseId: HandlerIsUnset,
+  {
+    self.response_id_internal(message.get_id())
   }
 }
 
@@ -44,7 +70,7 @@ impl<S: ServiceState> ServiceBuilder<S> {
     arena.files[file_id].name.clone()
   }
 
-  pub fn handlers(self, handlers: &[ServiceHandler]) -> ServiceBuilder<SetOptions<S>>
+  pub fn handlers(self, handlers: &[ServiceHandler]) -> ServiceBuilder<SetHandlers<S>>
   where
     S::Handlers: IsUnset,
   {

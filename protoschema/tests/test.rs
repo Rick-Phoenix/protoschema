@@ -2,8 +2,8 @@
 
 use askama::Template;
 use protoschema::{
-  enum_field, enum_map, message_body, msg_field, msg_map, proto_enum, schema::Package, string,
-  OptionValue, ProtoOption,
+  enum_field, enum_map, message_body, msg_field, msg_map, proto_enum, schema::Package, service,
+  services, string, OptionValue, ProtoOption,
 };
 
 #[test]
@@ -26,6 +26,15 @@ fn main_test() {
     file.new_enum("file_enum"),
     options = [opt.clone()],
     1 => "UNSPECIFIED"
+  );
+
+  service!(
+    file,
+    MyService {
+      options = [ opt.clone(), opt.clone() ];
+      GetUser(msg => msg2) [ opt.clone() ];
+      GetUser2(msg => msg2);
+    }
   );
 
   message_body! {
