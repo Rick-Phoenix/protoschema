@@ -2,8 +2,8 @@
 
 use askama::Template;
 use protoschema::{
-  enum_field, enum_map, message_body, msg_field, msg_map, proto_enum, schema::Package, service,
-  services, string, OptionValue, ProtoOption,
+  enum_field, enum_map, message_body, msg_field, msg_map, proto_enum, schema::Package, services,
+  string, OptionValue, ProtoOption,
 };
 
 #[test]
