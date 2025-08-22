@@ -51,13 +51,14 @@ macro_rules! proto_enum_impl {
     @options($($options:tt)*),
     @reserved($($reserved:tt)*),
     @reserved_names(),
-    @rest($(,)? reserved_names = [ $($reserved_names:tt)* ] $($rest:tt)*)
+    // Expr must be followed by a comma
+    @rest($(,)? reserved_names = $reserved_names:expr, $($rest:tt)*)
   ) => {
     $crate::proto_enum_impl! {
       @builder($enum),
       @options($($options)*),
       @reserved($($reserved)*),
-      @reserved_names(&[ $($reserved_names)* ]),
+      @reserved_names($reserved_names),
       @rest($($rest)*)
     }
   };
@@ -67,21 +68,21 @@ macro_rules! proto_enum_impl {
     @options($($options:expr)?),
     @reserved($($reserved:tt)*),
     @reserved_names($($reserved_names:expr)?),
-    @rest($(,)? $($tag:literal => $variant:literal),* $(,)?)
+    @rest($(,)? $($tag:literal => $variant:expr),* $(,)?)
   ) => {
     {
       let mut temp_enum = $enum
 
       $(
-        .options($options.as_slice())
+        .options($options)
       )?
 
       $(
-        .reserved_names($reserved_names.as_slice())
+        .reserved_names($reserved_names)
       )?
 
       .variants(
-        &[ $(($tag, $variant.into())),* ]
+        [ $(($tag, $variant)),* ]
       );
 
       $crate::parse_reserved!{

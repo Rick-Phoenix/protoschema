@@ -55,11 +55,11 @@ impl<'a> From<MapValidator<'a>> for ProtoOption {
     insert_option!(validator, values, max_pairs, Uint);
 
     if let Some(keys_option) = validator.keys {
-      values.insert("keys".into(), keys_option.value);
+      values.insert("keys".into(), (*keys_option.value).clone());
     }
 
     if let Some(values_option) = validator.values {
-      values.insert("values".into(), values_option.value);
+      values.insert("values".into(), (*values_option.value).clone());
     }
 
     let mut options_map: BTreeMap<Box<str>, OptionValue> = btreemap! {
@@ -70,8 +70,8 @@ impl<'a> From<MapValidator<'a>> for ProtoOption {
     insert_option!(validator, options_map, required, bool);
 
     ProtoOption {
-      name,
-      value: OptionValue::Message(options_map),
+      name: name.into(),
+      value: OptionValue::Message(options_map).into(),
     }
   }
 }

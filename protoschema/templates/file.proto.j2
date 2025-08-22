@@ -27,6 +27,20 @@ extend {{ extension.target }} {
 {%- endfor -%}
 
 {%- for service in services %}
-{{ service }}
+service {{ service.name }} {
+  {% for opt in service.options %}
+    option {{ opt.name }} = {{ opt.value }};
+  {%- endfor -%}
+
+  {%+ for handler in service.handlers +%}
+    rpc {{ handler.name }} ({{ handler.render_request(&package) }}) returns ({{ handler.render_response(&package) }})
+
+    {%- if !handler.options.is_empty() %} { 
+    {%- for opt in handler.options %}
+      option {{ opt.name }} = {{ opt.value }};
+    {% endfor %}}
+    {%- endif %};
+  {%- endfor %}
+}
 {%- endfor -%}
 

@@ -75,11 +75,6 @@ impl<'a> From<BytesValidator<'a>> for ProtoOption {
         "const".into(),
         OptionValue::String(format_bytes_as_proto_string_literal(const_val).into()),
       );
-
-      return ProtoOption {
-        name,
-        value: OptionValue::Message(values),
-      };
     }
 
     validate_lists(validator.in_, validator.not_in).unwrap_or_else(|invalid| {
@@ -115,8 +110,8 @@ impl<'a> From<BytesValidator<'a>> for ProtoOption {
     insert_option!(validator, options_map, required, bool);
 
     ProtoOption {
-      name,
-      value: OptionValue::Message(options_map),
+      name: name.into(),
+      value: OptionValue::Message(options_map).into(),
     }
   }
 }

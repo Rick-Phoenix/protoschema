@@ -1,9 +1,8 @@
-use std::{collections::HashSet, marker::PhantomData, ops::Range, sync::Arc};
+use std::{marker::PhantomData, ops::Range, sync::Arc};
 
 use crate::{
   enums::{EnumBuilder, EnumData},
   fields::{self, FieldBuilder, FieldData},
-  from_str_slice,
   oneofs::{Oneof, OneofData},
   rendering::MessageTemplate,
   schema::{Arena, PackageData},
@@ -63,7 +62,7 @@ pub struct MessageData {
   pub options: Box<[ProtoOption]>,
   pub enums: Vec<usize>,
   pub messages: Vec<usize>,
-  pub imports: HashSet<Box<str>>,
+  pub imports: Vec<Arc<str>>,
 }
 
 impl<S: MessageState> MessageBuilder<S> {
@@ -75,10 +74,6 @@ impl<S: MessageState> MessageBuilder<S> {
 
   pub fn get_id(&self) -> usize {
     self.id
-  }
-
-  pub fn get_file_id(&self) -> usize {
-    self.file_id
   }
 
   pub fn get_data(self) -> MessageTemplate
@@ -116,7 +111,7 @@ impl<S: MessageState> MessageBuilder<S> {
 
   // Setters
   pub fn new_message(&self, name: &str) -> MessageBuilder {
-    let file_id = self.get_file_id();
+    let file_id = self.file_id;
     let package = self.get_package();
     let mut arena = self.arena.borrow_mut();
 
@@ -176,20 +171,18 @@ impl<S: MessageState> MessageBuilder<S> {
     }
   }
 
-  pub fn fields(
-    self,
-    fields: &[(u32, FieldBuilder<fields::SetFieldType<fields::SetName>>)],
-  ) -> MessageBuilder<SetFields<S>>
+  pub fn fields<I>(self, fields: I) -> MessageBuilder<SetFields<S>>
   where
     S::Fields: IsUnset,
+    I: IntoIterator<Item = (u32, FieldBuilder<fields::SetFieldType<fields::SetName>>)>,
   {
     {
       let mut arena = self.arena.borrow_mut();
 
       let final_fields: Vec<FieldData> = fields
-        .iter()
+        .into_iter()
         .map(|(tag, field)| {
-          let field = field.clone().tag(*tag).build();
+          let field = field.clone().tag(tag).build();
           let file_id = self.file_id;
 
           for import in &field.imports {
@@ -217,15 +210,16 @@ impl<S: MessageState> MessageBuilder<S> {
     }
   }
 
-  pub fn oneofs(self, oneofs: &[Oneof]) -> MessageBuilder<SetOneofs<S>>
+  pub fn oneofs<I>(self, oneofs: I) -> MessageBuilder<SetOneofs<S>>
   where
     S::Oneofs: IsUnset,
+    I: IntoIterator<Item = Oneof>,
   {
     {
       let mut arena = self.arena.borrow_mut();
 
       let oneofs_data: Vec<OneofData> = oneofs
-        .iter()
+        .into_iter()
         .map(|of| {
           let built_fields: Vec<FieldData> = of
             .fields
@@ -264,15 +258,16 @@ impl<S: MessageState> MessageBuilder<S> {
     }
   }
 
-  pub fn options(self, options: &[ProtoOption]) -> MessageBuilder<SetOptions<S>>
+  pub fn options<I>(self, options: I) -> MessageBuilder<SetOptions<S>>
   where
     S::Options: IsUnset,
+    I: IntoIterator<Item = ProtoOption>,
   {
     {
       let mut arena = self.arena.borrow_mut();
       let msg = &mut arena.messages[self.id];
 
-      msg.options = options.into()
+      msg.options = options.into_iter().collect()
     }
 
     MessageBuilder {
@@ -283,15 +278,18 @@ impl<S: MessageState> MessageBuilder<S> {
     }
   }
 
-  pub fn reserved_names(self, names: &[&str]) -> MessageBuilder<SetReservedNames<S>>
+  pub fn reserved_names<I, Str>(self, names: I) -> MessageBuilder<SetReservedNames<S>>
   where
     S::ReservedNames: IsUnset,
+    I: IntoIterator<Item = Str>,
+    Str: AsRef<str>,
   {
     {
       let mut arena = self.arena.borrow_mut();
       let msg = &mut arena.messages[self.id];
+      let reserved_names: Vec<Box<str>> = names.into_iter().map(|n| n.as_ref().into()).collect();
 
-      msg.reserved_names = from_str_slice(names)
+      msg.reserved_names = reserved_names.into_boxed_slice();
     }
 
     MessageBuilder {
@@ -302,15 +300,16 @@ impl<S: MessageState> MessageBuilder<S> {
     }
   }
 
-  pub fn reserved_numbers(self, numbers: &[u32]) -> MessageBuilder<SetReservedNumbers<S>>
+  pub fn reserved_numbers<I>(self, numbers: I) -> MessageBuilder<SetReservedNumbers<S>>
   where
     S::ReservedNumbers: IsUnset,
+    I: IntoIterator<Item = u32>,
   {
     {
       let mut arena = self.arena.borrow_mut();
       let msg = &mut arena.messages[self.id];
 
-      msg.reserved_numbers = numbers.into()
+      msg.reserved_numbers = numbers.into_iter().collect()
     }
 
     MessageBuilder {
@@ -321,15 +320,16 @@ impl<S: MessageState> MessageBuilder<S> {
     }
   }
 
-  pub fn reserved_ranges(self, ranges: &[Range<u32>]) -> MessageBuilder<SetReservedRanges<S>>
+  pub fn reserved_ranges<I>(self, ranges: I) -> MessageBuilder<SetReservedRanges<S>>
   where
     S::ReservedRanges: IsUnset,
+    I: IntoIterator<Item = Range<u32>>,
   {
     {
       let mut arena = self.arena.borrow_mut();
       let msg = &mut arena.messages[self.id];
 
-      msg.reserved_ranges = ranges.into()
+      msg.reserved_ranges = ranges.into_iter().collect()
     }
 
     MessageBuilder {

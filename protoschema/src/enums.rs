@@ -1,8 +1,8 @@
 use std::{marker::PhantomData, ops::Range, sync::Arc};
 
 use crate::{
-  from_str_slice, rendering::EnumTemplate, schema::Arena, sealed, Empty, FieldType, IsSet, IsUnset,
-  ProtoOption, Set, Unset,
+  rendering::EnumTemplate, schema::Arena, sealed, Empty, FieldType, IsSet, IsUnset, ProtoOption,
+  Set, Unset,
 };
 
 #[derive(Clone, Debug)]
@@ -20,7 +20,7 @@ pub struct EnumData {
   pub file_id: usize,
   pub package: Arc<str>,
   pub parent_message: Option<usize>,
-  pub reserved_numbers: Box<[u32]>,
+  pub reserved_numbers: Box<[i32]>,
   pub reserved_ranges: Box<[Range<i32>]>,
   pub reserved_names: Box<[Box<str>]>,
   pub options: Box<[ProtoOption]>,
@@ -59,15 +59,20 @@ impl<S: EnumState> EnumBuilder<S> {
   }
 
   // Setters
-  pub fn variants(self, variants: &[(i32, Box<str>)]) -> EnumBuilder<SetVariants<S>>
+  pub fn variants<I, Str>(self, variants: I) -> EnumBuilder<SetVariants<S>>
   where
     S::Variants: IsUnset,
+    I: IntoIterator<Item = (i32, Str)>,
+    Str: AsRef<str>,
   {
     {
       let mut arena = self.arena.borrow_mut();
       let enum_ = &mut arena.enums[self.id];
 
-      enum_.variants = variants.into();
+      enum_.variants = variants
+        .into_iter()
+        .map(|(num, name)| (num, name.as_ref().into()))
+        .collect();
     }
 
     EnumBuilder {
@@ -77,15 +82,16 @@ impl<S: EnumState> EnumBuilder<S> {
     }
   }
 
-  pub fn options(self, options: &[ProtoOption]) -> EnumBuilder<SetOptions<S>>
+  pub fn options<I>(self, options: I) -> EnumBuilder<SetOptions<S>>
   where
     S::Options: IsUnset,
+    I: IntoIterator<Item = ProtoOption>,
   {
     {
       let mut arena = self.arena.borrow_mut();
       let msg = &mut arena.enums[self.id];
 
-      msg.options = options.into()
+      msg.options = options.into_iter().collect()
     }
 
     EnumBuilder {
@@ -95,15 +101,18 @@ impl<S: EnumState> EnumBuilder<S> {
     }
   }
 
-  pub fn reserved_names(self, names: &[&str]) -> EnumBuilder<SetReservedNames<S>>
+  pub fn reserved_names<I, Str>(self, names: I) -> EnumBuilder<SetReservedNames<S>>
   where
     S::ReservedNames: IsUnset,
+    I: IntoIterator<Item = Str>,
+    Str: AsRef<str>,
   {
     {
       let mut arena = self.arena.borrow_mut();
       let msg = &mut arena.enums[self.id];
+      let reserved_names: Vec<Box<str>> = names.into_iter().map(|n| n.as_ref().into()).collect();
 
-      msg.reserved_names = from_str_slice(names)
+      msg.reserved_names = reserved_names.into_boxed_slice()
     }
 
     EnumBuilder {
@@ -113,15 +122,16 @@ impl<S: EnumState> EnumBuilder<S> {
     }
   }
 
-  pub fn reserved_numbers(self, numbers: &[u32]) -> EnumBuilder<SetReservedNumbers<S>>
+  pub fn reserved_numbers<I>(self, numbers: I) -> EnumBuilder<SetReservedNumbers<S>>
   where
     S::ReservedNumbers: IsUnset,
+    I: IntoIterator<Item = i32>,
   {
     {
       let mut arena = self.arena.borrow_mut();
       let msg = &mut arena.enums[self.id];
 
-      msg.reserved_numbers = numbers.into()
+      msg.reserved_numbers = numbers.into_iter().collect()
     }
 
     EnumBuilder {
@@ -131,15 +141,16 @@ impl<S: EnumState> EnumBuilder<S> {
     }
   }
 
-  pub fn reserved_ranges(self, ranges: &[Range<i32>]) -> EnumBuilder<SetReservedRanges<S>>
+  pub fn reserved_ranges<I>(self, ranges: I) -> EnumBuilder<SetReservedRanges<S>>
   where
     S::ReservedRanges: IsUnset,
+    I: IntoIterator<Item = Range<i32>>,
   {
     {
       let mut arena = self.arena.borrow_mut();
       let msg = &mut arena.enums[self.id];
 
-      msg.reserved_ranges = ranges.into()
+      msg.reserved_ranges = ranges.into_iter().collect()
     }
 
     EnumBuilder {

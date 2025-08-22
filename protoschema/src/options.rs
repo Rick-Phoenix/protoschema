@@ -1,23 +1,25 @@
-use std::{collections::BTreeMap, fmt::Display};
+use std::{collections::BTreeMap, fmt::Display, sync::Arc};
 
 use askama::Template;
 
 use crate::field_type::{Duration, Timestamp};
 
 pub mod common_options {
+  use std::sync::{Arc, LazyLock};
+
   use crate::{OptionValue, ProtoOption};
 
-  pub const ONEOF_REQUIRED: ProtoOption = ProtoOption {
-    name: "(buf.validate.oneof).required",
-    value: OptionValue::Bool(true),
-  };
+  pub static ONEOF_REQUIRED: LazyLock<ProtoOption> = LazyLock::new(|| ProtoOption {
+    name: "(buf.validate.oneof).required".into(),
+    value: Arc::new(OptionValue::Bool(true)),
+  });
 }
 
 #[derive(Template, Clone, Debug)]
 #[template(path = "opt.proto.j2")]
 pub struct ProtoOption {
-  pub name: &'static str,
-  pub value: OptionValue,
+  pub name: Arc<str>,
+  pub value: Arc<OptionValue>,
 }
 
 #[derive(Clone, Debug)]

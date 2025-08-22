@@ -45,10 +45,6 @@ impl<'a> From<DurationValidator<'a>> for ProtoOption {
 
     if let Some(const_val) = validator.const_ {
       values.insert("const".into(), OptionValue::Duration(const_val));
-      return ProtoOption {
-        name,
-        value: OptionValue::Message(values),
-      };
     }
 
     validate_comparables(validator.lt, validator.lte, validator.gt, validator.gte);
@@ -74,8 +70,8 @@ impl<'a> From<DurationValidator<'a>> for ProtoOption {
     insert_option!(validator, options_map, required, bool);
 
     ProtoOption {
-      name,
-      value: OptionValue::Message(options_map),
+      name: name.into(),
+      value: OptionValue::Message(options_map).into(),
     }
   }
 }

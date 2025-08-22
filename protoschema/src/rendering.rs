@@ -36,7 +36,7 @@ pub struct MessageTemplate {
 pub struct EnumTemplate {
   pub name: Arc<str>,
   pub variants: Box<[(i32, Box<str>)]>,
-  pub reserved_numbers: Box<[u32]>,
+  pub reserved_numbers: Box<[i32]>,
   pub reserved_ranges: Box<[Range<i32>]>,
   pub reserved_names: Box<[Box<str>]>,
   pub options: Box<[ProtoOption]>,

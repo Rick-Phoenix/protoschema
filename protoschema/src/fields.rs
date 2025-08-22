@@ -76,8 +76,11 @@ impl<S: field_builder::State> FieldBuilder<S> {
     self
   }
 
-  pub fn options(mut self, options: &[ProtoOption]) -> Self {
-    self.options = options.to_vec();
+  pub fn options<I>(mut self, options: I) -> Self
+  where
+    I: IntoIterator<Item = ProtoOption>,
+  {
+    self.options = options.into_iter().collect();
     self
   }
 

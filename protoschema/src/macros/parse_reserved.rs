@@ -16,7 +16,7 @@ macro_rules! parse_reserved {
     @rest($(,)?)
   ) => {
      $builder
-      .reserved_ranges(&[$(::std::ops::Range { start: $start, end: $end }),*])
+      .reserved_ranges([$(::std::ops::Range { start: $start, end: $end }),*])
   };
 
   (
@@ -26,7 +26,7 @@ macro_rules! parse_reserved {
     @rest($(,)?)
   ) => {
      $builder
-      .reserved_numbers(&[$($number),*])
+      .reserved_numbers([$($number),*])
   };
 
   (
@@ -36,8 +36,8 @@ macro_rules! parse_reserved {
     @rest($(,)?)
   ) => {
      $builder
-      .reserved_ranges(&[$(::std::ops::Range { start: $start, end: $end }),*])
-      .reserved_numbers(&[$($number),*])
+      .reserved_ranges([$(::std::ops::Range { start: $start, end: $end }),*])
+      .reserved_numbers([$($number),*])
   };
 
   (

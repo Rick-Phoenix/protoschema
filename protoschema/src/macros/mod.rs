@@ -16,7 +16,7 @@ macro_rules! message_body {
       @reserved()
       @reserved_names()
       @input($($tokens)*)
-    }.options($options.as_slice())
+    }.options($options)
   };
 
   ($msg_builder:expr, $($tokens:tt)*) => {
@@ -47,14 +47,14 @@ macro_rules! _internal_message_body {
     {
       { $($enums)* };
 
-      let fields_list = &[ $($fields)* ];
-      let oneofs_list = &[ $($oneofs)* ];
+      let fields_list = [ $($fields)* ];
+      let oneofs_list = [ $($oneofs)* ];
 
       let mut new_msg = $builder
         .fields(fields_list)
         .oneofs(oneofs_list)
       $(
-        .reserved_names($names.as_slice())
+        .reserved_names($names)
       )?;
 
       $crate::parse_reserved! {
@@ -95,7 +95,8 @@ macro_rules! _internal_message_body {
     @enums($($enums:tt)*)
     @reserved($($reserved:tt)*)
     @reserved_names()
-    @input($(,)? reserved_names = [ $($reserved_names:tt)* ] $($rest:tt)*)
+    // Expr must be followed by a comma
+    @input($(,)? reserved_names = $reserved_names:expr, $($rest:tt)*)
   ) => {
     $crate::_internal_message_body! {
       @builder($builder)
@@ -103,7 +104,7 @@ macro_rules! _internal_message_body {
       @oneofs($($oneofs)*)
       @enums($($enums)*)
       @reserved($($reserved)*)
-      @reserved_names(&[ $($reserved_names)* ])
+      @reserved_names($reserved_names)
       @input($($rest)*)
     }
   };
@@ -207,7 +208,7 @@ macro_rules! oneof {
     {
       $crate::oneofs::Oneof::builder()
         .name($name.into())
-        .options($options_expr.as_slice())
+        .options($options_expr)
         .fields(
           vec! [ $($field.tag($tag).build()),* ].into_boxed_slice()
         )

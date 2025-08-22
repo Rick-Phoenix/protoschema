@@ -13,8 +13,8 @@ fn main_test() {
   let file = package.new_file("abc");
 
   let opt = ProtoOption {
-    name: "abc",
-    value: OptionValue::Bool(true),
+    name: "abc".into(),
+    value: OptionValue::Bool(true).into(),
   };
 
   let msg = file.new_message("MyMsg");
@@ -24,6 +24,7 @@ fn main_test() {
 
   let example_enum = proto_enum!(
     file.new_enum("file_enum"),
+    reserved_names = ["abc"],
     options = [opt.clone()],
     1 => "UNSPECIFIED"
   );
@@ -50,7 +51,7 @@ fn main_test() {
     reserved_names = [ "one", "two" ],
     reserved = [ 2, 2..4 ],
 
-    2 => string!("abc").options(&[opt.clone(), opt.clone(), opt.clone()]),
+    2 => string!("abc").options([opt.clone(), opt.clone(), opt.clone()]),
     3 => string!(repeated "abc", |r, i| r.items(i.min_len(4).ignore_if_zero_value())),
     6 => enum_map!("abc", <string, example_enum>, |m, k, v| m.min_pairs(3).keys(k.min_len(15)).values(v.defined_only())),
     5 => enum_field!(example_enum, "enum_without_validator"),
@@ -78,7 +79,7 @@ fn main_test() {
   };
 
   extension!(file, msg2 {
-    15 => string!("abc").options(&[opt.clone(), opt.clone(), opt.clone()])
+    15 => string!("abc").options([opt.clone(), opt.clone(), opt.clone()])
   });
 
   let file_renders = &package.build_templates()[0];

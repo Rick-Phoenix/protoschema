@@ -11,7 +11,7 @@ macro_rules! parse_field_type {
 
 #[macro_export]
 macro_rules! repeated_field {
-  ($name:literal, $field_type:expr, $proto_type:ident $(, $validator:expr)?) => {
+  ($name:expr, $field_type:expr, $proto_type:ident $(, $validator:expr)?) => {
     $crate::paste! {
       $crate::fields::Field::builder()
       .name($name.into())
@@ -27,7 +27,7 @@ macro_rules! repeated_field {
 
 #[macro_export]
 macro_rules! field {
-  ($($optional:ident)? $name:literal, $field_type:expr, $proto_type:ident, $module_name:ident $(, $validator:expr)? ) => {
+  ($($optional:ident)? $name:expr, $field_type:expr, $proto_type:ident, $module_name:ident $(, $validator:expr)? ) => {
     $crate::paste! {
       $crate::fields::Field::builder()
       .name($name.into())
@@ -42,10 +42,10 @@ macro_rules! field {
 }
 
 macro_rules! field_impl {
-  ($proto_type:ident, $module_name:ident $(, $import_path:literal)?) => {
+  ($proto_type:ident, $module_name:ident $(, $import_path:expr)?) => {
     #[macro_export]
     macro_rules! $proto_type {
-      (repeated $name:literal, $validator:expr) => {
+      (repeated $name:expr, $validator:expr) => {
         $crate::repeated_field!(
           $name,
           $crate::parse_field_type!(stringify!($proto_type)),
@@ -57,7 +57,7 @@ macro_rules! field_impl {
         )?
       };
 
-      (repeated $name:literal) => {
+      (repeated $name:expr) => {
         $crate::repeated_field!(
           $name,
           $crate::parse_field_type!(stringify!($proto_type)),
@@ -68,7 +68,7 @@ macro_rules! field_impl {
         )?
       };
 
-      (optional $name:literal, $validator:expr) => {
+      (optional $name:expr, $validator:expr) => {
         $crate::field!(
           optional
           $name,
@@ -82,7 +82,7 @@ macro_rules! field_impl {
         )?
       };
 
-      (optional $name:literal) => {
+      (optional $name:expr) => {
         $crate::field!(
           optional
           $name,
@@ -95,7 +95,7 @@ macro_rules! field_impl {
         )?
       };
 
-      ($name:literal, $validator:expr) => {
+      ($name:expr, $validator:expr) => {
         $crate::field!(
           $name,
           $crate::parse_field_type!(stringify!($proto_type)),
@@ -108,7 +108,7 @@ macro_rules! field_impl {
         )?
       };
 
-      ($name:literal) => {
+      ($name:expr) => {
         $crate::field!(
           $name,
           $crate::parse_field_type!(stringify!($proto_type)),
@@ -144,7 +144,7 @@ field_impl!(float, numeric);
 
 #[macro_export]
 macro_rules! enum_field {
-  (repeated $enum_ident:expr, $name:literal $(, $validator:expr)?) => {
+  (repeated $enum_ident:expr, $name:expr $(, $validator:expr)?) => {
     $crate::repeated_field!(
       $name,
       $crate::FieldType::Enum($enum_ident.get_full_name().into()),
@@ -154,7 +154,7 @@ macro_rules! enum_field {
     .add_import(&$enum_ident.get_file())
   };
 
-  (optional $enum_ident:expr, $name:literal $(, $validator:expr)? ) => {
+  (optional $enum_ident:expr, $name:expr $(, $validator:expr)? ) => {
     $crate::field!(
       optional
       $name,
@@ -165,7 +165,7 @@ macro_rules! enum_field {
     .add_import(&$enum_ident.get_file())
   };
 
-  ($enum_ident:expr, $name:literal $(, $validator:expr)?) => {
+  ($enum_ident:expr, $name:expr $(, $validator:expr)?) => {
     $crate::field!(
       $name,
       $crate::FieldType::Enum($enum_ident.get_full_name().into()),
@@ -179,7 +179,7 @@ macro_rules! enum_field {
 
 #[macro_export]
 macro_rules! msg_field {
-  (repeated $msg_ident:expr, $name:literal $(, $validator:expr)?) => {
+  (repeated $msg_ident:expr, $name:expr $(, $validator:expr)?) => {
     $crate::repeated_field!(
       $name,
       $crate::FieldType::Message($msg_ident.get_full_name().into()),
@@ -189,7 +189,7 @@ macro_rules! msg_field {
     .add_import(&$msg_ident.get_file())
   };
 
-  ($msg_ident:expr, $name:literal $(, $validator:expr)?) => {
+  ($msg_ident:expr, $name:expr $(, $validator:expr)?) => {
     $crate::field!(
       $name,
       $crate::FieldType::Message($msg_ident.get_full_name().into()),

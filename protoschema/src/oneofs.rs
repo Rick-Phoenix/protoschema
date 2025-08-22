@@ -11,7 +11,7 @@ use crate::{
 #[derive(Clone, Debug, Builder)]
 pub struct Oneof {
   pub name: Arc<str>,
-  #[builder(into)]
+  #[builder(setters(vis = "", name = fields_internal))]
   pub fields: Box<[Field]>,
   #[builder(default)]
   #[builder(setters(vis = "", name = options_internal))]
@@ -26,10 +26,19 @@ pub struct OneofData {
 }
 
 impl<S: oneof_builder::State> OneofBuilder<S> {
-  pub fn options(self, options: &[ProtoOption]) -> OneofBuilder<oneof_builder::SetOptions<S>>
+  pub fn fields<I>(self, fields: I) -> OneofBuilder<oneof_builder::SetFields<S>>
+  where
+    S::Fields: IsUnset,
+    I: IntoIterator<Item = Field>,
+  {
+    self.fields_internal(fields.into_iter().collect())
+  }
+
+  pub fn options<I>(self, options: I) -> OneofBuilder<oneof_builder::SetOptions<S>>
   where
     S::Options: IsUnset,
+    I: IntoIterator<Item = ProtoOption>,
   {
-    self.options_internal(options.into())
+    self.options_internal(options.into_iter().collect())
   }
 }

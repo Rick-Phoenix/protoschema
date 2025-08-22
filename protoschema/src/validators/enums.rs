@@ -42,10 +42,6 @@ impl<'a> From<EnumValidator<'a>> for ProtoOption {
 
     if let Some(const_val) = validator.const_ {
       values.insert("const".into(), OptionValue::Int(const_val as i64));
-      return ProtoOption {
-        name,
-        value: OptionValue::Message(values),
-      };
     }
 
     validate_lists(validator.in_, validator.not_in).unwrap_or_else(|invalid| {
@@ -67,8 +63,8 @@ impl<'a> From<EnumValidator<'a>> for ProtoOption {
     insert_option!(validator, options_map, required, bool);
 
     ProtoOption {
-      name,
-      value: OptionValue::Message(options_map),
+      name: name.into(),
+      value: OptionValue::Message(options_map).into(),
     }
   }
 }

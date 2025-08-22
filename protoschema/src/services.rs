@@ -1,6 +1,5 @@
 use std::{marker::PhantomData, sync::Arc};
 
-use askama::Template;
 use bon::Builder;
 
 use crate::{
@@ -12,24 +11,24 @@ use crate::{
 pub struct ServiceBuilder<S: ServiceState = Empty> {
   pub(crate) id: usize,
   pub(crate) arena: Arena,
-  pub(crate) _phantom: PhantomData<fn() -> S>,
   pub(crate) file_id: usize,
+  pub(crate) _phantom: PhantomData<fn() -> S>,
 }
 
 #[derive(Clone, Debug, Builder)]
 #[builder(start_fn = new)]
 pub struct ServiceHandler {
   #[builder(start_fn)]
-  name: Box<str>,
+  pub(crate) name: Box<str>,
   #[builder(field)]
-  imports: Vec<Arc<str>>,
+  pub(crate) imports: Vec<Arc<str>>,
   #[builder(setters(vis = "", name = options_internal))]
   #[builder(default)]
-  options: Box<[ProtoOption]>,
+  pub(crate) options: Box<[ProtoOption]>,
   #[builder(setters(vis = "", name = request_internal))]
-  request: Arc<str>,
+  pub(crate) request: Arc<str>,
   #[builder(setters(vis = "", name = response_internal))]
-  response: Arc<str>,
+  pub(crate) response: Arc<str>,
 }
 
 impl ServiceHandler {
@@ -79,8 +78,7 @@ impl<S: HandlerState> ServiceHandlerBuilder<S> {
   }
 }
 
-#[derive(Clone, Debug, Default, Template)]
-#[template(path = "service.proto.j2")]
+#[derive(Clone, Debug, Default)]
 pub struct ServiceData {
   pub imports: Vec<Box<str>>,
   pub name: Box<str>,

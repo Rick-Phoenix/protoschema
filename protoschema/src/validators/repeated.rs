@@ -58,7 +58,7 @@ impl<'a> From<RepeatedValidator<'a>> for ProtoOption {
     insert_option!(validator, values, max_items, Uint);
 
     if let Some(items_option) = validator.items {
-      values.insert("items".into(), items_option.value);
+      values.insert("items".into(), (*items_option.value).clone());
     }
 
     let mut options_map: BTreeMap<Box<str>, OptionValue> = btreemap! {
@@ -69,8 +69,8 @@ impl<'a> From<RepeatedValidator<'a>> for ProtoOption {
     insert_option!(validator, options_map, required, bool);
 
     ProtoOption {
-      name,
-      value: OptionValue::Message(options_map),
+      name: name.into(),
+      value: OptionValue::Message(options_map).into(),
     }
   }
 }
