@@ -1,9 +1,5 @@
 #[macro_export]
 macro_rules! parse_field_type {
-  (enum($ty:ident)) => {
-    $crate::FieldType::from($ty.get_type())
-  };
-
   ($ty:ident) => {
     $crate::FieldType::from($ty.get_type())
   };
@@ -15,25 +11,18 @@ macro_rules! parse_field_type {
 
 #[macro_export]
 macro_rules! handler {
-  ($handler:ident($request:expr => $response:expr) $options:expr) => {
+  ($handler:ident($request:expr => $response:expr) $($options:expr)?) => {
     $crate::services::ServiceHandler::new(stringify!($handler).into())
       .request(&$request)
       .response(&$response)
-      .options(&$options)
-      .build()
-  };
-
-  ($handler:ident($request:expr => $response:expr)) => {
-    $crate::services::ServiceHandler::new(stringify!($handler).into())
-      .request(&$request)
-      .response(&$response)
+      $(.options(&$options))?
       .build()
   };
 }
 
 #[macro_export]
 macro_rules! service {
-  ($file:ident, $name:ident { options = $service_options:expr; $($handler_name:ident($request:ident => $response:ident) $([ $($handler_options:tt)+ ])?);+ $(;)? }) => {
+  ($file:ident, $name:ident { options = $service_options:expr; $($handler_name:ident($request:ident => $response:ident) $([ $($handler_options:tt)+ ])?);+ $(;)? } $(;)?) => {
     $file
       .new_service(stringify!($name).into())
       .handlers(&[
@@ -41,7 +30,6 @@ macro_rules! service {
       ])
       .options(&$service_options)
   };
-
 }
 
 #[macro_export]
@@ -56,86 +44,93 @@ macro_rules! services {
 }
 
 #[macro_export]
-macro_rules! enum_field {
-  (repeated $enum_ident:expr, $name:literal) => {
-    $crate::fields::Field::builder()
+macro_rules! repeated_field {
+  ($name:literal, $field_type:expr, $proto_type:ident $(, $validator:expr)?) => {
+    $crate::paste! {
+      $crate::fields::Field::builder()
       .name($name.into())
       .repeated()
-      .field_type($crate::FieldType::Enum($enum_ident.get_full_name().into()))
-      .add_import(&$enum_ident.get_file())
+      .field_type($field_type)
+      $(
+        .option($crate::validators::repeated::[< build_repeated_ $proto_type _validator_option >]($validator))
+        .add_import("buf/validate/validate.proto")
+      )?
+    }
+  };
+}
+
+#[macro_export]
+macro_rules! field {
+  ($($optional:ident)? $name:literal, $field_type:expr, $proto_type:ident, $module_name:ident $(, $validator:expr)? ) => {
+    $crate::paste! {
+      $crate::fields::Field::builder()
+      .name($name.into())
+      .field_type($field_type)
+      $(.$optional())?
+      $(
+        .option($crate::validators::$module_name::[< build_ $proto_type _validator_option >]($validator))
+        .add_import("buf/validate/validate.proto")
+      )?
+    }
+  };
+}
+
+#[macro_export]
+macro_rules! enum_field {
+  (repeated $enum_ident:expr, $name:literal $(, $validator:expr)?) => {
+    $crate::repeated_field!(
+      $name,
+      $crate::FieldType::Enum($enum_ident.get_full_name().into()),
+      enum
+      $(, $validator)?
+    )
+    .add_import(&$enum_ident.get_file())
   };
 
-  (repeated $enum_ident:expr, $name:literal, $validator:expr) => {
-    $crate::fields::Field::builder()
-      .name($name.into())
-      .field_type($crate::FieldType::Enum($enum_ident.get_full_name().into()))
-      .add_import(&$enum_ident.get_file())
-      .option($crate::validators::repeated::build_repeated_enum_validator_option($validator))
-      .add_import("buf/validate/validate.proto")
+  (optional $enum_ident:expr, $name:literal $(, $validator:expr)? ) => {
+    $crate::field!(
+      optional
+      $name,
+      $crate::FieldType::Enum($enum_ident.get_full_name().into()),
+      enum
+      $(, $validator)?
+    )
+    .add_import(&$enum_ident.get_file())
   };
 
-  ($enum_ident:expr, $name:literal) => {
-    $crate::fields::Field::builder()
-      .name($name.into())
-      .field_type($crate::FieldType::Enum($enum_ident.get_full_name().into()))
-      .add_import(&$enum_ident.get_file())
-  };
-
-  ($enum_ident:expr, $name:literal, $validator:expr) => {
-    $crate::fields::Field::builder()
-      .name($name.into())
-      .field_type($crate::FieldType::Enum($enum_ident.get_full_name().into()))
-      .add_import(&$enum_ident.get_file())
-      .option($crate::validators::enums::build_enum_validator_option(
-        $validator,
-      ))
-      .add_import("buf/validate/validate.proto")
+  ($enum_ident:expr, $name:literal $(, $validator:expr)?) => {
+    $crate::field!(
+      $name,
+      $crate::FieldType::Enum($enum_ident.get_full_name().into()),
+      enum,
+      enums
+      $(, $validator)?
+    )
+    .add_import(&$enum_ident.get_file())
   };
 }
 
 #[macro_export]
 macro_rules! msg_field {
-  (repeated $message_ident:expr, $name:literal) => {
-    $crate::fields::Field::builder()
-      .name($name.into())
-      .repeated()
-      .field_type($crate::FieldType::Message(
-        $message_ident.get_full_name().into(),
-      ))
-      .add_import(&$message_ident.get_file())
+  (repeated $msg_ident:expr, $name:literal $(, $validator:expr)?) => {
+    $crate::repeated_field!(
+      $name,
+      $crate::FieldType::Message($msg_ident.get_full_name().into()),
+      message
+      $(, $validator)?
+    )
+    .add_import(&$msg_ident.get_file())
   };
 
-  (repeated $message_ident:expr, $name:literal, $validator:expr) => {
-    $crate::fields::Field::builder()
-      .name($name.into())
-      .field_type($crate::FieldType::Message(
-        $message_ident.get_full_name().into(),
-      ))
-      .add_import(&$message_ident.get_file())
-      .option($crate::validators::repeated::build_repeated_message_validator_option($validator))
-      .add_import("buf/validate/validate.proto")
-  };
-
-  ($message_ident:expr, $name:literal) => {
-    $crate::fields::Field::builder()
-      .name($name.into())
-      .field_type($crate::FieldType::Message(
-        $message_ident.get_full_name().into(),
-      ))
-      .add_import(&$message_ident.get_file())
-  };
-
-  ($message_ident:expr, $name:literal, $validator:expr) => {
-    $crate::fields::Field::builder()
-      .name($name.into())
-      .field_type($crate::FieldType::Message(
-        $message_ident.get_full_name().into(),
-      ))
-      .add_import(&$message_ident.get_file())
-      .option($crate::validators::message::build_message_validator_option(
-        $validator,
-      ))
-      .add_import("buf/validate/validate.proto")
+  ($msg_ident:expr, $name:literal $(, $validator:expr)?) => {
+    $crate::field!(
+      $name,
+      $crate::FieldType::Message($msg_ident.get_full_name().into()),
+      message,
+      message
+      $(, $validator)?
+    )
+    .add_import(&$msg_ident.get_file())
   };
 }
 

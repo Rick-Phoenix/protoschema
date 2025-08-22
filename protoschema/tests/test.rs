@@ -28,13 +28,19 @@ fn main_test() {
     1 => "UNSPECIFIED"
   );
 
-  service!(
+  services!(
     file,
     MyService {
       options = [ opt.clone(), opt.clone() ];
       GetUser(msg => msg2) [ opt.clone() ];
       GetUser2(msg => msg2);
-    }
+    };
+
+    MyService2 {
+      options = [ opt.clone(), opt.clone() ];
+      GetUser(msg => msg2) [ opt.clone() ];
+      GetUser2(msg => msg2);
+    };
   );
 
   message_body! {
@@ -47,7 +53,9 @@ fn main_test() {
     2 => string!("abc").options(&[opt.clone(), opt.clone(), opt.clone()]),
     3 => string!(repeated "abc", |r, i| r.items(i.min_len(4).ignore_if_zero_value())),
     6 => enum_map!("abc", <string, example_enum>, |m, k, v| m.min_pairs(3).keys(k.min_len(15)).values(v.defined_only())),
-    7 => enum_field!(example_enum, "enum_field", |v| v.defined_only()),
+    5 => enum_field!(example_enum, "enum_without_validator"),
+    7 => enum_field!(example_enum, "enum_with_validator", |v| v.defined_only()),
+    10 => enum_field!(repeated example_enum, "repeated_enum_field", |r, i| r.items(i.defined_only())),
     9 => msg_map!("abc", <string, msg2>, |m, k, v| m.min_pairs(15).keys(k.min_len(25)).values(v.cel(&[]))),
 
     enum "my_enum" {
