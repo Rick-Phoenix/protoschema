@@ -2,7 +2,6 @@
 
 use std::path::Path;
 
-use askama::Template;
 use protoschema::{
   common_options::oneof_required, enum_field, enum_map, enum_variants, extension, message_body,
   msg_field, msg_map, package::Package, proto_enum, services, string, OptionValue, ProtoOption,
@@ -96,14 +95,6 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
   extension!(file, msg2 {
     15 => string!("abc").add_options([opt.clone(), opt.clone(), opt.clone()])
   });
-
-  let file_renders = &package.build_templates()[0];
-
-  println!("{:#?}", file_renders);
-
-  let render = file_renders.render().unwrap();
-
-  println!("{}", render);
 
   package.render_templates(Path::new("proto"))?;
   Ok(())

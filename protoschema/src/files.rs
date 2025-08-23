@@ -20,7 +20,7 @@ pub struct FileData {
   pub imports: HashSet<Arc<str>>,
   pub services: Vec<usize>,
   pub extensions: Vec<ExtensionData>,
-  pub options: Box<[ProtoOption]>,
+  pub options: Vec<ProtoOption>,
 }
 
 #[derive(Debug, Clone)]
@@ -122,6 +122,21 @@ impl FileBuilder {
       arena: self.arena.clone(),
       file_id: self.id,
       _phantom: PhantomData,
+    }
+  }
+
+  pub fn add_options<I>(self, options: I) -> FileBuilder
+  where
+    I: IntoIterator<Item = ProtoOption>,
+  {
+    {
+      let file = &mut self.arena.borrow_mut().files[self.id];
+      file.options.extend(options)
+    }
+
+    FileBuilder {
+      id: self.id,
+      arena: self.arena,
     }
   }
 
