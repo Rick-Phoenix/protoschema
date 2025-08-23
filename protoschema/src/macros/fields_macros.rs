@@ -10,6 +10,13 @@ macro_rules! parse_field_type {
 }
 
 #[macro_export]
+macro_rules! reusable_fields {
+  ($($tag:literal => $field:expr),+ $(,)?) => {
+    [ $($field.tag($tag)),+ ]
+  };
+}
+
+#[macro_export]
 macro_rules! repeated_field {
   ($name:expr, $field_type:expr, $proto_type:ident $(, $validator:expr)?) => {
     $crate::paste! {

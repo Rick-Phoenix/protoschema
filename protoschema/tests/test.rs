@@ -2,8 +2,8 @@
 
 use askama::Template;
 use protoschema::{
-  enum_field, enum_map, extension, message_body, msg_field, msg_map, proto_enum, schema::Package,
-  services, string, OptionValue, ProtoOption,
+  enum_field, enum_map, extension, message_body, msg_field, msg_map, proto_enum, reusable_fields,
+  schema::Package, services, string, OptionValue, ProtoOption,
 };
 
 #[test]
@@ -44,6 +44,11 @@ fn main_test() {
     };
   );
 
+  let reusable_fields = reusable_fields!(
+    1 => string!("abc"),
+    2 => string!("abc")
+  );
+
   message_body! {
     msg,
 
@@ -75,7 +80,6 @@ fn main_test() {
     }
 
     10 => field.clone(),
-
   };
 
   extension!(file, msg2 {

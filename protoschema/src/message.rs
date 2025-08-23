@@ -171,18 +171,19 @@ impl<S: MessageState> MessageBuilder<S> {
     }
   }
 
-  pub fn fields<I>(self, fields: I) -> MessageBuilder<SetFields<S>>
+  pub fn fields<I, F>(self, fields: I) -> MessageBuilder<SetFields<S>>
   where
     S::Fields: IsUnset,
-    I: IntoIterator<Item = (u32, FieldBuilder<fields::SetFieldType<fields::SetName>>)>,
+    I: IntoIterator<Item = FieldBuilder<F>>,
+    F: fields::IsComplete,
   {
     {
       let mut arena = self.arena.borrow_mut();
 
       let final_fields: Vec<FieldData> = fields
         .into_iter()
-        .map(|(tag, field)| {
-          let field = field.clone().tag(tag).build();
+        .map(|field| {
+          let field = field.build();
           let file_id = self.file_id;
 
           for import in &field.imports {

@@ -11,6 +11,7 @@ macro_rules! message_body {
     $crate::_internal_message_body! {
       @builder($msg_builder)
       @fields()
+      @fields_blocks()
       @oneofs()
       @enums()
       @reserved()
@@ -23,6 +24,7 @@ macro_rules! message_body {
     $crate::_internal_message_body! {
       @builder($msg_builder)
       @fields()
+      @fields_blocks()
       @oneofs()
       @enums()
       @reserved()
@@ -38,6 +40,7 @@ macro_rules! _internal_message_body {
   (
     @builder($builder:expr)
     @fields($($fields:tt)*)
+    @fields_blocks($($fields_blocks:expr,)*)
     @oneofs($($oneofs:tt)*)
     @enums($($enums:tt)*)
     @reserved($($reserved:tt)*)
@@ -47,7 +50,9 @@ macro_rules! _internal_message_body {
     {
       { $($enums)* };
 
-      let fields_list = [ $($fields)* ];
+      let mut fields_list = vec! [ $($fields)* ];
+      $(fields_list.extend($fields_blocks));*;
+
       let oneofs_list = [ $($oneofs)* ];
 
       let mut new_msg = $builder
@@ -66,10 +71,33 @@ macro_rules! _internal_message_body {
     }
   };
 
+  (
+    @builder($builder:expr)
+    @fields($($fields:tt)*)
+    @fields_blocks($($fields_blocks:tt)*)
+    @oneofs($($oneofs:tt)*)
+    @enums($($enums:tt)*)
+    @reserved($($reserved:tt)*)
+    @reserved_names($($reserved_names:tt)*)
+    @input($(,)? extend($block:expr) $($rest:tt)*)
+  ) => {
+    $crate::_internal_message_body! {
+      @builder($builder)
+      @fields($($fields)*)
+      @fields_blocks($($fields_blocks)* $block,)
+      @oneofs($($oneofs)*)
+      @enums($($enums)*)
+      @reserved($($reserved)*)
+      @reserved_names($($reserved_names)*)
+      @input($($rest)*)
+    }
+  };
+
   // Reserved numbers
   (
     @builder($builder:expr)
     @fields($($fields:tt)*)
+    @fields_blocks($($fields_blocks:tt)*)
     @oneofs($($oneofs:tt)*)
     @enums($($enums:tt)*)
     @reserved()
@@ -79,6 +107,7 @@ macro_rules! _internal_message_body {
     $crate::_internal_message_body! {
       @builder($builder)
       @fields($($fields)*)
+      @fields_blocks($($fields_blocks)*)
       @oneofs($($oneofs)*)
       @enums($($enums)*)
       @reserved($($items)*)
@@ -91,6 +120,7 @@ macro_rules! _internal_message_body {
   (
     @builder($builder:expr)
     @fields($($fields:tt)*)
+    @fields_blocks($($fields_blocks:tt)*)
     @oneofs($($oneofs:tt)*)
     @enums($($enums:tt)*)
     @reserved($($reserved:tt)*)
@@ -101,6 +131,7 @@ macro_rules! _internal_message_body {
     $crate::_internal_message_body! {
       @builder($builder)
       @fields($($fields)*)
+      @fields_blocks($($fields_blocks)*)
       @oneofs($($oneofs)*)
       @enums($($enums)*)
       @reserved($($reserved)*)
@@ -113,6 +144,7 @@ macro_rules! _internal_message_body {
   (
     @builder($builder:expr)
     @fields($($fields:tt)*)
+    @fields_blocks($($fields_blocks:tt)*)
     @oneofs($($oneofs:tt)*)
     @enums($($enums:tt)*)
     @reserved($($reserved:tt)*)
@@ -122,6 +154,7 @@ macro_rules! _internal_message_body {
     $crate::_internal_message_body! {
       @builder($builder)
       @fields($($fields)*)
+      @fields_blocks($($fields_blocks)*)
       @oneofs($($oneofs)*)
       @enums($crate::proto_enum!($builder.new_enum($name), $($tokens)*); $($enums)*)
       @reserved($($reserved)*)
@@ -134,6 +167,7 @@ macro_rules! _internal_message_body {
   (
     @builder($builder:expr)
     @fields($($fields:tt)*)
+    @fields_blocks($($fields_blocks:tt)*)
     @oneofs($($oneofs:tt)*)
     @enums($($enums:tt)*)
     @reserved($($reserved:tt)*)
@@ -143,6 +177,7 @@ macro_rules! _internal_message_body {
     $crate::_internal_message_body! {
       @builder($builder)
       @fields($($fields)*)
+      @fields_blocks($($fields_blocks)*)
       @oneofs(
         $($oneofs)*
         $crate::oneof!($builder, $name, $($oneof_body)*),
@@ -158,6 +193,7 @@ macro_rules! _internal_message_body {
   (
     @builder($builder:expr)
     @fields($($fields:tt)*)
+    @fields_blocks($($fields_blocks:tt)*)
     @oneofs($($oneofs:tt)*)
     @enums($($enums:tt)*)
     @reserved($($reserved:tt)*)
@@ -166,7 +202,8 @@ macro_rules! _internal_message_body {
   ) => {
     $crate::_internal_message_body! {
       @builder($builder)
-      @fields($($fields)* ($tag, $field),)
+      @fields($($fields)* $field.tag($tag),)
+      @fields_blocks($($fields_blocks)*)
       @oneofs($($oneofs)*)
       @enums($($enums)*)
       @reserved($($reserved)*)
@@ -179,6 +216,7 @@ macro_rules! _internal_message_body {
   (
     @builder($builder:expr)
     @fields($($fields:tt)*)
+    @fields_blocks($($fields_blocks:tt)*)
     @oneofs($($oneofs:tt)*)
     @enums($($enums:tt)*)
     @reserved($($reserved:tt)*)
@@ -187,7 +225,8 @@ macro_rules! _internal_message_body {
   ) => {
     $crate::_internal_message_body! {
       @builder($builder)
-      @fields($($fields)* ($tag, $field))
+      @fields($($fields)* $field.tag($tag))
+      @fields_blocks($($fields_blocks)*)
       @oneofs($($oneofs)*)
       @enums($($enums)*)
       @reserved($($reserved)*)
