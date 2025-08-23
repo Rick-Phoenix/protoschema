@@ -45,18 +45,18 @@ impl FileBuilder {
     self.arena.borrow().files[self.id].name.clone()
   }
 
-  pub fn new_message(&self, name: &str) -> MessageBuilder {
+  pub fn new_message<T: AsRef<str>>(&self, name: T) -> MessageBuilder {
     let file_name = self.get_name();
     let mut arena = self.arena.borrow_mut();
     let package_name = arena.name.clone();
     let msg_id = arena.messages.len();
 
     arena.files[self.id].messages.push(msg_id);
-    let full_name_with_package = format!("{}.{}", package_name, name);
+    let full_name_with_package = format!("{}.{}", package_name, name.as_ref());
 
     arena.messages.push(MessageData {
       import_path: ImportedItemPath {
-        name: name.into(),
+        name: name.as_ref().into(),
         full_name: full_name_with_package.into(),
         package: package_name,
         file: file_name,
@@ -73,7 +73,7 @@ impl FileBuilder {
     }
   }
 
-  pub fn new_enum(&self, name: &str) -> EnumBuilder {
+  pub fn new_enum<T: AsRef<str>>(&self, name: T) -> EnumBuilder {
     let file_name = self.get_name();
     let mut arena = self.arena.borrow_mut();
     let package_name = arena.name.clone();
@@ -81,11 +81,11 @@ impl FileBuilder {
 
     arena.files[self.id].enums.push(enum_id);
 
-    let full_name_with_package = format!("{}.{}", package_name, name);
+    let full_name_with_package = format!("{}.{}", package_name, name.as_ref());
 
     arena.enums.push(EnumData {
       import_path: ImportedItemPath {
-        name: name.into(),
+        name: name.as_ref().into(),
         full_name: full_name_with_package.into(),
         file: file_name,
         package: package_name,
@@ -102,14 +102,14 @@ impl FileBuilder {
     }
   }
 
-  pub fn new_service(&self, name: &str) -> ServiceBuilder {
+  pub fn new_service<T: AsRef<str>>(&self, name: T) -> ServiceBuilder {
     let mut arena = self.arena.borrow_mut();
     let service_id = arena.services.len();
 
     arena.files[self.id].services.push(service_id);
 
     arena.services.push(ServiceData {
-      name: name.into(),
+      name: name.as_ref().into(),
       ..Default::default()
     });
 
@@ -159,14 +159,18 @@ impl FileBuilder {
     }
   }
 
-  pub fn add_imports(self, imports: &[&str]) -> FileBuilder {
+  pub fn add_imports<I, S>(self, imports: I) -> FileBuilder
+  where
+    I: IntoIterator<Item = S>,
+    S: AsRef<str>,
+  {
     {
       let file = &mut self.arena.borrow_mut().files[self.id];
       let file_name = file.name.as_ref();
 
-      for &import in imports {
-        if import != file_name {
-          file.imports.insert(import.into());
+      for import in imports.into_iter() {
+        if import.as_ref() != file_name {
+          file.imports.insert(import.as_ref().into());
         }
       }
     }

@@ -46,3 +46,23 @@ mod macros;
 mod field_type;
 #[macro_use]
 mod options;
+
+pub mod common_options {
+  use std::sync::Arc;
+
+  use crate::{OptionValue, ProtoOption};
+
+  pub fn oneof_required() -> ProtoOption {
+    ProtoOption {
+      name: "(buf.validate.oneof).required",
+      value: Arc::new(OptionValue::Bool(true)),
+    }
+  }
+
+  pub fn deprecated() -> ProtoOption {
+    ProtoOption {
+      name: "deprecated",
+      value: Arc::new(OptionValue::Bool(true)),
+    }
+  }
+}

@@ -113,7 +113,7 @@ impl<S: MessageState> MessageBuilder<S> {
   }
 
   // Setters
-  pub fn new_message(&self, name: &str) -> MessageBuilder {
+  pub fn new_message<T: AsRef<str>>(&self, name: T) -> MessageBuilder {
     let file_id = self.file_id;
     let package = self.get_package();
     let parent_message_name = self.get_name();
@@ -128,7 +128,7 @@ impl<S: MessageState> MessageBuilder<S> {
       .messages
       .push(child_message_id);
 
-    let full_message_name = format!("{}.{}", parent_message_name, name);
+    let full_message_name = format!("{}.{}", parent_message_name, name.as_ref());
     let full_name_with_package = format!("{}.{}", package, full_message_name);
 
     let new_msg = MessageData {
@@ -152,7 +152,7 @@ impl<S: MessageState> MessageBuilder<S> {
     }
   }
 
-  pub fn new_enum(&self, name: &str) -> EnumBuilder {
+  pub fn new_enum<T: AsRef<str>>(&self, name: T) -> EnumBuilder {
     let package = self.get_package();
     let parent_message_name = self.get_name();
     let file_name = self.get_file();
@@ -164,7 +164,7 @@ impl<S: MessageState> MessageBuilder<S> {
 
     arena.messages[parent_message_id].enums.push(new_enum_id);
 
-    let full_enum_name = format!("{}.{}", parent_message_name, name);
+    let full_enum_name = format!("{}.{}", parent_message_name, name.as_ref());
     let full_name_with_package = format!("{}.{}", package, full_enum_name);
 
     let new_enum = EnumData {

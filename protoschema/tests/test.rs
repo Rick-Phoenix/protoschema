@@ -2,8 +2,10 @@
 
 use askama::Template;
 use protoschema::{
+  common_options::{deprecated, oneof_required},
   enum_field, enum_map, enum_variants, extension, message_body, msg_field, msg_map,
-  package::Package, proto_enum, services, string, OptionValue, ProtoOption,
+  package::Package,
+  proto_enum, services, string, OptionValue, ProtoOption,
 };
 
 #[test]
@@ -67,7 +69,7 @@ fn main_test() {
     cel = [{ id = "abc", msg = "abc", expr = "abc" }],
 
     1 => isolated_field,
-    2 => string!("abc").options([opt.clone(), opt.clone(), opt.clone()]),
+    2 => string!("abc").add_options([opt.clone(), opt.clone(), opt.clone()]),
     3 => string!(repeated "abc", |r, i| r.items(i.min_len(4).ignore_if_zero_value())),
     6 => enum_map!("abc", <string, example_enum>, |m, k, v| m.min_pairs(3).keys(k.min_len(15)).values(v.defined_only())),
     5 => enum_field!(example_enum, "enum_without_validator"),
@@ -87,7 +89,7 @@ fn main_test() {
     }
 
     oneof "my_oneof" {
-      options = [ opt.clone() ],
+      options = [ oneof_required() ],
 
       6 => field.clone(),
       7 => field.clone()
@@ -95,7 +97,7 @@ fn main_test() {
   };
 
   extension!(file, msg2 {
-    15 => string!("abc").options([opt.clone(), opt.clone(), opt.clone()])
+    15 => string!("abc").add_options([opt.clone(), opt.clone(), opt.clone()])
   });
 
   let file_renders = &package.build_templates()[0];

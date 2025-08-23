@@ -29,21 +29,21 @@ impl Package {
     self.data.borrow().name.clone()
   }
 
-  pub fn new(name: &str) -> Self {
+  pub fn new<T: AsRef<str>>(name: T) -> Self {
     Package {
       data: Rc::new(RefCell::new(PackageData {
-        name: name.into(),
+        name: name.as_ref().into(),
         ..Default::default()
       })),
     }
   }
 
-  pub fn new_file(&self, name: &str) -> FileBuilder {
+  pub fn new_file<T: AsRef<str>>(&self, name: T) -> FileBuilder {
     let mut arena = self.data.borrow_mut();
     let file_id = arena.files.len();
 
     arena.files.push(FileData {
-      name: name.into(),
+      name: name.as_ref().into(),
       ..Default::default()
     });
     FileBuilder {

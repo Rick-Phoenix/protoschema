@@ -76,16 +76,16 @@ impl<S: field_builder::State> FieldBuilder<S> {
     self
   }
 
-  pub fn options<I>(mut self, options: I) -> Self
+  pub fn add_options<I>(mut self, options: I) -> Self
   where
     I: IntoIterator<Item = ProtoOption>,
   {
-    self.options = options.into_iter().collect();
+    self.options.extend(options);
     self
   }
 
-  pub fn add_import(mut self, import: &str) -> Self {
-    self.imports.push(import.into());
+  pub fn add_import<T: AsRef<str>>(mut self, import: T) -> Self {
+    self.imports.push(import.as_ref().into());
     self
   }
 }
