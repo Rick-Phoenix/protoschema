@@ -2,12 +2,16 @@
 
 use askama::Template;
 use protoschema::{
-  enum_field, enum_map, extension, message_body, msg_field, msg_map, proto_enum, reusable_fields,
-  schema::Package, services, string, OptionValue, ProtoOption,
+  enum_field, enum_map, enum_variants, extension, message_body, msg_field, msg_map, oneof,
+  proto_enum, reusable_fields, schema::Package, services, string, OptionValue, ProtoOption,
 };
 
 #[test]
 fn main_test() {
+  let second_package = Package::new("myapp.v2");
+  let external_file = second_package.new_file("myapp/v2/abcde.proto");
+  let imported_msg = external_file.new_message("ExternalMsg");
+
   let package = Package::new("myapp.v1");
 
   let file = package.new_file("abc");
@@ -20,12 +24,18 @@ fn main_test() {
   let msg = file.new_message("MyMsg");
   let msg2 = file.new_message("MyMsg2");
 
-  let field = msg_field!(repeated msg, "my_msg_field", |r, i| r.items(i.cel(&[])));
+  let field = msg_field!(repeated imported_msg, "my_msg_field", |r, i| r.items(i.cel(&[])));
+
+  let reusable_variants = enum_variants!(
+    1 => "ABC",
+    2 => "BCD"
+  );
 
   let example_enum = proto_enum!(
     file.new_enum("file_enum"),
     reserved_names = ["abc"],
     options = [opt.clone()],
+    include(reusable_variants),
     1 => "UNSPECIFIED"
   );
 
@@ -49,6 +59,8 @@ fn main_test() {
     2 => string!("abc")
   );
 
+  let isolated_field = string!("abc");
+
   message_body! {
     msg,
 
@@ -56,6 +68,7 @@ fn main_test() {
     reserved_names = [ "one", "two" ],
     reserved = [ 2, 2..4 ],
 
+    1 => isolated_field,
     2 => string!("abc").options([opt.clone(), opt.clone(), opt.clone()]),
     3 => string!(repeated "abc", |r, i| r.items(i.min_len(4).ignore_if_zero_value())),
     6 => enum_map!("abc", <string, example_enum>, |m, k, v| m.min_pairs(3).keys(k.min_len(15)).values(v.defined_only())),
@@ -68,6 +81,7 @@ fn main_test() {
       options = [ opt.clone() ],
       reserved_names = [ "one", "two" ],
       reserved = [ 1, 2..4 ],
+      include(reusable_variants),
 
       1 => "UNSPECIFIED",
     }

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use bon::Builder;
 
-use crate::fields::{Field, FieldData};
+use crate::fields::{self, Field, FieldBuilder, FieldData};
 
 #[derive(Clone, Debug, Default, Builder)]
 pub struct Extension {
@@ -13,12 +13,13 @@ pub struct Extension {
 }
 
 impl<S: extension_builder::State> ExtensionBuilder<S> {
-  pub fn fields<I>(self, fields: I) -> ExtensionBuilder<extension_builder::SetFields<S>>
+  pub fn fields<I, F>(self, fields: I) -> ExtensionBuilder<extension_builder::SetFields<S>>
   where
     S::Fields: extension_builder::IsUnset,
-    I: IntoIterator<Item = Field>,
+    I: IntoIterator<Item = FieldBuilder<F>>,
+    F: fields::IsComplete,
   {
-    self.fields_internal(fields.into_iter().collect())
+    self.fields_internal(fields.into_iter().map(|f| f.build()).collect())
   }
 }
 

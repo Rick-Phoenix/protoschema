@@ -4,7 +4,7 @@ use bon::Builder;
 pub(crate) use oneof_builder::*;
 
 use crate::{
-  fields::{Field, FieldData},
+  fields::{self, Field, FieldBuilder, FieldData},
   ProtoOption,
 };
 
@@ -26,12 +26,13 @@ pub struct OneofData {
 }
 
 impl<S: oneof_builder::State> OneofBuilder<S> {
-  pub fn fields<I>(self, fields: I) -> OneofBuilder<oneof_builder::SetFields<S>>
+  pub fn fields<I, F>(self, fields: I) -> OneofBuilder<oneof_builder::SetFields<S>>
   where
     S::Fields: IsUnset,
-    I: IntoIterator<Item = Field>,
+    I: IntoIterator<Item = FieldBuilder<F>>,
+    F: fields::IsComplete,
   {
-    self.fields_internal(fields.into_iter().collect())
+    self.fields_internal(fields.into_iter().map(|f| f.build()).collect())
   }
 
   pub fn options<I>(self, options: I) -> OneofBuilder<oneof_builder::SetOptions<S>>

@@ -1,4 +1,55 @@
 #[macro_export]
+macro_rules! parse_fields {
+  (
+    @included_fields($($included_fields:expr,)*)
+    @fields($($fields:tt)*)
+    @rest($(,)?)
+  ) => {
+    {
+      let mut fields = vec! [ $($fields)* ];
+      $(fields.extend($included_fields));*;
+      fields
+    }
+  };
+
+  (
+    @included_fields($($included_fields:tt)*)
+    @fields($($fields:tt)*)
+    @rest($(,)? include($reusable_fields:expr) $($rest:tt)*)
+  ) => {
+    $crate::parse_fields!(
+      @included_fields($($included_fields)* $reusable_fields,)
+      @fields($($fields)*)
+      @rest($($rest)*)
+    )
+  };
+
+  (
+    @included_fields($($included_fields:tt)*)
+    @fields($($fields:tt)*)
+    @rest($(,)? $tag:literal => $field:expr, $($rest:tt)* )
+  ) => {
+    $crate::parse_fields!(
+      @included_fields($($included_fields)*)
+      @fields($($fields)* $field.tag($tag),)
+      @rest($($rest)*)
+    )
+  };
+
+  (
+    @included_fields($($included_fields:tt)*)
+    @fields($($fields:tt)*)
+    @rest($(,)? $tag:literal => $field:expr )
+  ) => {
+    $crate::parse_fields!(
+      @included_fields($($included_fields)*)
+      @fields($($fields)* $field.tag($tag))
+      @rest()
+    )
+  };
+}
+
+#[macro_export]
 macro_rules! parse_field_type {
   ($ty:ident) => {
     $crate::FieldType::from($ty.get_type())

@@ -2,6 +2,7 @@ mod enums_macros;
 mod extensions_macros;
 mod fields_macros;
 mod maps_macros;
+mod oneofs_macros;
 mod parse_reserved;
 mod services_macros;
 
@@ -71,6 +72,7 @@ macro_rules! _internal_message_body {
     }
   };
 
+  // Handle field blocks
   (
     @builder($builder:expr)
     @fields($($fields:tt)*)
@@ -79,7 +81,7 @@ macro_rules! _internal_message_body {
     @enums($($enums:tt)*)
     @reserved($($reserved:tt)*)
     @reserved_names($($reserved_names:tt)*)
-    @input($(,)? extend($block:expr) $($rest:tt)*)
+    @input($(,)? include($block:expr) $($rest:tt)*)
   ) => {
     $crate::_internal_message_body! {
       @builder($builder)
@@ -180,7 +182,7 @@ macro_rules! _internal_message_body {
       @fields_blocks($($fields_blocks)*)
       @oneofs(
         $($oneofs)*
-        $crate::oneof!($builder, $name, $($oneof_body)*),
+        $crate::oneof!($name, $($oneof_body)*),
       )
       @enums($($enums)*)
       @reserved($($reserved)*)
@@ -232,41 +234,6 @@ macro_rules! _internal_message_body {
       @reserved($($reserved)*)
       @reserved_names($($reserved_names)*)
       @input()
-    }
-  };
-}
-
-#[macro_export]
-macro_rules! oneof {
-  (
-    $msg:expr,
-    $name:expr,
-    options = $options_expr:expr,
-    $($tag:literal => $field:expr),* $(,)?
-  ) => {
-    {
-      $crate::oneofs::Oneof::builder()
-        .name($name.into())
-        .options($options_expr)
-        .fields(
-          vec! [ $($field.tag($tag).build()),* ].into_boxed_slice()
-        )
-        .build()
-    }
-  };
-
-  (
-    $msg:expr,
-    $name:expr,
-    $($tag:literal => $field:expr),* $(,)?
-  ) => {
-    {
-      $crate::oneofs::OneofData::builder()
-        .name($name.into())
-        .fields(
-          vec! [ $($field.tag($tag).build()),* ].into_boxed_slice()
-        )
-        .build()
     }
   };
 }
