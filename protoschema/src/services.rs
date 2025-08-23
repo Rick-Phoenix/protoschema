@@ -5,7 +5,7 @@ use bon::Builder;
 use crate::{
   field_type::{get_shortest_item_name, ImportedItemPath},
   message::MessageBuilder,
-  schema::Arena,
+  package::Arena,
   sealed, Empty, IsSet, IsUnset, ProtoOption, Set, Unset,
 };
 
@@ -22,8 +22,6 @@ pub struct ServiceBuilder<S: ServiceState = Empty> {
 pub struct ServiceHandler {
   #[builder(start_fn)]
   pub(crate) name: Box<str>,
-  #[builder(field)]
-  pub(crate) imports: Vec<Arc<str>>,
   #[builder(setters(vis = "", name = options_internal))]
   #[builder(default)]
   pub(crate) options: Box<[ProtoOption]>,
@@ -56,36 +54,25 @@ impl<S: HandlerState> ServiceHandlerBuilder<S> {
     self.options_internal(options.into())
   }
 
-  pub fn add_import(mut self, import: &str) -> ServiceHandlerBuilder<S> {
-    self.imports.push(import.into());
-    self
-  }
-
   pub fn request(self, message: &MessageBuilder) -> ServiceHandlerBuilder<SetRequest<S>>
   where
     S::Request: HandlerIsUnset,
   {
-    self
-      .add_import(&message.get_file())
-      .request_internal(message.get_import_path())
+    self.request_internal(message.get_import_path())
   }
 
   pub fn response(self, message: &MessageBuilder) -> ServiceHandlerBuilder<SetResponse<S>>
   where
     S::Response: HandlerIsUnset,
   {
-    self
-      .add_import(&message.get_file())
-      .response_internal(message.get_import_path())
+    self.response_internal(message.get_import_path())
   }
 }
 
 #[derive(Clone, Debug, Default)]
 pub struct ServiceData {
-  pub imports: Vec<Box<str>>,
   pub name: Box<str>,
   pub handlers: Box<[ServiceHandler]>,
-  pub package: Arc<str>,
   pub options: Box<[ProtoOption]>,
 }
 
@@ -109,20 +96,22 @@ impl<S: ServiceState> ServiceBuilder<S> {
     self.arena.borrow().name.clone()
   }
 
-  pub fn handlers(self, handlers: &[ServiceHandler]) -> ServiceBuilder<SetHandlers<S>>
+  pub fn handlers<I>(self, handlers: I) -> ServiceBuilder<SetHandlers<S>>
   where
     S::Handlers: IsUnset,
+    I: IntoIterator<Item = ServiceHandler>,
   {
     {
       let mut arena = self.arena.borrow_mut();
+      let file = &mut arena.files[self.file_id];
 
-      for handler in handlers {
-        handler.imports.iter().for_each(|i| {
-          arena.files[self.file_id].imports.insert(i.clone());
-        });
-      }
-
-      arena.services[self.id].handlers = handlers.into()
+      arena.services[self.id].handlers = handlers
+        .into_iter()
+        .inspect(|h| {
+          file.conditionally_add_import(&h.request.file);
+          file.conditionally_add_import(&h.response.file);
+        })
+        .collect();
     }
 
     ServiceBuilder {

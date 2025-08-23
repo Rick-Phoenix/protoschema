@@ -5,8 +5,8 @@ use crate::{
   field_type::ImportedItemPath,
   fields::{self, FieldBuilder, FieldData},
   oneofs::{Oneof, OneofData},
+  package::Arena,
   rendering::MessageTemplate,
-  schema::{Arena, PackageData},
   sealed, Empty, FieldType, IsSet, IsUnset, ProtoOption, Set, Unset,
 };
 
@@ -18,38 +18,9 @@ pub struct MessageBuilder<S: MessageState = Empty> {
   pub(crate) _phantom: PhantomData<fn() -> S>,
 }
 
-impl PackageData {
-  pub fn get_full_message_name(
-    &self,
-    base_name: &str,
-    parent_message_id: Option<usize>,
-  ) -> Arc<str> {
-    let mut path = String::new();
-
-    match parent_message_id {
-      Some(id) => {
-        let mut current_id = Some(id);
-        path.push_str(base_name);
-
-        while let Some(id) = current_id {
-          let current_message = &self.messages[id];
-          path.insert(0, '.');
-          path.insert_str(0, &current_message.import_path.name);
-
-          current_id = current_message.parent_message_id;
-        }
-      }
-      None => path.push_str(base_name),
-    }
-
-    path.into()
-  }
-}
-
 #[derive(Clone, Debug, Default)]
 pub struct MessageData {
   pub import_path: Arc<ImportedItemPath>,
-  pub parent_message_id: Option<usize>,
   pub fields: Box<[FieldData]>,
   pub oneofs: Box<[OneofData]>,
   pub reserved_numbers: Box<[u32]>,
@@ -93,7 +64,7 @@ impl<S: MessageState> MessageBuilder<S> {
     let arena = self.arena.borrow();
 
     let msg = &arena.messages[self.id];
-    msg.import_path.full_name().into()
+    msg.import_path.full_name.clone()
   }
 
   pub fn get_package(&self) -> Arc<str> {
@@ -112,6 +83,8 @@ impl<S: MessageState> MessageBuilder<S> {
   pub fn new_message(&self, name: &str) -> MessageBuilder {
     let file_id = self.file_id;
     let package = self.get_package();
+    let parent_message_name = self.get_name();
+
     let mut arena = self.arena.borrow_mut();
     let file_name = arena.files[file_id].name.clone();
 
@@ -122,16 +95,17 @@ impl<S: MessageState> MessageBuilder<S> {
       .messages
       .push(child_message_id);
 
-    let full_name = arena.get_full_message_name(name, Some(parent_message_id));
+    let full_message_name = format!("{}.{}", parent_message_name, name);
+    let full_name_with_package = format!("{}.{}", package, full_message_name);
 
     let new_msg = MessageData {
       import_path: ImportedItemPath {
-        name: full_name,
+        name: full_message_name.into(),
+        full_name: full_name_with_package.into(),
         file: file_name.clone(),
         package,
       }
       .into(),
-      parent_message_id: Some(parent_message_id),
       ..Default::default()
     };
 
@@ -157,15 +131,18 @@ impl<S: MessageState> MessageBuilder<S> {
 
     arena.messages[parent_message_id].enums.push(new_enum_id);
 
+    let full_enum_name = format!("{}.{}", parent_message_name, name);
+    let full_name_with_package = format!("{}.{}", package, full_enum_name);
+
     let new_enum = EnumData {
       import_path: ImportedItemPath {
-        name: format!("{}.{}", parent_message_name, name).into(),
+        name: full_enum_name.into(),
+        full_name: full_name_with_package.into(),
         file: file_name,
         package,
       }
       .into(),
       file_id,
-      parent_message: Some(parent_message_id),
       ..Default::default()
     };
 
@@ -194,7 +171,7 @@ impl<S: MessageState> MessageBuilder<S> {
           let file_id = self.file_id;
 
           for import in &field.imports {
-            arena.files[file_id].imports.insert(import.clone());
+            arena.files[file_id].conditionally_add_import(import);
           }
 
           FieldData {
@@ -234,7 +211,7 @@ impl<S: MessageState> MessageBuilder<S> {
             .iter()
             .map(|f| {
               f.imports.iter().for_each(|i| {
-                arena.files[self.file_id].imports.insert(i.clone());
+                arena.files[self.file_id].conditionally_add_import(i);
               });
 
               FieldData {

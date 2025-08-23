@@ -6,8 +6,8 @@ use crate::{
   field_type::ImportedItemPath,
   fields::FieldData,
   message::{MessageBuilder, MessageData},
+  package::Arena,
   rendering::FileTemplate,
-  schema::Arena,
   services::{ServiceBuilder, ServiceData},
 };
 
@@ -27,6 +27,14 @@ pub struct FileBuilder {
   pub(crate) arena: Arena,
 }
 
+impl FileData {
+  pub(crate) fn conditionally_add_import(&mut self, import: &Arc<str>) {
+    if import.as_ref() != self.name.as_ref() {
+      self.imports.insert(import.clone());
+    }
+  }
+}
+
 impl FileBuilder {
   pub fn get_data(&self) -> FileTemplate {
     let arena = self.arena.borrow();
@@ -44,10 +52,12 @@ impl FileBuilder {
     let msg_id = arena.messages.len();
 
     arena.files[self.id].messages.push(msg_id);
+    let full_name_with_package = format!("{}.{}", package_name, name);
 
     arena.messages.push(MessageData {
       import_path: ImportedItemPath {
         name: name.into(),
+        full_name: full_name_with_package.into(),
         package: package_name,
         file: file_name,
       }
@@ -71,9 +81,12 @@ impl FileBuilder {
 
     arena.files[self.id].enums.push(enum_id);
 
+    let full_name_with_package = format!("{}.{}", package_name, name);
+
     arena.enums.push(EnumData {
       import_path: ImportedItemPath {
         name: name.into(),
+        full_name: full_name_with_package.into(),
         file: file_name,
         package: package_name,
       }
@@ -91,14 +104,12 @@ impl FileBuilder {
 
   pub fn new_service(&self, name: &str) -> ServiceBuilder {
     let mut arena = self.arena.borrow_mut();
-    let package_name = arena.name.clone();
     let service_id = arena.services.len();
 
     arena.files[self.id].services.push(service_id);
 
     arena.services.push(ServiceData {
       name: name.into(),
-      package: package_name,
       ..Default::default()
     });
 
@@ -112,18 +123,16 @@ impl FileBuilder {
 
   pub fn add_extension(self, extension: Extension) -> FileBuilder {
     {
-      let mut arena = self.arena.borrow_mut();
+      let file = &mut self.arena.borrow_mut().files[self.id];
 
-      arena.files[self.id]
-        .imports
-        .insert(extension.import_path.clone());
+      file.conditionally_add_import(&extension.import_path.file);
 
       let built_fields: Vec<FieldData> = extension
         .fields
         .into_iter()
         .map(|f| {
           f.imports.into_iter().for_each(|i| {
-            arena.files[self.id].imports.insert(i);
+            file.conditionally_add_import(&i);
           });
 
           FieldData {
@@ -137,12 +146,11 @@ impl FileBuilder {
         .collect();
 
       let ext_data = ExtensionData {
-        target: extension.target,
         import_path: extension.import_path,
         fields: built_fields.into_boxed_slice(),
       };
 
-      arena.files[self.id].extensions.push(ext_data)
+      file.extensions.push(ext_data)
     }
 
     FileBuilder {
@@ -153,10 +161,13 @@ impl FileBuilder {
 
   pub fn add_imports(self, imports: &[&str]) -> FileBuilder {
     {
-      let file_imports = &mut self.arena.borrow_mut().files[self.id].imports;
+      let file = &mut self.arena.borrow_mut().files[self.id];
+      let file_name = file.name.as_ref();
 
       for &import in imports {
-        file_imports.insert(import.into());
+        if import != file_name {
+          file.imports.insert(import.into());
+        }
       }
     }
 

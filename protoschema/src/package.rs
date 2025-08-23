@@ -53,7 +53,7 @@ impl Package {
   }
 
   pub fn build_templates(&self) -> Vec<FileTemplate> {
-    let arena = self.data.borrow();
+    let arena = self.data.borrow_mut();
     let templates: Vec<FileTemplate> = arena
       .files
       .iter()

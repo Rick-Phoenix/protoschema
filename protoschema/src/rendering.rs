@@ -1,17 +1,18 @@
-use std::{ops::Range, sync::Arc};
+use std::{collections::HashSet, ops::Range, sync::Arc};
 
 use askama::Template;
 
 use crate::{
   enums::EnumData, extensions::ExtensionData, fields::FieldData, files::FileData,
-  message::MessageData, oneofs::OneofData, schema::PackageData, services::ServiceData, ProtoOption,
+  message::MessageData, oneofs::OneofData, package::PackageData, services::ServiceData,
+  ProtoOption,
 };
 
 #[derive(Debug, Clone, Template, Default)]
 #[template(path = "file.proto.j2")]
 pub struct FileTemplate {
   pub name: Arc<str>,
-  pub imports: Vec<Arc<str>>,
+  pub imports: HashSet<Arc<str>>,
   pub package: Arc<str>,
   pub messages: Vec<MessageTemplate>,
   pub enums: Vec<EnumTemplate>,
@@ -57,10 +58,20 @@ impl From<EnumData> for EnumTemplate {
 
 impl FileData {
   pub(crate) fn build_template(&self, package: &PackageData) -> FileTemplate {
+    let mut imports = self.imports.clone();
+
     let file_messages: Vec<MessageTemplate> = self
       .messages
       .iter()
-      .map(|id| package.messages[*id].build_template(package))
+      .map(|id| {
+        let msg = &package.messages[*id];
+        msg.imports.iter().for_each(|i| {
+          if i.as_ref() != self.name.as_ref() {
+            imports.insert(i.clone());
+          };
+        });
+        msg.build_template(package)
+      })
       .collect();
 
     let built_enums: Vec<EnumTemplate> = self
@@ -74,8 +85,6 @@ impl FileData {
       .iter()
       .map(|id| package.services[*id].clone())
       .collect();
-
-    let imports: Vec<Arc<str>> = self.imports.iter().cloned().collect();
 
     FileTemplate {
       name: self.name.clone(),

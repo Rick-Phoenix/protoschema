@@ -2,14 +2,16 @@ use std::sync::Arc;
 
 use bon::Builder;
 
-use crate::fields::{self, Field, FieldBuilder, FieldData};
+use crate::{
+  field_type::{get_shortest_item_name, ImportedItemPath},
+  fields::{self, Field, FieldBuilder, FieldData},
+};
 
 #[derive(Clone, Debug, Default, Builder)]
 pub struct Extension {
-  pub target: Arc<str>,
   #[builder(setters(vis = "", name = fields_internal))]
   pub fields: Box<[Field]>,
-  pub import_path: Arc<str>,
+  pub import_path: Arc<ImportedItemPath>,
 }
 
 impl<S: extension_builder::State> ExtensionBuilder<S> {
@@ -25,7 +27,12 @@ impl<S: extension_builder::State> ExtensionBuilder<S> {
 
 #[derive(Clone, Debug, Default)]
 pub struct ExtensionData {
-  pub target: Arc<str>,
   pub fields: Box<[FieldData]>,
-  pub import_path: Arc<str>,
+  pub import_path: Arc<ImportedItemPath>,
+}
+
+impl ExtensionData {
+  pub fn get_target(&self, current_file: &str, current_package: &str) -> Arc<str> {
+    get_shortest_item_name(&self.import_path, current_file, current_package)
+  }
 }

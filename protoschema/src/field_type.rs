@@ -46,14 +46,9 @@ impl Display for MapKey {
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct ImportedItemPath {
   pub name: Arc<str>,
+  pub full_name: Arc<str>,
   pub file: Arc<str>,
   pub package: Arc<str>,
-}
-
-impl ImportedItemPath {
-  pub fn full_name(&self) -> String {
-    format!("{}.{}", self.package, self.name)
-  }
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
@@ -89,16 +84,6 @@ impl Display for FieldType {
   }
 }
 
-pub(crate) fn strip_common_prefix<'a>(s1: &'a str, s2: &'a str) -> &'a str {
-  let zipped_chars = s1.chars().zip(s2.chars());
-
-  let prefix_len = zipped_chars.take_while(|(c1, c2)| c1 == c2).count();
-
-  let byte_offset = s1.chars().take(prefix_len).map(|c| c.len_utf8()).sum();
-
-  (&s1[byte_offset..]) as _
-}
-
 pub fn get_shortest_item_name(
   path: &Arc<ImportedItemPath>,
   current_file: &str,
@@ -107,7 +92,7 @@ pub fn get_shortest_item_name(
   if path.file.as_ref() == current_file || path.package.as_ref() == current_package {
     path.name.clone()
   } else {
-    format!("{}.{}", path.package, path.name).into()
+    path.full_name.clone()
   }
 }
 

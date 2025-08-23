@@ -1,7 +1,7 @@
 use std::{marker::PhantomData, ops::Range, sync::Arc};
 
 use crate::{
-  field_type::ImportedItemPath, rendering::EnumTemplate, schema::Arena, sealed, Empty, FieldType,
+  field_type::ImportedItemPath, package::Arena, rendering::EnumTemplate, sealed, Empty, FieldType,
   IsSet, IsUnset, ProtoOption, Set, Unset,
 };
 
@@ -17,7 +17,6 @@ pub struct EnumData {
   pub variants: Box<[(i32, Box<str>)]>,
   pub import_path: Arc<ImportedItemPath>,
   pub file_id: usize,
-  pub parent_message: Option<usize>,
   pub reserved_numbers: Box<[i32]>,
   pub reserved_ranges: Box<[Range<i32>]>,
   pub reserved_names: Box<[Box<str>]>,
@@ -55,8 +54,11 @@ impl<S: EnumState> EnumBuilder<S> {
     self.arena.borrow().name.clone()
   }
 
-  pub fn get_full_name(&self) -> String {
-    self.arena.borrow().enums[self.id].import_path.full_name()
+  pub fn get_full_name(&self) -> Arc<str> {
+    self.arena.borrow().enums[self.id]
+      .import_path
+      .full_name
+      .clone()
   }
 
   // Setters

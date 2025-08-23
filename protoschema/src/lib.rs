@@ -35,8 +35,8 @@ pub mod fields;
 pub mod files;
 mod message;
 pub mod oneofs;
+pub mod package;
 pub mod rendering;
-pub mod schema;
 pub mod services;
 pub mod validators;
 
