@@ -22,6 +22,7 @@ pub struct MessageBuilder<S: MessageState = Empty> {
 
 #[derive(Clone, Debug, Default)]
 pub struct MessageData {
+  pub name: Arc<str>,
   pub import_path: Arc<ImportedItemPath>,
   pub fields: Box<[FieldData]>,
   pub oneofs: Box<[OneofData]>,
@@ -85,17 +86,17 @@ impl<S: MessageState> MessageBuilder<S> {
     arena.messages[self.id].build_template(&arena)
   }
 
-  pub fn get_name(&self) -> Arc<str> {
-    let arena = self.arena.borrow();
-
-    arena.messages[self.id].import_path.name.clone()
-  }
-
   pub fn get_full_name(&self) -> Arc<str> {
     let arena = self.arena.borrow();
 
+    arena.messages[self.id].import_path.full_name.clone()
+  }
+
+  pub fn get_full_name_with_package(&self) -> Arc<str> {
+    let arena = self.arena.borrow();
+
     let msg = &arena.messages[self.id];
-    msg.import_path.full_name.clone()
+    msg.import_path.full_name_with_package.clone()
   }
 
   pub fn get_package(&self) -> Arc<str> {
@@ -114,7 +115,7 @@ impl<S: MessageState> MessageBuilder<S> {
   pub fn new_message<T: AsRef<str>>(&self, name: T) -> MessageBuilder {
     let file_id = self.file_id;
     let package = self.get_package();
-    let parent_message_name = self.get_name();
+    let parent_message_name = self.get_full_name();
 
     let mut arena = self.arena.borrow_mut();
     let file_name = arena.files[file_id].name.clone();
@@ -130,9 +131,10 @@ impl<S: MessageState> MessageBuilder<S> {
     let full_name_with_package = format!("{}.{}", package, full_message_name);
 
     let new_msg = MessageData {
+      name: name.as_ref().into(),
       import_path: ImportedItemPath {
-        name: full_message_name.into(),
-        full_name: full_name_with_package.into(),
+        full_name: full_message_name.into(),
+        full_name_with_package: full_name_with_package.into(),
         file: file_name.clone(),
         package,
       }
@@ -152,7 +154,7 @@ impl<S: MessageState> MessageBuilder<S> {
 
   pub fn new_enum<T: AsRef<str>>(&self, name: T) -> EnumBuilder {
     let package = self.get_package();
-    let parent_message_name = self.get_name();
+    let parent_message_name = self.get_full_name();
     let file_name = self.get_file();
     let mut arena = self.arena.borrow_mut();
 
@@ -166,9 +168,10 @@ impl<S: MessageState> MessageBuilder<S> {
     let full_name_with_package = format!("{}.{}", package, full_enum_name);
 
     let new_enum = EnumData {
+      name: name.as_ref().into(),
       import_path: ImportedItemPath {
-        name: full_enum_name.into(),
-        full_name: full_name_with_package.into(),
+        full_name: full_enum_name.into(),
+        full_name_with_package: full_name_with_package.into(),
         file: file_name,
         package,
       }

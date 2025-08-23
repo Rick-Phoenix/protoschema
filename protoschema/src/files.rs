@@ -9,6 +9,7 @@ use crate::{
   package::Arena,
   rendering::FileTemplate,
   services::{ServiceBuilder, ServiceData},
+  ProtoOption,
 };
 
 #[derive(Clone, Debug, Default)]
@@ -19,6 +20,7 @@ pub struct FileData {
   pub imports: HashSet<Arc<str>>,
   pub services: Vec<usize>,
   pub extensions: Vec<ExtensionData>,
+  pub options: Box<[ProtoOption]>,
 }
 
 #[derive(Debug, Clone)]
@@ -55,9 +57,10 @@ impl FileBuilder {
     let full_name_with_package = format!("{}.{}", package_name, name.as_ref());
 
     arena.messages.push(MessageData {
+      name: name.as_ref().into(),
       import_path: ImportedItemPath {
-        name: name.as_ref().into(),
-        full_name: full_name_with_package.into(),
+        full_name: name.as_ref().into(),
+        full_name_with_package: full_name_with_package.into(),
         package: package_name,
         file: file_name,
       }
@@ -84,9 +87,10 @@ impl FileBuilder {
     let full_name_with_package = format!("{}.{}", package_name, name.as_ref());
 
     arena.enums.push(EnumData {
+      name: name.as_ref().into(),
       import_path: ImportedItemPath {
-        name: name.as_ref().into(),
-        full_name: full_name_with_package.into(),
+        full_name: name.as_ref().into(),
+        full_name_with_package: full_name_with_package.into(),
         file: file_name,
         package: package_name,
       }

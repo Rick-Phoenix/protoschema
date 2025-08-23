@@ -18,6 +18,7 @@ pub struct FileTemplate {
   pub enums: Vec<EnumTemplate>,
   pub services: Vec<ServiceData>,
   pub extensions: Vec<ExtensionData>,
+  pub options: Box<[ProtoOption]>,
 }
 
 #[derive(Clone, Debug, Default, Template)]
@@ -47,7 +48,7 @@ pub struct EnumTemplate {
 impl From<EnumData> for EnumTemplate {
   fn from(value: EnumData) -> Self {
     EnumTemplate {
-      name: value.import_path.name.clone(),
+      name: value.name.clone(),
       variants: value.variants,
       reserved_numbers: value.reserved_numbers,
       reserved_ranges: value.reserved_ranges,
@@ -91,6 +92,7 @@ impl FileData {
       name: self.name.clone(),
       package: package.name.clone(),
       messages: file_messages,
+      options: self.options.clone(),
       imports,
       extensions: self.extensions.clone(),
       enums: built_enums,
@@ -118,7 +120,7 @@ impl MessageData {
       .collect();
 
     MessageTemplate {
-      name: self.import_path.name.clone(),
+      name: self.name.clone(),
       package: self.import_path.package.clone(),
       file: self.import_path.file.clone(),
       fields: self.fields.clone(),

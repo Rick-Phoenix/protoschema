@@ -14,6 +14,7 @@ pub struct EnumBuilder<S: EnumState = Empty> {
 
 #[derive(Clone, Debug, Default)]
 pub struct EnumData {
+  pub name: Arc<str>,
   pub variants: Box<[(i32, Box<str>)]>,
   pub import_path: Arc<ImportedItemPath>,
   pub file_id: usize,
@@ -47,7 +48,7 @@ impl<S: EnumState> EnumBuilder<S> {
   pub fn get_name(&self) -> Arc<str> {
     let arena = self.arena.borrow();
 
-    arena.enums[self.id].import_path.name.clone()
+    arena.enums[self.id].import_path.full_name.clone()
   }
 
   pub fn get_package(&self) -> Arc<str> {
@@ -57,7 +58,7 @@ impl<S: EnumState> EnumBuilder<S> {
   pub fn get_full_name(&self) -> Arc<str> {
     self.arena.borrow().enums[self.id]
       .import_path
-      .full_name
+      .full_name_with_package
       .clone()
   }
 

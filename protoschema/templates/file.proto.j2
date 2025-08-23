@@ -1,10 +1,17 @@
+syntax = "proto3";
+
+package {{ package }};
+
+{% import "opt.proto.j2" as opts %}
+
+{% call opts::get_options(options) %}
+
 {% for import in imports %}
 {% if import.to_string() != name.to_string() %}
 import "{{ import }}";
 {% endif %}
 {% endfor %}
 
-{% import "opt.proto.j2" as opts %}
 
 {%- for extension in extensions %}
 extend {{ extension.get_target(name.as_ref(), package.as_ref()) }} {

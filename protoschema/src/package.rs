@@ -1,4 +1,12 @@
-use std::{cell::RefCell, rc::Rc, sync::Arc};
+use std::{
+  cell::RefCell,
+  fs::{create_dir_all, File},
+  path::Path,
+  rc::Rc,
+  sync::Arc,
+};
+
+use askama::Template;
 
 use crate::{
   enums::EnumData,
@@ -21,6 +29,7 @@ pub(crate) struct PackageData {
 
 #[derive(Clone)]
 pub struct Package {
+  path: Box<str>,
   data: Arena,
 }
 
@@ -31,6 +40,7 @@ impl Package {
 
   pub fn new<T: AsRef<str>>(name: T) -> Self {
     Package {
+      path: name.as_ref().replace(".", "/").into(),
       data: Rc::new(RefCell::new(PackageData {
         name: name.as_ref().into(),
         ..Default::default()
@@ -43,7 +53,7 @@ impl Package {
     let file_id = arena.files.len();
 
     arena.files.push(FileData {
-      name: name.as_ref().into(),
+      name: format!("{}/{}.proto", &self.path, name.as_ref()).into(),
       ..Default::default()
     });
     FileBuilder {
@@ -60,5 +70,18 @@ impl Package {
       .map(|f| f.build_template(&arena))
       .collect();
     templates
+  }
+
+  pub fn render_templates(&self, proto_root: &Path) -> Result<(), Box<dyn std::error::Error>> {
+    let templates = self.build_templates();
+
+    for template in templates {
+      let path = proto_root.join(template.name.as_ref());
+      create_dir_all(path.parent().unwrap())?;
+      let mut file = File::create(path)?;
+      template.write_into(&mut file)?;
+    }
+
+    Ok(())
   }
 }

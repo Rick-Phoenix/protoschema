@@ -1,17 +1,17 @@
 #![allow(clippy::cloned_ref_to_slice_refs)]
 
+use std::path::Path;
+
 use askama::Template;
 use protoschema::{
-  common_options::{deprecated, oneof_required},
-  enum_field, enum_map, enum_variants, extension, message_body, msg_field, msg_map,
-  package::Package,
-  proto_enum, services, string, OptionValue, ProtoOption,
+  common_options::oneof_required, enum_field, enum_map, enum_variants, extension, message_body,
+  msg_field, msg_map, package::Package, proto_enum, services, string, OptionValue, ProtoOption,
 };
 
 #[test]
-fn main_test() {
+fn main_test() -> Result<(), Box<dyn std::error::Error>> {
   let second_package = Package::new("myapp.v2");
-  let external_file = second_package.new_file("myapp/v2/abcde.proto");
+  let external_file = second_package.new_file("myapp/v2/abcde");
   let imported_msg = external_file.new_message("ExternalMsg");
   let imported_nested_msg = imported_msg.new_message("NestedMsg");
   let imported_enum = imported_msg.new_enum("ExternalEnum");
@@ -28,10 +28,10 @@ fn main_test() {
   let msg = file.new_message("MyMsg");
   let msg2 = file.new_message("MyMsg2");
 
-  let field = msg_field!(repeated imported_nested_msg, "my_msg_field");
+  let field = msg_field!(imported_nested_msg, "my_msg_field");
 
   let reusable_variants = enum_variants!(
-    1 => "ABC",
+    0 => "UNSPECIFIED",
     2 => "BCD"
   );
 
@@ -39,8 +39,7 @@ fn main_test() {
     file.new_enum("file_enum"),
     reserved_names = ["abc"],
     options = [opt.clone()],
-    include(reusable_variants),
-    1 => "UNSPECIFIED"
+    0 => "UNSPECIFIED"
   );
 
   services!(
@@ -71,28 +70,26 @@ fn main_test() {
     1 => isolated_field,
     2 => string!("abc").add_options([opt.clone(), opt.clone(), opt.clone()]),
     3 => string!(repeated "abc", |r, i| r.items(i.min_len(4).ignore_if_zero_value())),
-    6 => enum_map!("abc", <string, example_enum>, |m, k, v| m.min_pairs(3).keys(k.min_len(15)).values(v.defined_only())),
+    4 => enum_map!("abc", <string, example_enum>, |m, k, v| m.min_pairs(3).keys(k.min_len(15)).values(v.defined_only())),
     5 => enum_field!(example_enum, "enum_without_validator"),
-    7 => enum_field!(example_enum, "enum_with_validator", |v| v.defined_only()),
-    10 => enum_field!(repeated example_enum, "repeated_enum_field", |r, i| r.items(i.defined_only())),
-    9 => msg_map!("abc", <string, msg2>, |m, k, _| m.min_pairs(15).keys(k.min_len(25))),
-    15 => enum_field!(imported_enum, "imported_enum"),
-    16 => field.clone(),
+    6 => enum_field!(example_enum, "enum_with_validator", |v| v.defined_only()),
+    7 => enum_field!(repeated example_enum, "repeated_enum_field", |r, i| r.items(i.defined_only())),
+    8 => msg_map!("abc", <string, msg2>, |m, k, _| m.min_pairs(15).keys(k.min_len(25))),
+    9 => enum_field!(imported_enum, "imported_enum"),
+    10 => field.clone(),
 
     enum "my_enum" {
       options = [ opt.clone() ],
       reserved_names = [ "one", "two" ],
       reserved = [ 1, 2..4 ],
       include(reusable_variants),
-
-      1 => "UNSPECIFIED",
     }
 
     oneof "my_oneof" {
       options = [ oneof_required() ],
 
-      6 => field.clone(),
-      7 => field.clone()
+      11 => field.clone(),
+      12 => field.clone()
     }
   };
 
@@ -107,4 +104,7 @@ fn main_test() {
   let render = file_renders.render().unwrap();
 
   println!("{}", render);
+
+  package.render_templates(Path::new("proto"))?;
+  Ok(())
 }

@@ -45,8 +45,8 @@ impl Display for MapKey {
 
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct ImportedItemPath {
-  pub name: Arc<str>,
   pub full_name: Arc<str>,
+  pub full_name_with_package: Arc<str>,
   pub file: Arc<str>,
   pub package: Arc<str>,
 }
@@ -90,9 +90,9 @@ pub fn get_shortest_item_name(
   current_package: &str,
 ) -> Arc<str> {
   if path.file.as_ref() == current_file || path.package.as_ref() == current_package {
-    path.name.clone()
-  } else {
     path.full_name.clone()
+  } else {
+    path.full_name_with_package.clone()
   }
 }
 
@@ -124,12 +124,12 @@ impl FieldType {
       FieldType::String => "string",
       FieldType::Bytes => "bytes",
       FieldType::Uint32 => "uint32",
-      FieldType::Enum(path) => path.name.as_ref(),
+      FieldType::Enum(path) => path.full_name.as_ref(),
       FieldType::Sfixed32 => "sfixed32",
       FieldType::Sfixed64 => "sfixed64",
       FieldType::Sint32 => "sint32",
       FieldType::Sint64 => "sint64",
-      FieldType::Message(path) => path.name.as_ref(),
+      FieldType::Message(path) => path.full_name.as_ref(),
       FieldType::Duration => "google.protobuf.Duration",
       FieldType::Timestamp => "google.protobuf.Timestamp",
       FieldType::Any => "google.protobuf.Any",
