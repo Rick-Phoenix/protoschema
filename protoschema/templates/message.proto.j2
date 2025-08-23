@@ -1,13 +1,7 @@
 {% import "opt.proto.j2" as opts %}
 
-{% macro render_options(options) %}
-{% for option in options %}
-  option {{ option.name }} = {{ option.value }};
-{% endfor %}
-{% endmacro %}
-
-{% macro render_field(field, package) %}
-  {{ field.kind }}{{ field.field_type.render_name(parent_message_name.as_ref().unwrap_or(package)) }} {{ field.name }} = {{ field.tag }}
+{% macro render_field(field, file, package) %}
+  {{ field.kind }}{{ field.field_type.render_name(file, package) }} {{ field.name }} = {{ field.tag }}
   {%- if !field.options.is_empty() -%}
      {{ " " }}{% call opts::field_opts(&field.options) %}
   {%- endif -%};
@@ -24,15 +18,15 @@ message {{ name }} {
 
   {%- for oneof in oneofs %}
   oneof {{ oneof.name }} {
-    {% call render_options(&oneof.options) %}
+    {% call opts::get_options(&oneof.options) %}
 
     {% for field in oneof.fields %}
-      {% call render_field(field, package) %}
+      {% call render_field(field, file.as_ref(), package.as_ref()) %}
     {% endfor %}
   }
   {%- endfor -%}
 
   {% for field in fields %}
-    {% call render_field(field, package) %}
+    {% call render_field(field, file.as_ref(), package.as_ref()) %}
   {%- endfor %}
 }

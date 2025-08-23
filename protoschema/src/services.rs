@@ -3,8 +3,10 @@ use std::{marker::PhantomData, sync::Arc};
 use bon::Builder;
 
 use crate::{
-  field_type::strip_common_prefix, message::MessageBuilder, schema::Arena, sealed, Empty, IsSet,
-  IsUnset, ProtoOption, Set, Unset,
+  field_type::{get_shortest_item_name, ImportedItemPath},
+  message::MessageBuilder,
+  schema::Arena,
+  sealed, Empty, IsSet, IsUnset, ProtoOption, Set, Unset,
 };
 
 #[derive(Clone, Debug)]
@@ -26,18 +28,18 @@ pub struct ServiceHandler {
   #[builder(default)]
   pub(crate) options: Box<[ProtoOption]>,
   #[builder(setters(vis = "", name = request_internal))]
-  pub(crate) request: Arc<str>,
+  pub(crate) request: Arc<ImportedItemPath>,
   #[builder(setters(vis = "", name = response_internal))]
-  pub(crate) response: Arc<str>,
+  pub(crate) response: Arc<ImportedItemPath>,
 }
 
 impl ServiceHandler {
-  pub fn render_request(&self, package: &str) -> Box<str> {
-    strip_common_prefix(&self.request, &format!("{}.", package)).into()
+  pub fn render_request(&self, current_file: &str, current_package: &str) -> Arc<str> {
+    get_shortest_item_name(&self.request, current_file, current_package)
   }
 
-  pub fn render_response(&self, package: &str) -> Box<str> {
-    strip_common_prefix(&self.response, &format!("{}.", package)).into()
+  pub fn render_response(&self, current_file: &str, current_package: &str) -> Arc<str> {
+    get_shortest_item_name(&self.response, current_file, current_package)
   }
 }
 
@@ -65,7 +67,7 @@ impl<S: HandlerState> ServiceHandlerBuilder<S> {
   {
     self
       .add_import(&message.get_file())
-      .request_internal(message.get_full_name())
+      .request_internal(message.get_import_path())
   }
 
   pub fn response(self, message: &MessageBuilder) -> ServiceHandlerBuilder<SetResponse<S>>
@@ -74,7 +76,7 @@ impl<S: HandlerState> ServiceHandlerBuilder<S> {
   {
     self
       .add_import(&message.get_file())
-      .response_internal(message.get_full_name())
+      .response_internal(message.get_import_path())
   }
 }
 

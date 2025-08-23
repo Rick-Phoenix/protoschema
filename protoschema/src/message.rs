@@ -2,6 +2,7 @@ use std::{marker::PhantomData, ops::Range, sync::Arc};
 
 use crate::{
   enums::{EnumBuilder, EnumData},
+  field_type::ImportedItemPath,
   fields::{self, FieldBuilder, FieldData},
   oneofs::{Oneof, OneofData},
   rendering::MessageTemplate,
@@ -33,16 +34,13 @@ impl PackageData {
         while let Some(id) = current_id {
           let current_message = &self.messages[id];
           path.insert(0, '.');
-          path.insert_str(0, &current_message.name);
+          path.insert_str(0, &current_message.import_path.name);
 
-          current_id = current_message.parent_message;
+          current_id = current_message.parent_message_id;
         }
       }
       None => path.push_str(base_name),
     }
-
-    path.insert(0, '.');
-    path.insert_str(0, &self.name);
 
     path.into()
   }
@@ -50,10 +48,8 @@ impl PackageData {
 
 #[derive(Clone, Debug, Default)]
 pub struct MessageData {
-  pub name: Arc<str>,
-  pub full_name: Arc<str>,
-  pub package: Arc<str>,
-  pub parent_message: Option<usize>,
+  pub import_path: Arc<ImportedItemPath>,
+  pub parent_message_id: Option<usize>,
   pub fields: Box<[FieldData]>,
   pub oneofs: Box<[OneofData]>,
   pub reserved_numbers: Box<[u32]>,
@@ -68,8 +64,11 @@ pub struct MessageData {
 impl<S: MessageState> MessageBuilder<S> {
   // Getters
   pub fn get_type(&self) -> FieldType {
-    let name = self.get_full_name();
-    FieldType::Message(name)
+    FieldType::Message(self.get_import_path())
+  }
+
+  pub fn get_import_path(&self) -> Arc<ImportedItemPath> {
+    self.arena.borrow().messages[self.id].import_path.clone()
   }
 
   pub fn get_id(&self) -> usize {
@@ -87,20 +86,20 @@ impl<S: MessageState> MessageBuilder<S> {
   pub fn get_name(&self) -> Arc<str> {
     let arena = self.arena.borrow();
 
-    arena.messages[self.id].name.clone()
+    arena.messages[self.id].import_path.name.clone()
   }
 
   pub fn get_full_name(&self) -> Arc<str> {
     let arena = self.arena.borrow();
 
     let msg = &arena.messages[self.id];
-    msg.full_name.clone()
+    msg.import_path.full_name().into()
   }
 
   pub fn get_package(&self) -> Arc<str> {
     let arena = self.arena.borrow();
 
-    arena.messages[self.id].package.clone()
+    arena.messages[self.id].import_path.package.clone()
   }
 
   pub fn get_file(&self) -> Arc<str> {
@@ -114,6 +113,7 @@ impl<S: MessageState> MessageBuilder<S> {
     let file_id = self.file_id;
     let package = self.get_package();
     let mut arena = self.arena.borrow_mut();
+    let file_name = arena.files[file_id].name.clone();
 
     let parent_message_id = self.id;
     let child_message_id = arena.messages.len();
@@ -125,10 +125,13 @@ impl<S: MessageState> MessageBuilder<S> {
     let full_name = arena.get_full_message_name(name, Some(parent_message_id));
 
     let new_msg = MessageData {
-      name: name.into(),
-      package,
-      full_name,
-      parent_message: Some(parent_message_id),
+      import_path: ImportedItemPath {
+        name: full_name,
+        file: file_name.clone(),
+        package,
+      }
+      .into(),
+      parent_message_id: Some(parent_message_id),
       ..Default::default()
     };
 
@@ -144,7 +147,8 @@ impl<S: MessageState> MessageBuilder<S> {
 
   pub fn new_enum(&self, name: &str) -> EnumBuilder {
     let package = self.get_package();
-    let parent_message_full_name = self.get_full_name();
+    let parent_message_name = self.get_name();
+    let file_name = self.get_file();
     let mut arena = self.arena.borrow_mut();
 
     let file_id = self.file_id;
@@ -154,9 +158,12 @@ impl<S: MessageState> MessageBuilder<S> {
     arena.messages[parent_message_id].enums.push(new_enum_id);
 
     let new_enum = EnumData {
-      name: name.into(),
-      full_name: format!("{}.{}", parent_message_full_name, name).into(),
-      package,
+      import_path: ImportedItemPath {
+        name: format!("{}.{}", parent_message_name, name).into(),
+        file: file_name,
+        package,
+      }
+      .into(),
       file_id,
       parent_message: Some(parent_message_id),
       ..Default::default()

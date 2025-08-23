@@ -6,4 +6,10 @@
 {%- endif -%}
 {% endmacro %}
 
+{% macro get_options(options) %}
+{%- for option in options %}
+  option {{ option.name }} = {{ option.value }};
+{%- endfor %}
+{% endmacro %}
+
 

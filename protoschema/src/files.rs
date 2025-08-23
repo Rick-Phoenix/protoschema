@@ -3,6 +3,7 @@ use std::{collections::HashSet, marker::PhantomData, sync::Arc};
 use crate::{
   enums::{EnumBuilder, EnumData},
   extensions::{Extension, ExtensionData},
+  field_type::ImportedItemPath,
   fields::FieldData,
   message::{MessageBuilder, MessageData},
   rendering::FileTemplate,
@@ -32,23 +33,25 @@ impl FileBuilder {
     arena.files[self.id].build_template(&arena)
   }
 
-  pub fn get_name(&self) -> String {
-    self.arena.borrow().files[self.id].name.to_string()
+  pub fn get_name(&self) -> Arc<str> {
+    self.arena.borrow().files[self.id].name.clone()
   }
 
   pub fn new_message(&self, name: &str) -> MessageBuilder {
+    let file_name = self.get_name();
     let mut arena = self.arena.borrow_mut();
     let package_name = arena.name.clone();
     let msg_id = arena.messages.len();
 
     arena.files[self.id].messages.push(msg_id);
 
-    let full_name = arena.get_full_message_name(name, None);
-
     arena.messages.push(MessageData {
-      name: name.into(),
-      full_name,
-      package: package_name,
+      import_path: ImportedItemPath {
+        name: name.into(),
+        package: package_name,
+        file: file_name,
+      }
+      .into(),
       ..Default::default()
     });
 
@@ -61,6 +64,7 @@ impl FileBuilder {
   }
 
   pub fn new_enum(&self, name: &str) -> EnumBuilder {
+    let file_name = self.get_name();
     let mut arena = self.arena.borrow_mut();
     let package_name = arena.name.clone();
     let enum_id = arena.enums.len();
@@ -68,10 +72,13 @@ impl FileBuilder {
     arena.files[self.id].enums.push(enum_id);
 
     arena.enums.push(EnumData {
+      import_path: ImportedItemPath {
+        name: name.into(),
+        file: file_name,
+        package: package_name,
+      }
+      .into(),
       file_id: self.id,
-      full_name: name.into(),
-      name: name.into(),
-      package: package_name,
       ..Default::default()
     });
 

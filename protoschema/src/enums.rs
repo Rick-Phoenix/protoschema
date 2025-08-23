@@ -1,8 +1,8 @@
 use std::{marker::PhantomData, ops::Range, sync::Arc};
 
 use crate::{
-  rendering::EnumTemplate, schema::Arena, sealed, Empty, FieldType, IsSet, IsUnset, ProtoOption,
-  Set, Unset,
+  field_type::ImportedItemPath, rendering::EnumTemplate, schema::Arena, sealed, Empty, FieldType,
+  IsSet, IsUnset, ProtoOption, Set, Unset,
 };
 
 #[derive(Clone, Debug)]
@@ -14,11 +14,9 @@ pub struct EnumBuilder<S: EnumState = Empty> {
 
 #[derive(Clone, Debug, Default)]
 pub struct EnumData {
-  pub name: Arc<str>,
-  pub full_name: Arc<str>,
   pub variants: Box<[(i32, Box<str>)]>,
+  pub import_path: Arc<ImportedItemPath>,
   pub file_id: usize,
-  pub package: Arc<str>,
   pub parent_message: Option<usize>,
   pub reserved_numbers: Box<[i32]>,
   pub reserved_ranges: Box<[Range<i32>]>,
@@ -34,8 +32,11 @@ impl<S: EnumState> EnumBuilder<S> {
 
   // Getters
   pub fn get_type(&self) -> FieldType {
-    let name = self.get_full_name();
-    FieldType::Enum(name)
+    FieldType::Enum(self.get_import_path())
+  }
+
+  pub fn get_import_path(&self) -> Arc<ImportedItemPath> {
+    self.arena.borrow().enums[self.id].import_path.clone()
   }
 
   pub fn get_file(&self) -> Arc<str> {
@@ -47,15 +48,15 @@ impl<S: EnumState> EnumBuilder<S> {
   pub fn get_name(&self) -> Arc<str> {
     let arena = self.arena.borrow();
 
-    arena.enums[self.id].name.clone()
+    arena.enums[self.id].import_path.name.clone()
   }
 
   pub fn get_package(&self) -> Arc<str> {
     self.arena.borrow().name.clone()
   }
 
-  pub fn get_full_name(&self) -> Arc<str> {
-    self.arena.borrow().enums[self.id].full_name.clone()
+  pub fn get_full_name(&self) -> String {
+    self.arena.borrow().enums[self.id].import_path.full_name()
   }
 
   // Setters

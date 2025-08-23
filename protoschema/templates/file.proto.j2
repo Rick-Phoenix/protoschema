@@ -9,7 +9,7 @@ import "{{ import }}";
 {%- for extension in extensions %}
 extend {{ extension.target }} {
   {%- for field in extension.fields %}
-  {{ field.kind }}{{ field.field_type.render_name(package) }} {{ field.name }} = {{ field.tag }}
+  {{ field.kind }}{{ field.field_type.render_name(name.as_ref(), package.as_ref() ) }} {{ field.name }} = {{ field.tag }}
   {%- if !field.options.is_empty() -%}
      {{ " " }}{% call opts::field_opts(&field.options) %}
   {%- endif -%};
@@ -33,7 +33,7 @@ service {{ service.name }} {
   {%- endfor -%}
 
   {%+ for handler in service.handlers +%}
-    rpc {{ handler.name }} ({{ handler.render_request(&package) }}) returns ({{ handler.render_response(&package) }})
+    rpc {{ handler.name }} ({{ handler.render_request(name.as_ref(), package.as_ref()) }}) returns ({{ handler.render_response(name.as_ref(), package.as_ref()) }})
 
     {%- if !handler.options.is_empty() %} { 
     {%- for opt in handler.options %}

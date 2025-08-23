@@ -43,6 +43,19 @@ impl Display for MapKey {
   }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
+pub struct ImportedItemPath {
+  pub name: Arc<str>,
+  pub file: Arc<str>,
+  pub package: Arc<str>,
+}
+
+impl ImportedItemPath {
+  pub fn full_name(&self) -> String {
+    format!("{}.{}", self.package, self.name)
+  }
+}
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum FieldType {
   Double,
@@ -56,12 +69,12 @@ pub enum FieldType {
   String,
   Bytes,
   Uint32,
-  Enum(Arc<str>),
+  Enum(Arc<ImportedItemPath>),
   Sfixed32,
   Sfixed64,
   Sint32,
   Sint64,
-  Message(Arc<str>),
+  Message(Arc<ImportedItemPath>),
   Duration,
   Timestamp,
   Any,
@@ -86,14 +99,29 @@ pub(crate) fn strip_common_prefix<'a>(s1: &'a str, s2: &'a str) -> &'a str {
   (&s1[byte_offset..]) as _
 }
 
+pub fn get_shortest_item_name(
+  path: &Arc<ImportedItemPath>,
+  current_file: &str,
+  current_package: &str,
+) -> Arc<str> {
+  if path.file.as_ref() == current_file || path.package.as_ref() == current_package {
+    path.name.clone()
+  } else {
+    format!("{}.{}", path.package, path.name).into()
+  }
+}
+
 impl FieldType {
-  pub fn render_name<T: AsRef<str> + Display>(&self, prefix: T) -> Box<str> {
+  pub fn render_name(&self, current_file: &str, current_package: &str) -> Arc<str> {
     match self {
-      FieldType::Message(name) => {
-        strip_common_prefix(name, &format!("{}.", prefix.as_ref())).into()
-      }
-      FieldType::Enum(name) => strip_common_prefix(name, &format!("{}.", prefix.as_ref())).into(),
-      FieldType::Map(key, val) => format!("map<{}, {}>", key, val.render_name(prefix)).into(),
+      FieldType::Message(path) => get_shortest_item_name(path, current_file, current_package),
+      FieldType::Enum(path) => get_shortest_item_name(path, current_file, current_package),
+      FieldType::Map(key, val) => format!(
+        "map<{}, {}>",
+        key,
+        val.render_name(current_file, current_package)
+      )
+      .into(),
       _ => self.name().into(),
     }
   }
@@ -111,12 +139,12 @@ impl FieldType {
       FieldType::String => "string",
       FieldType::Bytes => "bytes",
       FieldType::Uint32 => "uint32",
-      FieldType::Enum(name) => name.as_ref(),
+      FieldType::Enum(path) => path.name.as_ref(),
       FieldType::Sfixed32 => "sfixed32",
       FieldType::Sfixed64 => "sfixed64",
       FieldType::Sint32 => "sint32",
       FieldType::Sint64 => "sint64",
-      FieldType::Message(name) => name.as_ref(),
+      FieldType::Message(path) => path.name.as_ref(),
       FieldType::Duration => "google.protobuf.Duration",
       FieldType::Timestamp => "google.protobuf.Timestamp",
       FieldType::Any => "google.protobuf.Any",

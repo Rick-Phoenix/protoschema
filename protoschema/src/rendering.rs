@@ -24,7 +24,7 @@ pub struct FileTemplate {
 pub struct MessageTemplate {
   pub name: Arc<str>,
   pub package: Arc<str>,
-  pub parent_message_name: Option<Arc<str>>,
+  pub file: Arc<str>,
   pub fields: Box<[FieldData]>,
   pub messages: Vec<MessageTemplate>,
   pub oneofs: Box<[OneofData]>,
@@ -45,7 +45,7 @@ pub struct EnumTemplate {
 impl From<EnumData> for EnumTemplate {
   fn from(value: EnumData) -> Self {
     EnumTemplate {
-      name: value.name,
+      name: value.import_path.name.clone(),
       variants: value.variants,
       reserved_numbers: value.reserved_numbers,
       reserved_ranges: value.reserved_ranges,
@@ -101,10 +101,6 @@ impl MessageData {
       })
       .collect();
 
-    let parent_message_name = self
-      .parent_message
-      .map(|id| package.messages[id].full_name.clone());
-
     let enums: Vec<EnumTemplate> = self
       .enums
       .iter()
@@ -112,10 +108,10 @@ impl MessageData {
       .collect();
 
     MessageTemplate {
-      name: self.name.clone(),
-      package: self.package.clone(),
+      name: self.import_path.name.clone(),
+      package: self.import_path.package.clone(),
+      file: self.import_path.file.clone(),
       fields: self.fields.clone(),
-      parent_message_name,
       oneofs: self.oneofs.clone(),
       messages: built_messages,
       enums,

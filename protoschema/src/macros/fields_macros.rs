@@ -205,7 +205,7 @@ macro_rules! enum_field {
   (repeated $enum_ident:expr, $name:expr $(, $validator:expr)?) => {
     $crate::repeated_field!(
       $name,
-      $crate::FieldType::Enum($enum_ident.get_full_name().into()),
+      $enum_ident.get_type(),
       enum
       $(, $validator)?
     )
@@ -216,7 +216,7 @@ macro_rules! enum_field {
     $crate::field!(
       optional
       $name,
-      $crate::FieldType::Enum($enum_ident.get_full_name().into()),
+      $enum_ident.get_type(),
       enum
       $(, $validator)?
     )
@@ -226,7 +226,7 @@ macro_rules! enum_field {
   ($enum_ident:expr, $name:expr $(, $validator:expr)?) => {
     $crate::field!(
       $name,
-      $crate::FieldType::Enum($enum_ident.get_full_name().into()),
+      $enum_ident.get_type(),
       enum,
       enums
       $(, $validator)?
@@ -240,7 +240,7 @@ macro_rules! msg_field {
   (repeated $msg_ident:expr, $name:expr $(, $validator:expr)?) => {
     $crate::repeated_field!(
       $name,
-      $crate::FieldType::Message($msg_ident.get_full_name().into()),
+      $msg_ident.get_type(),
       message
       $(, $validator)?
     )
@@ -250,7 +250,7 @@ macro_rules! msg_field {
   ($msg_ident:expr, $name:expr $(, $validator:expr)?) => {
     $crate::field!(
       $name,
-      $crate::FieldType::Message($msg_ident.get_full_name().into()),
+      $msg_ident.get_type(),
       message,
       message
       $(, $validator)?
