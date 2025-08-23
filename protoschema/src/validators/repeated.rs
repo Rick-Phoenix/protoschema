@@ -1,7 +1,4 @@
-use std::collections::BTreeMap;
-
 use bon::Builder;
-use maplit::btreemap;
 
 use crate::{
   validators::{
@@ -15,7 +12,7 @@ use crate::{
     numeric::*,
     string::{StringValidator, StringValidatorBuilder},
     timestamp::*,
-    Ignore,
+    Ignore, OptionValueList,
   },
   OptionValue, ProtoOption,
 };
@@ -51,26 +48,27 @@ impl<'a> From<RepeatedValidator<'a>> for ProtoOption {
   fn from(validator: RepeatedValidator) -> ProtoOption {
     let name = "(buf.validate.field)";
 
-    let mut values: BTreeMap<Box<str>, OptionValue> = BTreeMap::new();
+    let mut values: OptionValueList = Vec::new();
 
     insert_option!(validator, values, unique, bool);
     insert_option!(validator, values, min_items, Uint);
     insert_option!(validator, values, max_items, Uint);
 
     if let Some(items_option) = validator.items {
-      values.insert("items".into(), (*items_option.value).clone());
+      values.push(("items".into(), (*items_option.value).clone()));
     }
 
-    let mut options_map: BTreeMap<Box<str>, OptionValue> = btreemap! {
-      "repeated".into() => OptionValue::Message(values)
-    };
+    let mut option_value: OptionValueList = vec![(
+      "repeated".into(),
+      OptionValue::Message(values.into_boxed_slice()),
+    )];
 
-    insert_cel_rule!(validator, options_map);
-    insert_option!(validator, options_map, required, bool);
+    insert_cel_rule!(validator, option_value);
+    insert_option!(validator, option_value, required, bool);
 
     ProtoOption {
       name,
-      value: OptionValue::Message(options_map).into(),
+      value: OptionValue::Message(option_value.into_boxed_slice()).into(),
     }
   }
 }

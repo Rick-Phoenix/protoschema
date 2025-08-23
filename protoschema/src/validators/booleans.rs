@@ -1,9 +1,6 @@
-use std::collections::BTreeMap;
-
 use bon::Builder;
-use maplit::btreemap;
 
-use crate::{OptionValue, ProtoOption};
+use crate::{validators::OptionValueList, OptionValue, ProtoOption};
 
 #[derive(Clone, Debug, Builder)]
 pub struct BoolValidator {
@@ -24,21 +21,22 @@ impl From<BoolValidator> for ProtoOption {
   fn from(validator: BoolValidator) -> Self {
     let name = "(buf.validate.field)";
 
-    let mut values: BTreeMap<Box<str>, OptionValue> = BTreeMap::new();
+    let mut values: OptionValueList = Vec::new();
 
     if let Some(const_val) = validator.const_ {
-      values.insert("const".into(), OptionValue::Bool(const_val));
+      values.push(("const".into(), OptionValue::Bool(const_val)));
     }
 
-    let mut options_map: BTreeMap<Box<str>, OptionValue> = btreemap! {
-      "bool".into() => OptionValue::Message(values)
-    };
+    let mut option_value: OptionValueList = vec![(
+      "bool".into(),
+      OptionValue::Message(values.into_boxed_slice()),
+    )];
 
-    insert_option!(validator, options_map, required, bool);
+    insert_option!(validator, option_value, required, bool);
 
     ProtoOption {
       name,
-      value: OptionValue::Message(options_map).into(),
+      value: OptionValue::Message(option_value.into_boxed_slice()).into(),
     }
   }
 }

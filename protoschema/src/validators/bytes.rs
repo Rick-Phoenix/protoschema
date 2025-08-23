@@ -1,26 +1,23 @@
-use std::collections::BTreeMap;
-
 use bon::Builder;
-use maplit::btreemap;
 
 use crate::{
-  validators::{cel::CelRule, validate_lists, Ignore},
+  validators::{cel::CelRule, validate_lists, Ignore, OptionValueList},
   OptionValue, ProtoOption,
 };
 
 macro_rules! insert_bytes_option {
   ($validator:ident, $values:ident, $field:ident) => {
     $validator.$field.map(|v| {
-      $values.insert(
+      $values.push((
         stringify!($field).into(),
         OptionValue::String(format_bytes_as_proto_string_literal(v).into()),
-      )
+      ))
     })
   };
 
   ($validator:ident, $values:ident, $field:ident, list) => {
     $validator.$field.map(|v| {
-      $values.insert(
+      $values.push((
         stringify!($field).into(),
         OptionValue::List(
           v.iter()
@@ -28,7 +25,7 @@ macro_rules! insert_bytes_option {
             .collect::<Vec<OptionValue>>()
             .into_boxed_slice(),
         ),
-      )
+      ))
     })
   };
 }
@@ -68,13 +65,13 @@ impl<'a> From<BytesValidator<'a>> for ProtoOption {
   fn from(validator: BytesValidator<'a>) -> Self {
     let name = "(buf.validate.field)";
 
-    let mut values: BTreeMap<Box<str>, OptionValue> = BTreeMap::new();
+    let mut values: OptionValueList = Vec::new();
 
     if let Some(const_val) = validator.const_ {
-      values.insert(
+      values.push((
         "const".into(),
         OptionValue::String(format_bytes_as_proto_string_literal(const_val).into()),
-      );
+      ));
     }
 
     validate_lists(validator.in_, validator.not_in).unwrap_or_else(|invalid| {
@@ -102,16 +99,17 @@ impl<'a> From<BytesValidator<'a>> for ProtoOption {
       v.to_option(&mut values)
     }
 
-    let mut options_map: BTreeMap<Box<str>, OptionValue> = btreemap! {
-      "bytes".into() => OptionValue::Message(values)
-    };
+    let mut option_value: OptionValueList = vec![(
+      "bytes".into(),
+      OptionValue::Message(values.into_boxed_slice()),
+    )];
 
-    insert_cel_rule!(validator, options_map);
-    insert_option!(validator, options_map, required, bool);
+    insert_cel_rule!(validator, option_value);
+    insert_option!(validator, option_value, required, bool);
 
     ProtoOption {
       name,
-      value: OptionValue::Message(options_map).into(),
+      value: OptionValue::Message(option_value.into_boxed_slice()).into(),
     }
   }
 }
@@ -156,11 +154,11 @@ impl<'a, S: State> BytesValidatorBuilder<'a, S> {
 }
 
 impl WellKnown {
-  pub(crate) fn to_option(self, option_values: &mut BTreeMap<Box<str>, OptionValue>) {
+  pub(crate) fn to_option(self, option_values: &mut OptionValueList) {
     match self {
-      WellKnown::Ip => option_values.insert("ip".into(), OptionValue::Bool(true)),
-      WellKnown::Ipv4 => option_values.insert("ipv4".into(), OptionValue::Bool(true)),
-      WellKnown::Ipv6 => option_values.insert("ipv6".into(), OptionValue::Bool(true)),
+      WellKnown::Ip => option_values.push(("ip".into(), OptionValue::Bool(true))),
+      WellKnown::Ipv4 => option_values.push(("ipv4".into(), OptionValue::Bool(true))),
+      WellKnown::Ipv6 => option_values.push(("ipv6".into(), OptionValue::Bool(true))),
     };
   }
 }

@@ -1,10 +1,7 @@
-use std::collections::BTreeMap;
-
 use bon::Builder;
-use maplit::btreemap;
 
 use crate::{
-  validators::{cel::CelRule, validate_lists, Ignore},
+  validators::{cel::CelRule, validate_lists, Ignore, OptionValueList},
   OptionValue, ProtoOption,
 };
 
@@ -46,15 +43,10 @@ impl<'a> From<StringValidator<'a>> for ProtoOption {
   fn from(validator: StringValidator) -> ProtoOption {
     let name = "(buf.validate.field)";
 
-    let mut values: BTreeMap<Box<str>, OptionValue> = BTreeMap::new();
+    let mut values: OptionValueList = Vec::new();
 
     if let Some(const_val) = validator.const_ {
-      values.insert("const".into(), OptionValue::String(const_val.into()));
-
-      return ProtoOption {
-        name,
-        value: OptionValue::Message(values).into(),
-      };
+      values.push(("const".into(), OptionValue::String(const_val.into())));
     }
 
     validate_lists(validator.in_, validator.not_in).unwrap_or_else(|invalid| {
@@ -90,16 +82,17 @@ impl<'a> From<StringValidator<'a>> for ProtoOption {
       v.to_option(&mut values)
     }
 
-    let mut options_map: BTreeMap<Box<str>, OptionValue> = btreemap! {
-      "string".into() => OptionValue::Message(values)
-    };
+    let mut option_value: OptionValueList = vec![(
+      "string".into(),
+      OptionValue::Message(values.into_boxed_slice()),
+    )];
 
-    insert_cel_rule!(validator, options_map);
-    insert_option!(validator, options_map, required, bool);
+    insert_cel_rule!(validator, option_value);
+    insert_option!(validator, option_value, required, bool);
 
     ProtoOption {
       name,
-      value: OptionValue::Message(options_map).into(),
+      value: OptionValue::Message(option_value.into_boxed_slice()).into(),
     }
   }
 }
@@ -182,60 +175,60 @@ impl<'a, S: State> StringValidatorBuilder<'a, S> {
 }
 
 impl WellKnown {
-  pub(crate) fn to_option(self, option_values: &mut BTreeMap<Box<str>, OptionValue>) {
+  pub(crate) fn to_option(self, option_values: &mut OptionValueList) {
     match self {
-      WellKnown::Email => option_values.insert("email".into(), OptionValue::Bool(true)),
-      WellKnown::Hostname => option_values.insert("hostname".into(), OptionValue::Bool(true)),
-      WellKnown::Ip => option_values.insert("ip".into(), OptionValue::Bool(true)),
-      WellKnown::Ipv4 => option_values.insert("ipv4".into(), OptionValue::Bool(true)),
-      WellKnown::Ipv6 => option_values.insert("ipv6".into(), OptionValue::Bool(true)),
-      WellKnown::Uri => option_values.insert("uri".into(), OptionValue::Bool(true)),
-      WellKnown::UriRef => option_values.insert("uri_ref".into(), OptionValue::Bool(true)),
-      WellKnown::Address => option_values.insert("address".into(), OptionValue::Bool(true)),
-      WellKnown::Uuid => option_values.insert("uuid".into(), OptionValue::Bool(true)),
-      WellKnown::Tuuid => option_values.insert("tuuid".into(), OptionValue::Bool(true)),
+      WellKnown::Email => option_values.push(("email".into(), OptionValue::Bool(true))),
+      WellKnown::Hostname => option_values.push(("hostname".into(), OptionValue::Bool(true))),
+      WellKnown::Ip => option_values.push(("ip".into(), OptionValue::Bool(true))),
+      WellKnown::Ipv4 => option_values.push(("ipv4".into(), OptionValue::Bool(true))),
+      WellKnown::Ipv6 => option_values.push(("ipv6".into(), OptionValue::Bool(true))),
+      WellKnown::Uri => option_values.push(("uri".into(), OptionValue::Bool(true))),
+      WellKnown::UriRef => option_values.push(("uri_ref".into(), OptionValue::Bool(true))),
+      WellKnown::Address => option_values.push(("address".into(), OptionValue::Bool(true))),
+      WellKnown::Uuid => option_values.push(("uuid".into(), OptionValue::Bool(true))),
+      WellKnown::Tuuid => option_values.push(("tuuid".into(), OptionValue::Bool(true))),
       WellKnown::IpWithPrefixlen => {
-        option_values.insert("ip_with_prefixlen".into(), OptionValue::Bool(true))
+        option_values.push(("ip_with_prefixlen".into(), OptionValue::Bool(true)))
       }
       WellKnown::Ipv4WithPrefixlen => {
-        option_values.insert("ipv4_with_prefixlen".into(), OptionValue::Bool(true))
+        option_values.push(("ipv4_with_prefixlen".into(), OptionValue::Bool(true)))
       }
       WellKnown::Ipv6WithPrefixlen => {
-        option_values.insert("ipv6_with_prefixlen".into(), OptionValue::Bool(true))
+        option_values.push(("ipv6_with_prefixlen".into(), OptionValue::Bool(true)))
       }
-      WellKnown::IpPrefix => option_values.insert("ip_prefix".into(), OptionValue::Bool(true)),
-      WellKnown::Ipv4Prefix => option_values.insert("ipv4_prefix".into(), OptionValue::Bool(true)),
-      WellKnown::Ipv6Prefix => option_values.insert("ipv6_prefix".into(), OptionValue::Bool(true)),
+      WellKnown::IpPrefix => option_values.push(("ip_prefix".into(), OptionValue::Bool(true))),
+      WellKnown::Ipv4Prefix => option_values.push(("ipv4_prefix".into(), OptionValue::Bool(true))),
+      WellKnown::Ipv6Prefix => option_values.push(("ipv6_prefix".into(), OptionValue::Bool(true))),
       WellKnown::HostAndPort => {
-        option_values.insert("host_and_port".into(), OptionValue::Bool(true))
+        option_values.push(("host_and_port".into(), OptionValue::Bool(true)))
       }
       WellKnown::HeaderNameLoose => {
-        option_values.insert(
+        option_values.push((
           "well_known_regex".into(),
           OptionValue::Identifier("KNOWN_REGEX_HTTP_HEADER_NAME".into()),
-        );
-        option_values.insert("strict".into(), OptionValue::Bool(false))
+        ));
+        option_values.push(("strict".into(), OptionValue::Bool(false)))
       }
       WellKnown::HeaderNameStrict => {
-        option_values.insert(
+        option_values.push((
           "well_known_regex".into(),
           OptionValue::Identifier("KNOWN_REGEX_HTTP_HEADER_NAME".into()),
-        );
-        option_values.insert("strict".into(), OptionValue::Bool(true))
+        ));
+        option_values.push(("strict".into(), OptionValue::Bool(true)))
       }
       WellKnown::HeaderValueLoose => {
-        option_values.insert(
+        option_values.push((
           "well_known_regex".into(),
           OptionValue::Identifier("KNOWN_REGEX_HTTP_HEADER_VALUE".into()),
-        );
-        option_values.insert("strict".into(), OptionValue::Bool(false))
+        ));
+        option_values.push(("strict".into(), OptionValue::Bool(false)))
       }
       WellKnown::HeaderValueStrict => {
-        option_values.insert(
+        option_values.push((
           "well_known_regex".into(),
           OptionValue::Identifier("KNOWN_REGEX_HTTP_HEADER_VALUE".into()),
-        );
-        option_values.insert("strict".into(), OptionValue::Bool(true))
+        ));
+        option_values.push(("strict".into(), OptionValue::Bool(true)))
       }
     };
   }

@@ -1,10 +1,7 @@
-use std::collections::BTreeMap;
-
 use bon::Builder;
-use maplit::btreemap;
 
 use crate::{
-  validators::{cel::CelRule, Ignore},
+  validators::{cel::CelRule, Ignore, OptionValueList},
   OptionValue, ProtoOption,
 };
 
@@ -158,30 +155,26 @@ macro_rules! numeric_validator {
         fn from(validator: [< $proto_type:camel Validator >]) -> ProtoOption {
           let name = "(buf.validate.field)";
 
-          let mut values: BTreeMap<Box<str>, OptionValue> = BTreeMap::new();
+          let mut values: OptionValueList = Vec::new();
 
           if let Some(const_val) = validator.const_ {
-            values.insert("const".into(), OptionValue::from(const_val));
-            return ProtoOption {
-              name: name.into(),
-              value: OptionValue::Message(values).into(),
-            };
+            values.push(("const".into(), OptionValue::from(const_val)));
           }
 
           super::validate_comparables(validator.lt, validator.lte, validator.gt, validator.gte);
           get_list_check!($rust_type, validator.in_, validator.not_in);
           get_options!($option_value_variant, validator, values);
 
-          let mut options_map: BTreeMap<Box<str>, OptionValue> = btreemap! {
-            stringify!($proto_type).into() => OptionValue::Message(values)
-          };
+          let mut option_value: OptionValueList = vec! [
+            (stringify!($proto_type).into(), OptionValue::Message(values.into_boxed_slice()))
+          ];
 
-          insert_cel_rule!(validator, options_map);
-          insert_option!(validator, options_map, required, bool);
+          insert_cel_rule!(validator, option_value);
+          insert_option!(validator, option_value, required, bool);
 
           ProtoOption {
             name: name.into(),
-            value: OptionValue::Message(options_map).into(),
+            value: OptionValue::Message(option_value.into_boxed_slice()).into(),
           }
         }
       }

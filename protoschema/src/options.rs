@@ -1,11 +1,8 @@
-use std::{collections::BTreeMap, fmt::Display, sync::Arc};
+use std::{fmt::Display, sync::Arc};
 
-use askama::Template;
+pub use crate::field_type::{Duration, Timestamp};
 
-use crate::field_type::{Duration, Timestamp};
-
-#[derive(Template, Clone, Debug)]
-#[template(path = "opt.proto.j2")]
+#[derive(Clone, Debug)]
 pub struct ProtoOption {
   pub name: &'static str,
   pub value: Arc<OptionValue>,
@@ -19,7 +16,7 @@ pub enum OptionValue {
   Float(f64),
   String(Box<str>),
   List(Box<[OptionValue]>),
-  Message(BTreeMap<Box<str>, OptionValue>),
+  Message(Box<[(Box<str>, OptionValue)]>),
   Identifier(Box<str>),
   Duration(Duration),
   Timestamp(Timestamp),
@@ -64,11 +61,11 @@ impl Display for OptionValue {
         write!(f, " ]")?;
         Ok(())
       }
-      OptionValue::Message(btree_map) => {
+      OptionValue::Message(key_value_pairs) => {
         write!(f, "{{ ")?;
-        for (idx, (key, val)) in btree_map.iter().enumerate() {
+        for (idx, (key, val)) in key_value_pairs.iter().enumerate() {
           write!(f, "{}: {}", key, val)?;
-          if idx != btree_map.len() - 1 {
+          if idx != key_value_pairs.len() - 1 {
             write!(f, ", ")?;
           }
         }

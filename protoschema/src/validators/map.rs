@@ -1,7 +1,4 @@
-use std::collections::BTreeMap;
-
 use bon::Builder;
-use maplit::btreemap;
 
 use crate::{
   validators::{
@@ -15,7 +12,7 @@ use crate::{
     numeric::*,
     string::{StringValidator, StringValidatorBuilder},
     timestamp::*,
-    Ignore,
+    Ignore, OptionValueList,
   },
   OptionValue, ProtoOption,
 };
@@ -49,29 +46,30 @@ impl<'a> From<MapValidator<'a>> for ProtoOption {
   fn from(validator: MapValidator) -> Self {
     let name = "(buf.validate.field)";
 
-    let mut values: BTreeMap<Box<str>, OptionValue> = BTreeMap::new();
+    let mut values: OptionValueList = Vec::new();
 
     insert_option!(validator, values, min_pairs, Uint);
     insert_option!(validator, values, max_pairs, Uint);
 
     if let Some(keys_option) = validator.keys {
-      values.insert("keys".into(), (*keys_option.value).clone());
+      values.push(("keys".into(), (*keys_option.value).clone()));
     }
 
     if let Some(values_option) = validator.values {
-      values.insert("values".into(), (*values_option.value).clone());
+      values.push(("values".into(), (*values_option.value).clone()));
     }
 
-    let mut options_map: BTreeMap<Box<str>, OptionValue> = btreemap! {
-      "map".into() => OptionValue::Message(values)
-    };
+    let mut option_value: OptionValueList = vec![(
+      "map".into(),
+      OptionValue::Message(values.into_boxed_slice()),
+    )];
 
-    insert_cel_rule!(validator, options_map);
-    insert_option!(validator, options_map, required, bool);
+    insert_cel_rule!(validator, option_value);
+    insert_option!(validator, option_value, required, bool);
 
     ProtoOption {
       name,
-      value: OptionValue::Message(options_map).into(),
+      value: OptionValue::Message(option_value.into_boxed_slice()).into(),
     }
   }
 }

@@ -2,6 +2,10 @@ use std::{collections::HashSet, fmt::Debug, hash::Hash};
 
 use proto_types::protovalidate::Ignore;
 
+use crate::OptionValue;
+
+type OptionValueList = Vec<(Box<str>, OptionValue)>;
+
 macro_rules! impl_ignore {
   ($builder:ident) => {
     $crate::paste! {
@@ -103,10 +107,10 @@ pub mod macros {
       if let Some(cel_rules) = $validator.cel {
         let rule_values: Vec<OptionValue> =
           cel_rules.iter().cloned().map(OptionValue::from).collect();
-        $values.insert(
+        $values.push((
           "cel".into(),
           OptionValue::List(rule_values.into_boxed_slice()),
-        );
+        ));
       }
     };
   }
@@ -120,7 +124,7 @@ pub mod macros {
     ) => {
       $validator
         .$field
-        .map(|v| $values.insert(super::get_option_name(stringify!($field)), option_value!(v, $($val_type)*)))
+        .map(|v| $values.push((super::get_option_name(stringify!($field)), option_value!(v, $($val_type)*))))
     };
   }
 

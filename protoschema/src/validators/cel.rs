@@ -1,7 +1,3 @@
-use std::collections::BTreeMap;
-
-use maplit::btreemap;
-
 use crate::OptionValue;
 
 #[derive(Debug, Clone)]
@@ -13,12 +9,13 @@ pub struct CelRule {
 
 impl From<CelRule> for OptionValue {
   fn from(value: CelRule) -> Self {
-    let rule: BTreeMap<Box<str>, OptionValue> = btreemap! {
-      "id".into() => OptionValue::String(value.id),
-      "message".into() => OptionValue::String(value.message),
-      "expression".into() => OptionValue::String(value.expression),
-    };
-
-    OptionValue::Message(rule)
+    OptionValue::Message(
+      vec![
+        ("id".into(), OptionValue::String(value.id)),
+        ("message".into(), OptionValue::String(value.message)),
+        ("expression".into(), OptionValue::String(value.expression)),
+      ]
+      .into_boxed_slice(),
+    )
   }
 }

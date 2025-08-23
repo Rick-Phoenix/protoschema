@@ -1,10 +1,7 @@
-use std::collections::BTreeMap;
-
 use bon::Builder;
-use maplit::btreemap;
 
 use crate::{
-  validators::{cel::CelRule, validate_lists, Ignore},
+  validators::{cel::CelRule, validate_lists, Ignore, OptionValueList},
   OptionValue, ProtoOption,
 };
 
@@ -33,7 +30,7 @@ impl<'a> From<AnyValidator<'a>> for ProtoOption {
   fn from(validator: AnyValidator<'a>) -> Self {
     let name = "(buf.validate.field)";
 
-    let mut values: BTreeMap<Box<str>, OptionValue> = BTreeMap::new();
+    let mut values: OptionValueList = Vec::new();
 
     validate_lists(validator.in_, validator.not_in).unwrap_or_else(|invalid| {
       panic!(
@@ -45,16 +42,17 @@ impl<'a> From<AnyValidator<'a>> for ProtoOption {
     insert_option!(validator, values, in_, [string]);
     insert_option!(validator, values, not_in, [string]);
 
-    let mut options_map: BTreeMap<Box<str>, OptionValue> = btreemap! {
-      "any".into() => OptionValue::Message(values)
-    };
+    let mut option_value: OptionValueList = vec![(
+      "any".into(),
+      OptionValue::Message(values.into_boxed_slice()),
+    )];
 
-    insert_cel_rule!(validator, options_map);
-    insert_option!(validator, options_map, required, bool);
+    insert_cel_rule!(validator, option_value);
+    insert_option!(validator, option_value, required, bool);
 
     ProtoOption {
       name,
-      value: OptionValue::Message(options_map).into(),
+      value: OptionValue::Message(option_value.into_boxed_slice()).into(),
     }
   }
 }

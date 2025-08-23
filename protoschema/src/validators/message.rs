@@ -1,9 +1,7 @@
-use std::collections::BTreeMap;
-
 use bon::Builder;
 
 use crate::{
-  validators::{cel::CelRule, Ignore},
+  validators::{cel::CelRule, Ignore, OptionValueList},
   OptionValue, ProtoOption,
 };
 
@@ -30,14 +28,14 @@ impl<'a> From<MessageValidator<'a>> for ProtoOption {
   fn from(validator: MessageValidator) -> Self {
     let name = "(buf.validate.field)";
 
-    let mut values: BTreeMap<Box<str>, OptionValue> = BTreeMap::new();
+    let mut values: OptionValueList = Vec::new();
 
     insert_cel_rule!(validator, values);
     insert_option!(validator, values, required, bool);
 
     ProtoOption {
       name,
-      value: OptionValue::Message(values).into(),
+      value: OptionValue::Message(values.into_boxed_slice()).into(),
     }
   }
 }
