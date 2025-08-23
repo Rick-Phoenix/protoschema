@@ -36,7 +36,7 @@ impl<'a> From<MessageValidator<'a>> for ProtoOption {
     insert_option!(validator, values, required, bool);
 
     ProtoOption {
-      name: name.into(),
+      name,
       value: OptionValue::Message(values).into(),
     }
   }

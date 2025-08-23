@@ -63,7 +63,7 @@ impl<'a> From<EnumValidator<'a>> for ProtoOption {
     insert_option!(validator, options_map, required, bool);
 
     ProtoOption {
-      name: name.into(),
+      name,
       value: OptionValue::Message(options_map).into(),
     }
   }

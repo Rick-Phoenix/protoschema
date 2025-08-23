@@ -30,6 +30,7 @@ pub struct MessageTemplate {
   pub messages: Vec<MessageTemplate>,
   pub oneofs: Box<[OneofData]>,
   pub enums: Vec<EnumTemplate>,
+  pub options: Box<[ProtoOption]>,
 }
 
 #[derive(Clone, Debug, Default, Template)]
@@ -122,6 +123,7 @@ impl MessageData {
       file: self.import_path.file.clone(),
       fields: self.fields.clone(),
       oneofs: self.oneofs.clone(),
+      options: self.options.clone().into_boxed_slice(),
       messages: built_messages,
       enums,
     }

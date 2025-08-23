@@ -1,5 +1,7 @@
 use std::{marker::PhantomData, ops::Range, sync::Arc};
 
+use maplit::btreemap;
+
 use crate::{
   enums::{EnumBuilder, EnumData},
   field_type::ImportedItemPath,
@@ -7,7 +9,9 @@ use crate::{
   oneofs::{Oneof, OneofData},
   package::Arena,
   rendering::MessageTemplate,
-  sealed, Empty, FieldType, IsSet, IsUnset, ProtoOption, Set, Unset,
+  sealed,
+  validators::cel::CelRule,
+  Empty, FieldType, IsSet, IsUnset, OptionValue, ProtoOption, Set, Unset,
 };
 
 #[derive(Clone, Debug)]
@@ -26,13 +30,42 @@ pub struct MessageData {
   pub reserved_numbers: Box<[u32]>,
   pub reserved_ranges: Box<[Range<u32>]>,
   pub reserved_names: Box<[Box<str>]>,
-  pub options: Box<[ProtoOption]>,
+  pub options: Vec<ProtoOption>,
   pub enums: Vec<usize>,
   pub messages: Vec<usize>,
   pub imports: Vec<Arc<str>>,
 }
 
 impl<S: MessageState> MessageBuilder<S> {
+  pub fn cel_rules<I>(self, rules: I) -> MessageBuilder<S>
+  where
+    I: IntoIterator<Item = CelRule>,
+  {
+    {
+      let mut arena = self.arena.borrow_mut();
+      let msg = &mut arena.messages[self.id];
+      msg.imports.push("buf/validate/validate.proto".into());
+
+      let rules: Vec<OptionValue> = rules.into_iter().map(|r| r.into()).collect();
+      let option = ProtoOption {
+        name: "(buf.validate.cel).message",
+        value: OptionValue::Message(btreemap! {
+          "cel".into() => OptionValue::List(rules.into_boxed_slice())
+        })
+        .into(),
+      };
+
+      msg.options.push(option);
+    }
+
+    MessageBuilder {
+      id: self.id,
+      arena: self.arena,
+      file_id: self.file_id,
+      _phantom: PhantomData,
+    }
+  }
+
   // Getters
   pub fn get_type(&self) -> FieldType {
     FieldType::Message(self.get_import_path())
@@ -243,16 +276,15 @@ impl<S: MessageState> MessageBuilder<S> {
     }
   }
 
-  pub fn options<I>(self, options: I) -> MessageBuilder<SetOptions<S>>
+  pub fn add_options<I>(self, options: I) -> MessageBuilder<S>
   where
-    S::Options: IsUnset,
     I: IntoIterator<Item = ProtoOption>,
   {
     {
       let mut arena = self.arena.borrow_mut();
       let msg = &mut arena.messages[self.id];
 
-      msg.options = options.into_iter().collect()
+      msg.options.extend(options)
     }
 
     MessageBuilder {
@@ -332,7 +364,6 @@ mod members {
   pub struct reserved_numbers;
   pub struct reserved_ranges;
   pub struct reserved_names;
-  pub struct options;
   pub struct oneofs;
 }
 
@@ -341,35 +372,15 @@ pub trait MessageState: Sized {
   type ReservedNumbers;
   type ReservedRanges;
   type ReservedNames;
-  type Options;
   type Oneofs;
   #[doc(hidden)]
   const SEALED: sealed::Sealed;
-}
-
-pub trait IsComplete: MessageState {
-  #[doc(hidden)]
-  const SEALED: sealed::Sealed;
-}
-
-#[doc(hidden)]
-impl<S: MessageState> IsComplete for S
-where
-  S::Fields: IsSet,
-  S::ReservedNumbers: IsSet,
-  S::ReservedRanges: IsSet,
-  S::ReservedNames: IsSet,
-  S::Options: IsSet,
-  S::Oneofs: IsSet,
-{
-  const SEALED: sealed::Sealed = sealed::Sealed;
 }
 
 pub struct SetFields<S: MessageState = Empty>(PhantomData<fn() -> S>);
 pub struct SetReservedNumbers<S: MessageState = Empty>(PhantomData<fn() -> S>);
 pub struct SetReservedRanges<S: MessageState = Empty>(PhantomData<fn() -> S>);
 pub struct SetReservedNames<S: MessageState = Empty>(PhantomData<fn() -> S>);
-pub struct SetOptions<S: MessageState = Empty>(PhantomData<fn() -> S>);
 pub struct SetOneofs<S: MessageState = Empty>(PhantomData<fn() -> S>);
 
 #[doc(hidden)]
@@ -378,7 +389,6 @@ impl MessageState for Empty {
   type ReservedNumbers = Unset<members::reserved_numbers>;
   type ReservedRanges = Unset<members::reserved_ranges>;
   type ReservedNames = Unset<members::reserved_names>;
-  type Options = Unset<members::options>;
   type Oneofs = Unset<members::oneofs>;
   const SEALED: sealed::Sealed = sealed::Sealed;
 }
@@ -389,7 +399,6 @@ impl<S: MessageState> MessageState for SetFields<S> {
   type ReservedNumbers = S::ReservedNumbers;
   type ReservedRanges = S::ReservedRanges;
   type ReservedNames = S::ReservedNames;
-  type Options = S::Options;
   type Oneofs = S::Oneofs;
   const SEALED: sealed::Sealed = sealed::Sealed;
 }
@@ -400,7 +409,6 @@ impl<S: MessageState> MessageState for SetReservedNumbers<S> {
   type ReservedNumbers = Set<members::reserved_numbers>;
   type ReservedRanges = S::ReservedRanges;
   type ReservedNames = S::ReservedNames;
-  type Options = S::Options;
   type Oneofs = S::Oneofs;
 
   const SEALED: sealed::Sealed = sealed::Sealed;
@@ -411,7 +419,6 @@ impl<S: MessageState> MessageState for SetReservedRanges<S> {
   type ReservedNumbers = S::ReservedNumbers;
   type ReservedRanges = Set<members::reserved_ranges>;
   type ReservedNames = S::ReservedNames;
-  type Options = S::Options;
   type Oneofs = S::Oneofs;
 
   const SEALED: sealed::Sealed = sealed::Sealed;
@@ -422,18 +429,6 @@ impl<S: MessageState> MessageState for SetReservedNames<S> {
   type ReservedNumbers = S::ReservedNumbers;
   type ReservedRanges = S::ReservedRanges;
   type ReservedNames = Set<members::reserved_names>;
-  type Options = S::Options;
-  type Oneofs = S::Oneofs;
-
-  const SEALED: sealed::Sealed = sealed::Sealed;
-}
-#[doc(hidden)]
-impl<S: MessageState> MessageState for SetOptions<S> {
-  type Fields = S::Fields;
-  type ReservedNumbers = S::ReservedNumbers;
-  type ReservedRanges = S::ReservedRanges;
-  type ReservedNames = S::ReservedNames;
-  type Options = Set<members::options>;
   type Oneofs = S::Oneofs;
 
   const SEALED: sealed::Sealed = sealed::Sealed;
@@ -445,7 +440,6 @@ impl<S: MessageState> MessageState for SetOneofs<S> {
   type ReservedNumbers = S::ReservedNumbers;
   type ReservedRanges = S::ReservedRanges;
   type ReservedNames = S::ReservedNames;
-  type Options = S::Options;
   type Oneofs = Set<members::oneofs>;
 
   const SEALED: sealed::Sealed = sealed::Sealed;

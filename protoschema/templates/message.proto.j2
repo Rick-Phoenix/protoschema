@@ -8,6 +8,8 @@
 {% endmacro %}
 
 message {{ name }} {
+  {% call opts::get_options(options) %}
+
   {%- for enum_ in enums %}
     {{ enum_ }}
   {%- endfor -%}

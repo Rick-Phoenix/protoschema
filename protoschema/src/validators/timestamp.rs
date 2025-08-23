@@ -49,7 +49,7 @@ impl<'a> From<TimestampValidator<'a>> for ProtoOption {
     if let Some(const_val) = validator.const_ {
       values.insert("const".into(), OptionValue::Timestamp(const_val));
       return ProtoOption {
-        name: name.into(),
+        name,
         value: OptionValue::Message(values).into(),
       };
     }
@@ -98,7 +98,7 @@ impl<'a> From<TimestampValidator<'a>> for ProtoOption {
     insert_option!(validator, options_map, required, bool);
 
     ProtoOption {
-      name: name.into(),
+      name,
       value: OptionValue::Message(options_map).into(),
     }
   }

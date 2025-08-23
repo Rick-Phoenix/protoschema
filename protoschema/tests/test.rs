@@ -2,8 +2,8 @@
 
 use askama::Template;
 use protoschema::{
-  enum_field, enum_map, enum_variants, extension, message_body, msg_field, msg_map, oneof,
-  package::Package, proto_enum, reusable_fields, services, string, OptionValue, ProtoOption,
+  enum_field, enum_map, enum_variants, extension, message_body, msg_field, msg_map,
+  package::Package, proto_enum, services, string, OptionValue, ProtoOption,
 };
 
 #[test]
@@ -19,14 +19,14 @@ fn main_test() {
   let file = package.new_file("abc");
 
   let opt = ProtoOption {
-    name: "abc".into(),
+    name: "abc",
     value: OptionValue::Bool(true).into(),
   };
 
   let msg = file.new_message("MyMsg");
   let msg2 = file.new_message("MyMsg2");
 
-  let field = msg_field!(repeated imported_nested_msg, "my_msg_field", |r, i| r.items(i.cel(&[])));
+  let field = msg_field!(repeated imported_nested_msg, "my_msg_field");
 
   let reusable_variants = enum_variants!(
     1 => "ABC",
@@ -64,6 +64,7 @@ fn main_test() {
     options = [ opt.clone(), opt.clone() ],
     reserved_names = [ "one", "two" ],
     reserved = [ 2, 2..4 ],
+    cel = [{ id = "abc", msg = "abc", expr = "abc" }],
 
     1 => isolated_field,
     2 => string!("abc").options([opt.clone(), opt.clone(), opt.clone()]),
@@ -72,7 +73,7 @@ fn main_test() {
     5 => enum_field!(example_enum, "enum_without_validator"),
     7 => enum_field!(example_enum, "enum_with_validator", |v| v.defined_only()),
     10 => enum_field!(repeated example_enum, "repeated_enum_field", |r, i| r.items(i.defined_only())),
-    9 => msg_map!("abc", <string, msg2>, |m, k, v| m.min_pairs(15).keys(k.min_len(25)).values(v.cel(&[]))),
+    9 => msg_map!("abc", <string, msg2>, |m, k, _| m.min_pairs(15).keys(k.min_len(25))),
     15 => enum_field!(imported_enum, "imported_enum"),
     16 => field.clone(),
 

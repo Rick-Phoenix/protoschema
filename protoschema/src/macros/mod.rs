@@ -7,6 +7,37 @@ mod parse_reserved;
 mod services_macros;
 
 #[macro_export]
+macro_rules! cel_rule {
+  (id = $id:expr, msg = $msg:expr, expr = $expr:expr) => {
+    $crate::validators::cel::CelRule {
+      id: $id.into(),
+      message: $msg.into(),
+      expression: $expr.into(),
+    }
+  };
+}
+
+#[macro_export]
+macro_rules! cel_rules {
+  (
+    @rules($($rules:tt)*)
+    @rest($(,)?)
+  ) => {
+    [ $($rules)* ]
+  };
+
+  (
+    @rules($($rules:tt)*)
+    @rest({ $($rule_tokens:tt)* } $($rest:tt)*)
+  ) => {
+    $crate::cel_rules!(
+      @rules($($rules)* $crate::cel_rule!($($rule_tokens)*),)
+      @rest($($rest)*)
+    )
+  };
+}
+
+#[macro_export]
 macro_rules! message_body {
   ($msg_builder:expr, options = $options:expr, $($tokens:tt)*) => {
     $crate::_internal_message_body! {
@@ -17,8 +48,9 @@ macro_rules! message_body {
       @enums()
       @reserved()
       @reserved_names()
+      @cel()
       @input($($tokens)*)
-    }.options($options)
+    }.add_options($options)
   };
 
   ($msg_builder:expr, $($tokens:tt)*) => {
@@ -30,6 +62,7 @@ macro_rules! message_body {
       @enums()
       @reserved()
       @reserved_names()
+      @cel()
       @input($($tokens)*)
     }
   };
@@ -46,6 +79,7 @@ macro_rules! _internal_message_body {
     @enums($($enums:tt)*)
     @reserved($($reserved:tt)*)
     @reserved_names($($names:expr)?)
+    @cel($($cel_rules:expr)?)
     @input($(,)?)
   ) => {
     {
@@ -59,6 +93,10 @@ macro_rules! _internal_message_body {
       let mut new_msg = $builder
         .fields(fields_list)
         .oneofs(oneofs_list)
+      $(
+        .cel_rules($cel_rules)
+      )?
+
       $(
         .reserved_names($names)
       )?;
@@ -81,6 +119,7 @@ macro_rules! _internal_message_body {
     @enums($($enums:tt)*)
     @reserved($($reserved:tt)*)
     @reserved_names($($reserved_names:tt)*)
+    @cel($($cel:tt)*)
     @input($(,)? include($block:expr) $($rest:tt)*)
   ) => {
     $crate::_internal_message_body! {
@@ -91,6 +130,35 @@ macro_rules! _internal_message_body {
       @enums($($enums)*)
       @reserved($($reserved)*)
       @reserved_names($($reserved_names)*)
+      @cel($($cel)*)
+      @input($($rest)*)
+    }
+  };
+
+  // Cel rules
+  (
+    @builder($builder:expr)
+    @fields($($fields:tt)*)
+    @fields_blocks($($fields_blocks:tt)*)
+    @oneofs($($oneofs:tt)*)
+    @enums($($enums:tt)*)
+    @reserved($($reserved:tt)*)
+    @reserved_names($($reserved_names:tt)*)
+    @cel()
+    @input($(,)? cel = [ $($items:tt)* ] $($rest:tt)*)
+  ) => {
+    $crate::_internal_message_body! {
+      @builder($builder)
+      @fields($($fields)*)
+      @fields_blocks($($fields_blocks)*)
+      @oneofs($($oneofs)*)
+      @enums($($enums)*)
+      @reserved($($reserved)*)
+      @reserved_names($($reserved_names)*)
+      @cel($crate::cel_rules!(
+        @rules()
+        @rest($($items)*)
+      ))
       @input($($rest)*)
     }
   };
@@ -104,6 +172,7 @@ macro_rules! _internal_message_body {
     @enums($($enums:tt)*)
     @reserved()
     @reserved_names($($reserved_names:tt)*)
+    @cel($($cel:tt)*)
     @input($(,)? reserved = [ $($items:tt)* ] $($rest:tt)*)
   ) => {
     $crate::_internal_message_body! {
@@ -114,6 +183,7 @@ macro_rules! _internal_message_body {
       @enums($($enums)*)
       @reserved($($items)*)
       @reserved_names($($reserved_names)*)
+      @cel($($cel)*)
       @input($($rest)*)
     }
   };
@@ -127,6 +197,7 @@ macro_rules! _internal_message_body {
     @enums($($enums:tt)*)
     @reserved($($reserved:tt)*)
     @reserved_names()
+    @cel($($cel:tt)*)
     // Expr must be followed by a comma
     @input($(,)? reserved_names = $reserved_names:expr, $($rest:tt)*)
   ) => {
@@ -138,6 +209,7 @@ macro_rules! _internal_message_body {
       @enums($($enums)*)
       @reserved($($reserved)*)
       @reserved_names($reserved_names)
+      @cel($($cel)*)
       @input($($rest)*)
     }
   };
@@ -151,6 +223,7 @@ macro_rules! _internal_message_body {
     @enums($($enums:tt)*)
     @reserved($($reserved:tt)*)
     @reserved_names($($reserved_names:tt)*)
+    @cel($($cel:tt)*)
     @input($(,)? enum $name:literal { $($tokens:tt)* } $($rest:tt)* )
   ) => {
     $crate::_internal_message_body! {
@@ -161,6 +234,7 @@ macro_rules! _internal_message_body {
       @enums($crate::proto_enum!($builder.new_enum($name), $($tokens)*); $($enums)*)
       @reserved($($reserved)*)
       @reserved_names($($reserved_names)*)
+      @cel($($cel)*)
       @input($($rest)*)
     }
   };
@@ -174,6 +248,7 @@ macro_rules! _internal_message_body {
     @enums($($enums:tt)*)
     @reserved($($reserved:tt)*)
     @reserved_names($($reserved_names:tt)*)
+    @cel($($cel:tt)*)
     @input($(,)? oneof $name:literal { $($oneof_body:tt)* } $($rest:tt)* )
   ) => {
     $crate::_internal_message_body! {
@@ -187,6 +262,7 @@ macro_rules! _internal_message_body {
       @enums($($enums)*)
       @reserved($($reserved)*)
       @reserved_names($($reserved_names)*)
+      @cel($($cel)*)
       @input($($rest)*)
     }
   };
@@ -200,6 +276,7 @@ macro_rules! _internal_message_body {
     @enums($($enums:tt)*)
     @reserved($($reserved:tt)*)
     @reserved_names($($reserved_names:tt)*)
+    @cel($($cel:tt)*)
     @input($(,)? $tag:literal => $field:expr, $($rest:tt)* )
   ) => {
     $crate::_internal_message_body! {
@@ -210,6 +287,7 @@ macro_rules! _internal_message_body {
       @enums($($enums)*)
       @reserved($($reserved)*)
       @reserved_names($($reserved_names)*)
+      @cel($($cel)*)
       @input($($rest)*)
     }
   };
@@ -223,6 +301,7 @@ macro_rules! _internal_message_body {
     @enums($($enums:tt)*)
     @reserved($($reserved:tt)*)
     @reserved_names($($reserved_names:tt)*)
+    @cel($($cel:tt)*)
     @input($(,)? $tag:literal => $field:expr)
   ) => {
     $crate::_internal_message_body! {
@@ -233,6 +312,7 @@ macro_rules! _internal_message_body {
       @enums($($enums)*)
       @reserved($($reserved)*)
       @reserved_names($($reserved_names)*)
+      @cel($($cel)*)
       @input()
     }
   };

@@ -18,7 +18,7 @@ pub mod common_options {
 #[derive(Template, Clone, Debug)]
 #[template(path = "opt.proto.j2")]
 pub struct ProtoOption {
-  pub name: Arc<str>,
+  pub name: &'static str,
   pub value: Arc<OptionValue>,
 }
 

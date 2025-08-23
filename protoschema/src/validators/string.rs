@@ -52,7 +52,7 @@ impl<'a> From<StringValidator<'a>> for ProtoOption {
       values.insert("const".into(), OptionValue::String(const_val.into()));
 
       return ProtoOption {
-        name: name.into(),
+        name,
         value: OptionValue::Message(values).into(),
       };
     }
@@ -98,7 +98,7 @@ impl<'a> From<StringValidator<'a>> for ProtoOption {
     insert_option!(validator, options_map, required, bool);
 
     ProtoOption {
-      name: name.into(),
+      name,
       value: OptionValue::Message(options_map).into(),
     }
   }

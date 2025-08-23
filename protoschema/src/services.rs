@@ -47,11 +47,12 @@ use service_handler_builder::{
 };
 
 impl<S: HandlerState> ServiceHandlerBuilder<S> {
-  pub fn options(self, options: &[ProtoOption]) -> ServiceHandlerBuilder<HandlerSetOptions<S>>
+  pub fn options<I>(self, options: I) -> ServiceHandlerBuilder<HandlerSetOptions<S>>
   where
     S::Options: HandlerIsUnset,
+    I: IntoIterator<Item = ProtoOption>,
   {
-    self.options_internal(options.into())
+    self.options_internal(options.into_iter().collect())
   }
 
   pub fn request(self, message: &MessageBuilder) -> ServiceHandlerBuilder<SetRequest<S>>
@@ -122,15 +123,16 @@ impl<S: ServiceState> ServiceBuilder<S> {
     }
   }
 
-  pub fn options(self, options: &[ProtoOption]) -> ServiceBuilder<SetOptions<S>>
+  pub fn options<I>(self, options: I) -> ServiceBuilder<SetOptions<S>>
   where
     S::Options: IsUnset,
+    I: IntoIterator<Item = ProtoOption>,
   {
     {
       let mut arena = self.arena.borrow_mut();
       let service = &mut arena.services[self.id];
 
-      service.options = options.into()
+      service.options = options.into_iter().collect()
     }
 
     ServiceBuilder {

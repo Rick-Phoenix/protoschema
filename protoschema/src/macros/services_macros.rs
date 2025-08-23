@@ -4,7 +4,7 @@ macro_rules! handler {
     $crate::services::ServiceHandler::new(stringify!($handler).into())
       .request(&$request)
       .response(&$response)
-      $(.options(&$options))?
+      $(.options($options))?
       .build()
   };
 }
@@ -17,7 +17,7 @@ macro_rules! service {
       .handlers([
         $($crate::handler!($handler_name($request => $response) $([ $($handler_options)+ ])?)),*
       ])
-      .options(&$service_options)
+      .options($service_options)
   };
 }
 
