@@ -32,6 +32,9 @@ pub struct MessageTemplate {
   pub oneofs: Box<[OneofData]>,
   pub enums: Vec<EnumTemplate>,
   pub options: Box<[ProtoOption]>,
+  pub reserved_names: Box<[Box<str>]>,
+  pub reserved_numbers: Box<[u32]>,
+  pub reserved_ranges: Box<[Range<u32>]>,
 }
 
 #[derive(Clone, Debug, Default, Template)]
@@ -128,6 +131,9 @@ impl MessageData {
       options: self.options.clone().into_boxed_slice(),
       messages: built_messages,
       enums,
+      reserved_names: self.reserved_names.clone(),
+      reserved_numbers: self.reserved_numbers.clone(),
+      reserved_ranges: self.reserved_ranges.clone(),
     }
   }
 }

@@ -125,78 +125,57 @@ impl FileBuilder {
     }
   }
 
-  pub fn add_options<I>(self, options: I) -> FileBuilder
+  pub fn add_options<I>(&self, options: I)
   where
     I: IntoIterator<Item = ProtoOption>,
   {
-    {
-      let file = &mut self.arena.borrow_mut().files[self.id];
-      file.options.extend(options)
-    }
-
-    FileBuilder {
-      id: self.id,
-      arena: self.arena,
-    }
+    let file = &mut self.arena.borrow_mut().files[self.id];
+    file.options.extend(options)
   }
 
-  pub fn add_extension(self, extension: Extension) -> FileBuilder {
-    {
-      let file = &mut self.arena.borrow_mut().files[self.id];
+  pub fn add_extension(&self, extension: Extension) {
+    let file = &mut self.arena.borrow_mut().files[self.id];
 
-      file.conditionally_add_import(&extension.import_path.file);
+    file.conditionally_add_import(&extension.import_path.file);
 
-      let built_fields: Vec<FieldData> = extension
-        .fields
-        .into_iter()
-        .map(|f| {
-          f.imports.into_iter().for_each(|i| {
-            file.conditionally_add_import(&i);
-          });
+    let built_fields: Vec<FieldData> = extension
+      .fields
+      .into_iter()
+      .map(|f| {
+        f.imports.into_iter().for_each(|i| {
+          file.conditionally_add_import(&i);
+        });
 
-          FieldData {
-            name: f.name,
-            field_type: f.field_type,
-            kind: f.kind,
-            options: f.options.into_boxed_slice(),
-            tag: f.tag,
-          }
-        })
-        .collect();
+        FieldData {
+          name: f.name,
+          field_type: f.field_type,
+          kind: f.kind,
+          options: f.options.into_boxed_slice(),
+          tag: f.tag,
+        }
+      })
+      .collect();
 
-      let ext_data = ExtensionData {
-        import_path: extension.import_path,
-        fields: built_fields.into_boxed_slice(),
-      };
+    let ext_data = ExtensionData {
+      import_path: extension.import_path,
+      fields: built_fields.into_boxed_slice(),
+    };
 
-      file.extensions.push(ext_data)
-    }
-
-    FileBuilder {
-      id: self.id,
-      arena: self.arena,
-    }
+    file.extensions.push(ext_data)
   }
 
-  pub fn add_imports<I, S>(self, imports: I) -> FileBuilder
+  pub fn add_imports<I, S>(&self, imports: I)
   where
     I: IntoIterator<Item = S>,
     S: AsRef<str>,
   {
-    {
-      let file = &mut self.arena.borrow_mut().files[self.id];
-      let file_name = file.name.as_ref();
+    let file = &mut self.arena.borrow_mut().files[self.id];
+    let file_name = file.name.as_ref();
 
-      for import in imports.into_iter() {
-        if import.as_ref() != file_name {
-          file.imports.insert(import.as_ref().into());
-        }
+    for import in imports.into_iter() {
+      if import.as_ref() != file_name {
+        file.imports.insert(import.as_ref().into());
       }
-    }
-
-    FileBuilder {
-      id: self.id,
-      arena: self.arena,
     }
   }
 }

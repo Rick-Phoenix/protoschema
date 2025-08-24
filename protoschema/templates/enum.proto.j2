@@ -1,7 +1,16 @@
 {%- import "opt.proto.j2" as opts %}
 
 enum {{+ name +}} {
-{% filter indent(2) %}
+{% if !reserved_names.is_empty() ~%}
+  {{+ "reserved" +}} {%+ for name in reserved_names %}"{{ name }}"{% if !loop.last +%}, {%+ endif %}{% endfor %};
+{% endif %}
+{% if !reserved_numbers.is_empty() ~%}
+  {{+ "reserved" +}} {%+ for number in reserved_numbers %}{{ number }}{% if !loop.last +%}, {%+ endif %}{% endfor %};
+{% endif %}
+{% if !reserved_ranges.is_empty() ~%}
+  {{+ "reserved" +}} {%+ for range in reserved_ranges %}{{ range.start +}} to {{+ range.end }}{% if !loop.last %}, {%+ endif %}{% endfor %};
+{% endif ~%}
+{%~ filter indent(2) %}
 {%+ call opts::get_options(options) +%}
 {% endfilter %}
 

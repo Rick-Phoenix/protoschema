@@ -11,11 +11,11 @@ macro_rules! handler {
 
 #[macro_export]
 macro_rules! service {
-  ($file:ident, $name:ident { options = $service_options:expr; $($handler_name:ident($request:ident => $response:ident) $([ $($handler_options:tt)+ ])?);+ $(;)? } $(;)?) => {
+  ($file:ident, $name:ident { options = $service_options:expr; $($handler_name:ident($request:ident => $response:ident) $({ $handler_options:expr })?);+ $(;)? } $(;)?) => {
     $file
       .new_service(stringify!($name))
       .handlers([
-        $($crate::handler!($handler_name($request => $response) $([ $($handler_options)+ ])?)),*
+        $($crate::handler!($handler_name($request => $response) $($handler_options)?)),*
       ])
       .options($service_options)
   };

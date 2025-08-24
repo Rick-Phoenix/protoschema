@@ -1,13 +1,8 @@
-#![allow(clippy::cloned_ref_to_slice_refs)]
-
 use std::{path::Path, sync::Arc};
 
 use protoschema::{
-  common_options::{deprecated, oneof_required},
-  enum_field, enum_map, enum_variants, extension, message_body, msg_field, msg_map,
-  package::Package,
-  proto_enum, services, string,
-  validators::cel::CelRule,
+  common_options::deprecated, enum_field, enum_map, enum_variants, extension, message_body,
+  msg_field, msg_map, package::Package, proto_enum, services, string, validators::cel::CelRule,
   OptionValue, ProtoOption,
 };
 
@@ -51,9 +46,9 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
           "list2".into(),
           OptionValue::List(
             vec![
-              OptionValue::Int(4),
-              OptionValue::Int(4),
-              OptionValue::Int(4),
+              OptionValue::String("abcde".into()),
+              OptionValue::String("abcde".into()),
+              OptionValue::String("abcde".into()),
             ]
             .into(),
           ),
@@ -80,7 +75,8 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
 
   let example_enum = proto_enum!(
     file.new_enum("file_enum"),
-    reserved_names = ["abc"],
+    reserved_names = ["abcde"],
+    reserved = [ 405, 200..205 ],
     options = test_opts.clone(),
     0 => "UNSPECIFIED",
     1 => "ABC"
@@ -88,19 +84,20 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
 
   proto_enum!(
     file.new_enum("file_enum2"),
-    reserved_names = ["abc"],
+    reserved_names = ["abcde"],
+    reserved = [ 405, 200..205 ],
     options = test_opts.clone(),
     0 => "UNSPECIFIED",
     1 => "ABC"
   );
 
-  let file = file.add_options(test_opts.clone());
+  file.add_options(test_opts.clone());
 
   let isolated_field = string!("abc");
 
   let msgclone = msg.clone();
 
-  let file = extension!(file, msgclone {
+  extension!(file, msgclone {
     15 => string!("abc").add_options(test_opts.clone()),
     19 => string!("abc").add_options(test_opts.clone()),
     20 => isolated_field.clone()
@@ -110,13 +107,13 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
     file,
     MyService {
       options = [ opt.clone(), opt2.clone() ];
-      GetUser(msg => msg2) [ opt.clone(), opt2.clone() ];
+      GetUser(msg => msg2) { test_opts.clone() };
       GetUser2(msg => msg2);
     };
 
     MyService2 {
       options = [ opt.clone(), opt2.clone() ];
-      GetUser(msg => msg2) [ opt.clone(), opt2.clone() ];
+      GetUser(msg => msg2) { test_opts.clone() };
       GetUser2(msg => msg2);
     };
   );
@@ -126,7 +123,7 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
 
     options = test_opts.clone(),
     reserved_names = [ "one", "two" ],
-    reserved = [ 2, 2..4 ],
+    reserved = [ 405, 200..205 ],
     cel = [{ id = "abc", msg = "abc", expr = "abc" }],
 
     1 => isolated_field.clone(),
@@ -139,14 +136,14 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
     enum "my_enum" {
       options = test_opts.clone(),
       reserved_names = [ "one", "two" ],
-      reserved = [ 1, 2..4 ],
+      reserved = [ 405, 200..205 ],
       include(reusable_variants),
     }
 
     enum "my_enum2" {
       options = test_opts.clone(),
       reserved_names = [ "one", "two" ],
-      reserved = [ 1, 2..4 ],
+      reserved = [ 405, 200..205 ],
       include(reusable_variants),
     }
 
@@ -163,7 +160,7 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
 
     options = test_opts.clone(),
     reserved_names = [ "one", "two" ],
-    reserved = [ 2, 2..4 ],
+    reserved = [ 405, 200..205 ],
     cel = [{ id = "abc", msg = "abc", expr = "abc" }],
 
     1 => isolated_field.clone(),
@@ -180,14 +177,14 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
     enum "my_enum" {
       options = test_opts.clone(),
       reserved_names = [ "one", "two" ],
-      reserved = [ 1, 2..4 ],
+      reserved = [ 405, 200..205 ],
       include(reusable_variants),
     }
 
     enum "my_enum2" {
       options = test_opts.clone(),
       reserved_names = [ "one", "two" ],
-      reserved = [ 1, 2..4 ],
+      reserved = [ 405, 200..205 ],
       include(reusable_variants),
     }
 
