@@ -1,15 +1,11 @@
 {% macro field_opts(opts) %}
-{%- if !opts.is_empty() -%}
-[{%- for opt in opts -%}
-  {{ opt.name }} = {{ opt.value }}{%- if !loop.last -%}, {% endif -%}
-{%- endfor -%}]
-{%- endif -%}
+  {% for opt in opts ~%}
+    {{+ opt.name +}} = {{+ opt.value.render()? | indent(4) }}{% if !loop.last %}, {%+ endif ~%}
+  {% endfor +%}
 {% endmacro %}
 
 {% macro get_options(options) %}
-{%- for option in options %}
-  option {{ option.name }} = {{ option.value }};
-{%- endfor %}
+{% for option in options ~%}
+option {{+ option.name +}} = {{+ option.value +}};
+{%~ endfor %}
 {% endmacro %}
-
-

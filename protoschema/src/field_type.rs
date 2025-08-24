@@ -84,7 +84,7 @@ impl Display for FieldType {
   }
 }
 
-pub fn get_shortest_item_name(
+pub(crate) fn get_shortest_item_name(
   path: &Arc<ImportedItemPath>,
   current_file: &str,
   current_package: &str,

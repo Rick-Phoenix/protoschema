@@ -1,34 +1,49 @@
 {% import "opt.proto.j2" as opts %}
 
-{% macro render_field(field, file, package) %}
-  {{ field.kind }}{{ field.field_type.render_name(file, package) }} {{ field.name }} = {{ field.tag }}
-  {%- if !field.options.is_empty() -%}
-     {{ " " }}{% call opts::field_opts(&field.options) %}
-  {%- endif -%};
-{% endmacro %}
+{%- macro render_field(field, file, package) -%}
+{{+ field.kind +}}{{+ field.field_type.render_name(file, package) +}} {{+ field.name +}} = {{+ field.tag }}
+{%~ endmacro %}
 
-message {{ name }} {
-  {% call opts::get_options(options) %}
+message {{+ name +}} {
+{% filter indent(2) %}
+{%+ call opts::get_options(options) %}
+{% endfilter %}
 
-  {%- for enum_ in enums %}
-    {{ enum_ }}
-  {%- endfor -%}
+{% for enum_ in enums %}
+{%+ filter indent(2) ~%}
+{{+ enum_.render()? +}}
+{%+ endfilter %}
+{% endfor %}
 
-  {%- for nested_msg in messages -%}
-    {{ nested_msg.render()? | indent(2) }}
-  {%- endfor -%}
+{% for nested_msg in messages %}
+{%+ filter indent(2) ~%}
+{{+ nested_msg.render()? +}}
+{%+ endfilter %}
+{%- endfor ~%}
 
-  {%- for oneof in oneofs %}
-  oneof {{ oneof.name }} {
-    {% call opts::get_options(&oneof.options) %}
+{% for oneof in oneofs %}
+{%+ filter indent(2) ~%}
+oneof {{+ oneof.name +}} {
+  {% filter indent(2) %}
+    {% call opts::get_options(oneof.options) %}
+  {%~ endfilter %}
 
-    {% for field in oneof.fields %}
-      {% call render_field(field, file.as_ref(), package.as_ref()) %}
-    {% endfor %}
-  }
-  {%- endfor -%}
+  {%+ for field in oneof.fields ~%}
+  {%+ call render_field(field, file.as_ref(), package.as_ref()) %}
+  {%- if !field.options.is_empty() +%} [
+  {% call opts::field_opts(&field.options) +%}
+  ] {%- endif -%};
+  {%~ endfor %}
+}
+{%+ endfilter %}
+{%- endfor ~%}
 
-  {% for field in fields %}
-    {% call render_field(field, file.as_ref(), package.as_ref()) %}
-  {%- endfor %}
+{% for field in fields %}
+{%+ filter indent(2) ~%}
+{%+ call render_field(field, file.as_ref(), package.as_ref()) %}
+{% endfilter %}
+  {%- if !field.options.is_empty() +%} [
+  {% call opts::field_opts(&field.options) +%}
+  ] {%- endif -%};
+{%~ endfor %}
 }

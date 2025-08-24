@@ -1,5 +1,7 @@
 use std::{fmt::Display, sync::Arc};
 
+use askama::Template;
+
 pub use crate::field_type::{Duration, Timestamp};
 
 #[derive(Clone, Debug)]
@@ -8,7 +10,8 @@ pub struct ProtoOption {
   pub value: Arc<OptionValue>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Template)]
+#[template(path = "option_value.proto.j2")]
 pub enum OptionValue {
   Bool(bool),
   Int(i64),
@@ -42,48 +45,89 @@ option_value_conversion!(u32, Uint, as u64);
 option_value_conversion!(f64, Float);
 option_value_conversion!(f32, Float, as f64);
 
-impl Display for OptionValue {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    match &self {
-      OptionValue::Bool(v) => write!(f, "{}", v),
-      OptionValue::Int(v) => write!(f, "{}", v),
-      OptionValue::Uint(v) => write!(f, "{}", v),
-      OptionValue::Float(v) => write!(f, "{}", v),
-      OptionValue::String(v) => write!(f, "\"{}\"", v),
-      OptionValue::List(values) => {
-        write!(f, "[ ")?;
-        for (idx, item) in values.iter().enumerate() {
-          write!(f, "{}", item)?;
-          if idx != values.len() - 1 {
-            write!(f, ", ")?;
-          }
-        }
-        write!(f, " ]")?;
-        Ok(())
-      }
-      OptionValue::Message(key_value_pairs) => {
-        write!(f, "{{ ")?;
-        for (idx, (key, val)) in key_value_pairs.iter().enumerate() {
-          write!(f, "{}: {}", key, val)?;
-          if idx != key_value_pairs.len() - 1 {
-            write!(f, ", ")?;
-          }
-        }
-        write!(f, " }}")?;
-        Ok(())
-      }
-      OptionValue::Identifier(v) => {
-        write!(f, "{}", v)
-      }
-      OptionValue::Duration(Duration { seconds, nanos }) => {
-        write!(f, "{{ seconds: {}, nanos: {} }}", seconds, nanos)
-      }
-      OptionValue::Timestamp(Timestamp { seconds, nanos }) => {
-        write!(f, "{{ seconds: {}, nanos: {} }}", seconds, nanos)
-      }
+// impl OptionValue {
+//   pub fn render(&self, indent: usize) -> String {
+//     match &self {
+//       OptionValue::List(values) => {
+//         writeln!(f, "[")?;
+//         for (idx, item) in values.iter().enumerate() {
+//           write!(f, "{}", item)?;
+//           if idx != values.len() - 1 {
+//             write!(f, ", ")?;
+//           }
+//         }
+//         write!(f, " ]")?;
+//         Ok(())
+//       }
+//       OptionValue::Message(key_value_pairs) => {
+//         write!(f, "{{ ")?;
+//         for (idx, (key, val)) in key_value_pairs.iter().enumerate() {
+//           write!(f, "{}: {}", key, val)?;
+//           if idx != key_value_pairs.len() - 1 {
+//             write!(f, ", ")?;
+//           }
+//         }
+//         write!(f, " }}")?;
+//         Ok(())
+//       }
+//       _ => self.to_string()
+//     }
+//   }
+// }
+
+impl OptionValue {
+  pub fn is_short(&self) -> bool {
+    match self {
+      Self::List(list) => list.len() <= 5 && list.iter().all(OptionValue::is_short),
+      Self::String(str) => str.chars().count() <= 5,
+      Self::Duration(_) | Self::Timestamp(_) | Self::Message(_) => false,
+      _ => true,
     }
   }
 }
+
+// impl Display for OptionValue {
+//   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//     match &self {
+//       OptionValue::Bool(v) => write!(f, "{}", v),
+//       OptionValue::Int(v) => write!(f, "{}", v),
+//       OptionValue::Uint(v) => write!(f, "{}", v),
+//       OptionValue::Float(v) => write!(f, "{}", v),
+//       OptionValue::String(v) => write!(f, "\"{}\"", v),
+//       OptionValue::List(values) => {
+//         write!(f, "[ ")?;
+//         for (idx, item) in values.iter().enumerate() {
+//           write!(f, "{}", item)?;
+//           if idx != values.len() - 1 {
+//             write!(f, ", ")?;
+//           }
+//         }
+//         write!(f, " ]")?;
+//         Ok(())
+//       }
+//       OptionValue::Message(key_value_pairs) => {
+//         write!(f, "{{ ")?;
+//         for (idx, (key, val)) in key_value_pairs.iter().enumerate() {
+//           write!(f, "{}: {}", key, val)?;
+//           if idx != key_value_pairs.len() - 1 {
+//             write!(f, ", ")?;
+//           }
+//         }
+//         write!(f, " }}")?;
+//         Ok(())
+//       }
+//       OptionValue::Identifier(v) => {
+//         write!(f, "{}", v)
+//       }
+//       OptionValue::Duration(Duration { seconds, nanos }) => {
+//         write!(f, "{{ seconds: {}, nanos: {} }}", seconds, nanos)
+//       }
+//       OptionValue::Timestamp(Timestamp { seconds, nanos }) => {
+//         write!(f, "{{ seconds: {}, nanos: {} }}", seconds, nanos)
+//       }
+//     }
+//   }
+// }
 
 #[macro_export]
 macro_rules! proto_str_list {

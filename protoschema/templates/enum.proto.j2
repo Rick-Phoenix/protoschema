@@ -1,13 +1,13 @@
-{% macro render_options(options) %}
-{% for option in options %}
-  option {{ option.name }} = {{ option.value }};
+{%- import "opt.proto.j2" as opts %}
+
+enum {{+ name +}} {
+{% filter indent(2) %}
+{%+ call opts::get_options(options) +%}
+{% endfilter %}
+
+{% filter indent(2) %}
+{% for (tag, name) in variants +%}
+{{+ name +}} = {{+ tag +}};
 {% endfor %}
-{% endmacro %}
-
-enum {{ name }} {
-  {% call render_options(&options) %}
-
-  {% for (tag, name) in variants %}
-    {{ name }} = {{ tag }};
-  {% endfor %}
+{% endfilter ~%}
 }

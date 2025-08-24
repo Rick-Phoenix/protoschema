@@ -92,7 +92,7 @@ impl FileData {
       name: self.name.clone(),
       package: package.name.clone(),
       messages: file_messages,
-      options: self.options.clone(),
+      options: self.options.clone().into_boxed_slice(),
       imports,
       extensions: self.extensions.clone(),
       enums: built_enums,

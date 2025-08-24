@@ -1,53 +1,55 @@
 syntax = "proto3";
 
-package {{ package }};
+package {{+ package }};
 
-{% import "opt.proto.j2" as opts %}
+{%+ import "opt.proto.j2" as opts %}
 
-{% call opts::get_options(options) %}
-
-{% for import in imports %}
+{%~ for import in imports %}
 {% if import.to_string() != name.to_string() %}
 import "{{ import }}";
-{% endif %}
-{% endfor %}
+{% endif ~%}
+{%~ endfor %}
 
+{%~ for opt in options ~%}
+  option {{+ opt.name +}} = {{+ opt.value.render()? }};
+{%~ endfor %}
 
-{%- for extension in extensions %}
-extend {{ extension.get_target(name.as_ref(), package.as_ref()) }} {
-  {%- for field in extension.fields %}
-  {{ field.kind }}{{ field.field_type.render_name(name.as_ref(), package.as_ref() ) }} {{ field.name }} = {{ field.tag }}
-  {%- if !field.options.is_empty() -%}
-     {{ " " }}{% call opts::field_opts(&field.options) %}
-  {%- endif -%};
-  {%- endfor %}
+{%~ for extension in extensions ~%}
+extend {{+ extension.get_target(name.as_ref(), package.as_ref()) +}} {
+  {% for field in extension.fields ~%}
+  {{+ field.kind +}}{{+ field.field_type.render_name(name.as_ref(), package.as_ref() ) +}} {{+ field.name +}} = {{+ field.tag +}}
+  {%- if !field.options.is_empty() +%} [
+    {% call opts::field_opts(&field.options) +%}
+  ]
+  {% endif %};
+  {%~ endfor %}
 }
-{%- endfor %}
+{%~ endfor ~%}
 
+{%~ for enum_ in enums ~%}
+{{~ enum_ ~}}
+{%~ endfor %}
 
-{%- for enum_ in enums %}
-{{ enum_ }}
-{%- endfor -%}
+{%~ for msg in messages ~%}
+{{~ msg ~}}
+{%~ endfor %}
 
-{%- for msg in messages %}
-{{ msg }}
-{%- endfor -%}
+{%~ for service in services ~%}
+service {{+ service.name +}} {
+{% filter indent(2) %}
+{% if !service.options.is_empty() %}
+{%+ call opts::get_options(service.options) %}
+{%~ endif %}
 
-{%- for service in services %}
-service {{ service.name }} {
-  {% for opt in service.options %}
-    option {{ opt.name }} = {{ opt.value }};
-  {%- endfor -%}
-
-  {%+ for handler in service.handlers +%}
-    rpc {{ handler.name }} ({{ handler.render_request(name.as_ref(), package.as_ref()) }}) returns ({{ handler.render_response(name.as_ref(), package.as_ref()) }})
-
-    {%- if !handler.options.is_empty() %} { 
-    {%- for opt in handler.options %}
-      option {{ opt.name }} = {{ opt.value }};
-    {% endfor %}}
-    {%- endif %};
-  {%- endfor %}
+{%~ for handler in service.handlers ~%}
+rpc {{+ handler.name +}} ({{ handler.render_request(name.as_ref(), package.as_ref()) }}) returns ({{ handler.render_response(name.as_ref(), package.as_ref()) }})
+{%- if !handler.options.is_empty() +%} { 
+{% filter indent(2) %}
+{%+ call opts::get_options(handler.options) %}
+{%~ endfilter %}
 }
-{%- endfor -%}
-
+{% endif %};
+{%~ endfor ~%}
+{% endfilter %}
+}
+{%~ endfor %}
