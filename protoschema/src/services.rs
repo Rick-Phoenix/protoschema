@@ -9,6 +9,7 @@ use crate::{
   sealed, Empty, IsSet, IsUnset, ProtoOption, Set, Unset,
 };
 
+// The builder for a protobuf service.
 #[derive(Clone, Debug)]
 pub struct ServiceBuilder<S: ServiceState = Empty> {
   pub(crate) id: usize,
@@ -17,6 +18,7 @@ pub struct ServiceBuilder<S: ServiceState = Empty> {
   pub(crate) _phantom: PhantomData<fn() -> S>,
 }
 
+// A struct representing a protobuf service handler
 #[derive(Clone, Debug, Builder)]
 #[builder(start_fn = new)]
 pub struct ServiceHandler {
@@ -32,11 +34,11 @@ pub struct ServiceHandler {
 }
 
 impl ServiceHandler {
-  pub fn render_request(&self, current_file: &str, current_package: &str) -> Arc<str> {
+  pub(crate) fn render_request(&self, current_file: &str, current_package: &str) -> Arc<str> {
     get_shortest_item_name(&self.request, current_file, current_package)
   }
 
-  pub fn render_response(&self, current_file: &str, current_package: &str) -> Arc<str> {
+  pub(crate) fn render_response(&self, current_file: &str, current_package: &str) -> Arc<str> {
     get_shortest_item_name(&self.response, current_file, current_package)
   }
 }
@@ -47,6 +49,7 @@ use service_handler_builder::{
 };
 
 impl<S: HandlerState> ServiceHandlerBuilder<S> {
+  // Sets the options for this handler
   pub fn options<I>(self, options: I) -> ServiceHandlerBuilder<HandlerSetOptions<S>>
   where
     S::Options: HandlerIsUnset,
@@ -55,6 +58,7 @@ impl<S: HandlerState> ServiceHandlerBuilder<S> {
     self.options_internal(options.into_iter().collect())
   }
 
+  // Sets the request for this handler
   pub fn request(self, message: &MessageBuilder) -> ServiceHandlerBuilder<SetRequest<S>>
   where
     S::Request: HandlerIsUnset,
@@ -62,6 +66,7 @@ impl<S: HandlerState> ServiceHandlerBuilder<S> {
     self.request_internal(message.get_import_path())
   }
 
+  // Sets the response for this handler
   pub fn response(self, message: &MessageBuilder) -> ServiceHandlerBuilder<SetResponse<S>>
   where
     S::Response: HandlerIsUnset,
@@ -70,6 +75,7 @@ impl<S: HandlerState> ServiceHandlerBuilder<S> {
   }
 }
 
+// The aggregated data for a protobuf service
 #[derive(Clone, Debug, Default)]
 pub struct ServiceData {
   pub name: Box<str>,
@@ -78,25 +84,30 @@ pub struct ServiceData {
 }
 
 impl<S: ServiceState> ServiceBuilder<S> {
+  // Clones the data from the package's pool for this service and returns it
   pub fn get_data(self) -> ServiceData {
     self.arena.borrow().services[self.id].clone()
   }
 
+  // Gets the name of the containing file
   pub fn get_file(&self) -> Arc<str> {
     let arena = self.arena.borrow();
     arena.files[self.file_id].name.clone()
   }
 
+  // Gets the name of the service
   pub fn get_name(&self) -> Box<str> {
     let arena = self.arena.borrow();
 
     arena.services[self.id].name.clone()
   }
 
+  // Gets the name of the containing package
   pub fn get_package(&self) -> Arc<str> {
     self.arena.borrow().name.clone()
   }
 
+  // Sets the handlers for this service
   pub fn handlers<I>(self, handlers: I) -> ServiceBuilder<SetHandlers<S>>
   where
     S::Handlers: IsUnset,
@@ -123,6 +134,7 @@ impl<S: ServiceState> ServiceBuilder<S> {
     }
   }
 
+  // Sets the options for this service
   pub fn options<I>(self, options: I) -> ServiceBuilder<SetOptions<S>>
   where
     S::Options: IsUnset,
@@ -144,6 +156,7 @@ impl<S: ServiceState> ServiceBuilder<S> {
   }
 }
 
+#[doc(hidden)]
 pub trait ServiceState: Sized {
   type Handlers;
   type Options;
@@ -157,10 +170,12 @@ mod members {
   pub struct options;
 }
 
-pub trait IsComplete: ServiceState {
+#[doc(hidden)]
+trait IsComplete: ServiceState {
   #[doc(hidden)]
   const SEALED: sealed::Sealed;
 }
+
 #[doc(hidden)]
 impl<S: ServiceState> IsComplete for S
 where
@@ -170,7 +185,9 @@ where
   const SEALED: sealed::Sealed = sealed::Sealed;
 }
 
+#[doc(hidden)]
 pub struct SetHandlers<S: ServiceState = Empty>(PhantomData<fn() -> S>);
+#[doc(hidden)]
 pub struct SetOptions<S: ServiceState = Empty>(PhantomData<fn() -> S>);
 
 #[doc(hidden)]

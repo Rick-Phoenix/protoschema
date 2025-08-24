@@ -1,3 +1,4 @@
+#[doc(hidden)]
 #[macro_export]
 macro_rules! handler {
   ($handler:ident($request:expr => $response:expr) $($options:expr)?) => {
@@ -9,6 +10,7 @@ macro_rules! handler {
   };
 }
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! service {
   ($file:ident, $name:ident { options = $service_options:expr; $($handler_name:ident($request:ident => $response:ident) $({ $handler_options:expr })?);+ $(;)? } $(;)?) => {

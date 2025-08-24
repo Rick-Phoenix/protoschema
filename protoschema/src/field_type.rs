@@ -2,6 +2,7 @@ use std::{fmt::Display, sync::Arc};
 
 pub use proto_types::{Duration, Timestamp};
 
+// Protobuf map key types
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum MapKey {
   Int32,
@@ -43,6 +44,7 @@ impl Display for MapKey {
   }
 }
 
+// The import path information for a protobuf importable item, like an enum or a message
 #[derive(Clone, Debug, PartialEq, Eq, Default)]
 pub struct ImportedItemPath {
   pub full_name: Arc<str>,
@@ -51,6 +53,7 @@ pub struct ImportedItemPath {
   pub package: Arc<str>,
 }
 
+// The various types of protobuf fields, including some well known types
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum FieldType {
   Double,
@@ -97,7 +100,7 @@ pub(crate) fn get_shortest_item_name(
 }
 
 impl FieldType {
-  pub fn render_name(&self, current_file: &str, current_package: &str) -> Arc<str> {
+  pub(crate) fn render_name(&self, current_file: &str, current_package: &str) -> Arc<str> {
     match self {
       FieldType::Message(path) => get_shortest_item_name(path, current_file, current_package),
       FieldType::Enum(path) => get_shortest_item_name(path, current_file, current_package),

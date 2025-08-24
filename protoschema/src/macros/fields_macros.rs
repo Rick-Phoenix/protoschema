@@ -1,3 +1,4 @@
+#[doc(hidden)]
 #[macro_export]
 macro_rules! parse_fields {
   (
@@ -49,6 +50,7 @@ macro_rules! parse_fields {
   };
 }
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! parse_field_type {
   ($ty:ident) => {
@@ -83,6 +85,7 @@ macro_rules! repeated_field {
   };
 }
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! field {
   ($($optional:ident)? $name:expr, $field_type:expr, $proto_type:ident, $module_name:ident $(, $validator:expr)? ) => {
@@ -99,6 +102,7 @@ macro_rules! field {
   };
 }
 
+#[doc(hidden)]
 macro_rules! field_impl {
   ($proto_type:ident, $module_name:ident $(, $import_path:expr)?) => {
     #[macro_export]

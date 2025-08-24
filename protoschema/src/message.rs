@@ -12,6 +12,7 @@ use crate::{
   Empty, FieldType, IsSet, IsUnset, OptionValue, ProtoOption, Set, Unset,
 };
 
+// The builder for a protobuf Message. Its methods are used to collect and store the data for a given message.
 #[derive(Clone, Debug)]
 pub struct MessageBuilder<S: MessageState = Empty> {
   pub(crate) id: usize,
@@ -20,6 +21,7 @@ pub struct MessageBuilder<S: MessageState = Empty> {
   pub(crate) _phantom: PhantomData<fn() -> S>,
 }
 
+// The data storage for a Message
 #[derive(Clone, Debug, Default)]
 pub struct MessageData {
   pub name: Arc<str>,
@@ -36,6 +38,7 @@ pub struct MessageData {
 }
 
 impl<S: MessageState> MessageBuilder<S> {
+  // Sets the Cel rules for this message to be used with protovalidate
   pub fn cel_rules<I>(self, rules: I) -> MessageBuilder<S>
   where
     I: IntoIterator<Item = CelRule>,
@@ -65,19 +68,23 @@ impl<S: MessageState> MessageBuilder<S> {
     }
   }
 
-  // Getters
+  #[doc(hidden)]
   pub fn get_type(&self) -> FieldType {
     FieldType::Message(self.get_import_path())
   }
 
+  // Returns the import path for this message
   pub fn get_import_path(&self) -> Arc<ImportedItemPath> {
     self.arena.borrow().messages[self.id].import_path.clone()
   }
 
+  #[doc(hidden)]
   pub fn get_id(&self) -> usize {
     self.id
   }
 
+  // Builds the full template for this message and returns it.
+  // Mostly useful for debugging.
   pub fn get_data(self) -> MessageTemplate
   where
     S::Fields: IsSet,
@@ -86,12 +93,14 @@ impl<S: MessageState> MessageBuilder<S> {
     arena.messages[self.id].build_template(&arena)
   }
 
+  // Returns the full name for this message
   pub fn get_full_name(&self) -> Arc<str> {
     let arena = self.arena.borrow();
 
     arena.messages[self.id].import_path.full_name.clone()
   }
 
+  // Returns the full name for this message with the package prefix included
   pub fn get_full_name_with_package(&self) -> Arc<str> {
     let arena = self.arena.borrow();
 
@@ -99,19 +108,21 @@ impl<S: MessageState> MessageBuilder<S> {
     msg.import_path.full_name_with_package.clone()
   }
 
+  // Returns the name of this message's package
   pub fn get_package(&self) -> Arc<str> {
     let arena = self.arena.borrow();
 
     arena.messages[self.id].import_path.package.clone()
   }
 
+  // Returns the name of this message's file
   pub fn get_file(&self) -> Arc<str> {
     let arena = self.arena.borrow();
 
     arena.files[self.file_id].name.clone()
   }
 
-  // Setters
+  // Creates a new message belonging to this message, and returns its builder
   pub fn new_message<T: AsRef<str>>(&self, name: T) -> MessageBuilder {
     let file_id = self.file_id;
     let package = self.get_package();
@@ -152,6 +163,7 @@ impl<S: MessageState> MessageBuilder<S> {
     }
   }
 
+  // Creates a new enum belonging to this message, and returns its builder
   pub fn new_enum<T: AsRef<str>>(&self, name: T) -> EnumBuilder {
     let package = self.get_package();
     let parent_message_name = self.get_full_name();
@@ -189,6 +201,7 @@ impl<S: MessageState> MessageBuilder<S> {
     }
   }
 
+  // Sets the fields for this message
   pub fn fields<I, F>(self, fields: I) -> MessageBuilder<SetFields<S>>
   where
     S::Fields: IsUnset,
@@ -229,6 +242,7 @@ impl<S: MessageState> MessageBuilder<S> {
     }
   }
 
+  // Sets the oneofs for this message
   pub fn oneofs<I>(self, oneofs: I) -> MessageBuilder<SetOneofs<S>>
   where
     S::Oneofs: IsUnset,
@@ -277,6 +291,7 @@ impl<S: MessageState> MessageBuilder<S> {
     }
   }
 
+  // Adds the given options to the message's list of options
   pub fn add_options<I>(self, options: I) -> MessageBuilder<S>
   where
     I: IntoIterator<Item = ProtoOption>,
@@ -296,6 +311,7 @@ impl<S: MessageState> MessageBuilder<S> {
     }
   }
 
+  // Sets the reserved names for this message
   pub fn reserved_names<I, Str>(self, names: I) -> MessageBuilder<SetReservedNames<S>>
   where
     S::ReservedNames: IsUnset,
@@ -318,6 +334,7 @@ impl<S: MessageState> MessageBuilder<S> {
     }
   }
 
+  // Sets the reserved numbers for this message
   pub fn reserved_numbers<I>(self, numbers: I) -> MessageBuilder<SetReservedNumbers<S>>
   where
     S::ReservedNumbers: IsUnset,
@@ -338,6 +355,7 @@ impl<S: MessageState> MessageBuilder<S> {
     }
   }
 
+  // Sets the reserved ranges for this message
   pub fn reserved_ranges<I>(self, ranges: I) -> MessageBuilder<SetReservedRanges<S>>
   where
     S::ReservedRanges: IsUnset,
@@ -368,6 +386,7 @@ mod members {
   pub struct oneofs;
 }
 
+#[doc(hidden)]
 pub trait MessageState: Sized {
   type Fields;
   type ReservedNumbers;
@@ -378,10 +397,15 @@ pub trait MessageState: Sized {
   const SEALED: sealed::Sealed;
 }
 
+#[doc(hidden)]
 pub struct SetFields<S: MessageState = Empty>(PhantomData<fn() -> S>);
+#[doc(hidden)]
 pub struct SetReservedNumbers<S: MessageState = Empty>(PhantomData<fn() -> S>);
+#[doc(hidden)]
 pub struct SetReservedRanges<S: MessageState = Empty>(PhantomData<fn() -> S>);
+#[doc(hidden)]
 pub struct SetReservedNames<S: MessageState = Empty>(PhantomData<fn() -> S>);
+#[doc(hidden)]
 pub struct SetOneofs<S: MessageState = Empty>(PhantomData<fn() -> S>);
 
 #[doc(hidden)]
@@ -414,6 +438,7 @@ impl<S: MessageState> MessageState for SetReservedNumbers<S> {
 
   const SEALED: sealed::Sealed = sealed::Sealed;
 }
+
 #[doc(hidden)]
 impl<S: MessageState> MessageState for SetReservedRanges<S> {
   type Fields = S::Fields;
@@ -424,6 +449,7 @@ impl<S: MessageState> MessageState for SetReservedRanges<S> {
 
   const SEALED: sealed::Sealed = sealed::Sealed;
 }
+
 #[doc(hidden)]
 impl<S: MessageState> MessageState for SetReservedNames<S> {
   type Fields = S::Fields;

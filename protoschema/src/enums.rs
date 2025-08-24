@@ -5,6 +5,7 @@ use crate::{
   IsSet, IsUnset, ProtoOption, Set, Unset,
 };
 
+// The builder for a protobuf enum. Its methods are used to collect and store the information for that enum, which are later used to build a template for it.
 #[derive(Clone, Debug)]
 pub struct EnumBuilder<S: EnumState = Empty> {
   pub(crate) id: usize,
@@ -12,6 +13,7 @@ pub struct EnumBuilder<S: EnumState = Empty> {
   pub(crate) _phantom: PhantomData<fn() -> S>,
 }
 
+// The stored information for a given enum.
 #[derive(Clone, Debug, Default)]
 pub struct EnumData {
   pub name: Arc<str>,
@@ -25,44 +27,51 @@ pub struct EnumData {
 }
 
 impl<S: EnumState> EnumBuilder<S> {
+  // Builds the full template for this enum and returns it.
+  // Mostly useful for debugging.
   pub fn get_data(&self) -> EnumTemplate {
     let arena = self.arena.borrow();
     arena.enums[self.id].clone().into()
   }
 
-  // Getters
+  #[doc(hidden)]
   pub fn get_type(&self) -> FieldType {
     FieldType::Enum(self.get_import_path())
   }
 
+  // Returns the import path for this enum
   pub fn get_import_path(&self) -> Arc<ImportedItemPath> {
     self.arena.borrow().enums[self.id].import_path.clone()
   }
 
+  // Returns the name of the file containing this enum
   pub fn get_file(&self) -> Arc<str> {
     let arena = self.arena.borrow();
     let file_id = arena.enums[self.id].file_id;
     arena.files[file_id].name.clone()
   }
 
-  pub fn get_name(&self) -> Arc<str> {
+  // Returns the full name of this enum
+  pub fn get_full_name(&self) -> Arc<str> {
     let arena = self.arena.borrow();
 
     arena.enums[self.id].import_path.full_name.clone()
   }
 
+  // Returns the name of the package containing this enum
   pub fn get_package(&self) -> Arc<str> {
     self.arena.borrow().name.clone()
   }
 
-  pub fn get_full_name(&self) -> Arc<str> {
+  // Returns the full name of this enum, with the package prefix included
+  pub fn get_full_name_with_package(&self) -> Arc<str> {
     self.arena.borrow().enums[self.id]
       .import_path
       .full_name_with_package
       .clone()
   }
 
-  // Setters
+  // Sets the variants for this enum.
   pub fn variants<I, Str>(self, variants: I) -> EnumBuilder<SetVariants<S>>
   where
     S::Variants: IsUnset,
@@ -86,6 +95,7 @@ impl<S: EnumState> EnumBuilder<S> {
     }
   }
 
+  // Sets the options for this enum.
   pub fn options<I>(self, options: I) -> EnumBuilder<SetOptions<S>>
   where
     S::Options: IsUnset,
@@ -105,6 +115,7 @@ impl<S: EnumState> EnumBuilder<S> {
     }
   }
 
+  // Sets the reserved names for this enum.
   pub fn reserved_names<I, Str>(self, names: I) -> EnumBuilder<SetReservedNames<S>>
   where
     S::ReservedNames: IsUnset,
@@ -126,6 +137,7 @@ impl<S: EnumState> EnumBuilder<S> {
     }
   }
 
+  // Sets the reserved numbers for this enum
   pub fn reserved_numbers<I>(self, numbers: I) -> EnumBuilder<SetReservedNumbers<S>>
   where
     S::ReservedNumbers: IsUnset,
@@ -145,6 +157,7 @@ impl<S: EnumState> EnumBuilder<S> {
     }
   }
 
+  // Sets the reserved ranges for this enum
   pub fn reserved_ranges<I>(self, ranges: I) -> EnumBuilder<SetReservedRanges<S>>
   where
     S::ReservedRanges: IsUnset,
@@ -165,6 +178,7 @@ impl<S: EnumState> EnumBuilder<S> {
   }
 }
 
+#[doc(hidden)]
 pub trait EnumState: Sized {
   type Variants;
   type ReservedNumbers;
@@ -184,10 +198,12 @@ mod members {
   pub struct options;
 }
 
+#[doc(hidden)]
 pub trait IsComplete: EnumState {
   #[doc(hidden)]
   const SEALED: sealed::Sealed;
 }
+
 #[doc(hidden)]
 impl<S: EnumState> IsComplete for S
 where
@@ -200,10 +216,15 @@ where
   const SEALED: sealed::Sealed = sealed::Sealed;
 }
 
+#[doc(hidden)]
 pub struct SetVariants<S: EnumState = Empty>(PhantomData<fn() -> S>);
+#[doc(hidden)]
 pub struct SetReservedNumbers<S: EnumState = Empty>(PhantomData<fn() -> S>);
+#[doc(hidden)]
 pub struct SetReservedRanges<S: EnumState = Empty>(PhantomData<fn() -> S>);
+#[doc(hidden)]
 pub struct SetReservedNames<S: EnumState = Empty>(PhantomData<fn() -> S>);
+#[doc(hidden)]
 pub struct SetOptions<S: EnumState = Empty>(PhantomData<fn() -> S>);
 
 #[doc(hidden)]

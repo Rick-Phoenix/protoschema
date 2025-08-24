@@ -7,6 +7,14 @@ pub struct CelRule {
   pub expression: Box<str>,
 }
 
+pub fn cel_rule<T: AsRef<str>>(id: T, message: T, expression: T) -> CelRule {
+  CelRule {
+    id: id.as_ref().into(),
+    message: message.as_ref().into(),
+    expression: expression.as_ref().into(),
+  }
+}
+
 impl From<CelRule> for OptionValue {
   fn from(value: CelRule) -> Self {
     OptionValue::Message(

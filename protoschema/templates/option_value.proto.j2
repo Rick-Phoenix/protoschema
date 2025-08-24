@@ -24,7 +24,7 @@
   {{ val }}
 {% when Self::Float with (val) %}
   {{ val }} 
-{% when Self::Identifier with (val) %}
+{% when Self::Enum with (val) %}
   {{ val }}
 {% when Self::String with (val) %}
   "{{ val }}"

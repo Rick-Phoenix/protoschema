@@ -6,6 +6,7 @@ mod oneofs_macros;
 mod parse_reserved;
 mod services_macros;
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! cel_rule {
   (id = $id:expr, msg = $msg:expr, expr = $expr:expr) => {
@@ -17,6 +18,7 @@ macro_rules! cel_rule {
   };
 }
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! cel_rules {
   (
@@ -68,6 +70,7 @@ macro_rules! message_body {
   };
 }
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! _internal_message_body {
   // No tokens remaining, process items

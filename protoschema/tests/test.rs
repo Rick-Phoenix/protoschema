@@ -1,9 +1,12 @@
-use std::{path::Path, sync::Arc};
+use std::path::Path;
 
 use protoschema::{
-  common_options::deprecated, enum_field, enum_map, enum_variants, extension, message_body,
-  msg_field, msg_map, package::Package, proto_enum, services, string, validators::cel::CelRule,
-  OptionValue, ProtoOption,
+  common_options::deprecated,
+  enum_field, enum_map, enum_variants, extension, message_body, msg_field, msg_map,
+  options::{list_value, message_value, proto_option, string_value},
+  package::Package,
+  proto_enum, services, string,
+  validators::cel::CelRule,
 };
 
 #[test]
@@ -18,45 +21,36 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
 
   let file = package.new_file("abc");
 
-  let opt = ProtoOption {
-    name: "cel",
-    value: Arc::new(OptionValue::Message(
-      vec![
-        (
-          "list1".into(),
-          OptionValue::List(
-            vec![
-              CelRule {
-                id: "abc".into(),
-                message: "abc".into(),
-                expression: "abc".into(),
-              }
-              .into(),
-              CelRule {
-                id: "abc".into(),
-                message: "abc".into(),
-                expression: "abc".into(),
-              }
-              .into(),
-            ]
-            .into_boxed_slice(),
-          ),
-        ),
-        (
-          "list2".into(),
-          OptionValue::List(
-            vec![
-              OptionValue::String("abcde".into()),
-              OptionValue::String("abcde".into()),
-              OptionValue::String("abcde".into()),
-            ]
-            .into(),
-          ),
-        ),
-      ]
-      .into_boxed_slice(),
-    )),
-  };
+  let opt = proto_option(
+    "cel",
+    message_value([
+      (
+        "list1".into(),
+        list_value(vec![
+          CelRule {
+            id: "abc".into(),
+            message: "abc".into(),
+            expression: "abc".into(),
+          }
+          .into(),
+          CelRule {
+            id: "abc".into(),
+            message: "abc".into(),
+            expression: "abc".into(),
+          }
+          .into(),
+        ]),
+      ),
+      (
+        "list2".into(),
+        list_value(vec![
+          string_value("abcde"),
+          string_value("abcde"),
+          string_value("abcde"),
+        ]),
+      ),
+    ]),
+  );
 
   let opt2 = deprecated();
 

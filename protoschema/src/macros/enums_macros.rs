@@ -20,6 +20,7 @@ macro_rules! enum_variants {
   };
 }
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! proto_enum_impl {
   (

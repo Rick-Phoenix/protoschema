@@ -8,6 +8,7 @@ use crate::{
   ProtoOption,
 };
 
+// A struct representing a protobuf Oneof
 #[derive(Clone, Debug, Builder)]
 pub struct Oneof {
   pub name: Arc<str>,
@@ -18,6 +19,7 @@ pub struct Oneof {
   pub options: Box<[ProtoOption]>,
 }
 
+// The struct where the Oneof data is stored
 #[derive(Clone, Debug)]
 pub struct OneofData {
   pub name: Arc<str>,
@@ -26,6 +28,7 @@ pub struct OneofData {
 }
 
 impl<S: oneof_builder::State> OneofBuilder<S> {
+  // Sets the fields for this oneof
   pub fn fields<I, F>(self, fields: I) -> OneofBuilder<oneof_builder::SetFields<S>>
   where
     S::Fields: IsUnset,
@@ -35,6 +38,7 @@ impl<S: oneof_builder::State> OneofBuilder<S> {
     self.fields_internal(fields.into_iter().map(|f| f.build()).collect())
   }
 
+  // Sets the options for this oneof
   pub fn options<I>(self, options: I) -> OneofBuilder<oneof_builder::SetOptions<S>>
   where
     S::Options: IsUnset,

@@ -1,3 +1,4 @@
+#[doc(hidden)]
 #[macro_export]
 macro_rules! map_impl {
   ($name:literal, <$key_type:ident, $value_type:ident>, $values_type_name:ident $(, $validator:expr)?) => {

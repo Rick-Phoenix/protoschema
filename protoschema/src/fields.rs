@@ -29,6 +29,7 @@ impl Display for FieldKind {
   }
 }
 
+// A struct representing a protobuf field
 #[derive(Clone, Debug, Builder)]
 #[builder(derive(Clone))]
 pub struct Field {
@@ -44,6 +45,7 @@ pub struct Field {
   pub tag: u32,
 }
 
+// A struct representing the processed data for a protobuf field, after it's been added to a message or extension
 #[derive(Clone, Debug)]
 pub struct FieldData {
   pub options: Box<[ProtoOption]>,
@@ -54,16 +56,19 @@ pub struct FieldData {
 }
 
 impl<S: field_builder::State> FieldBuilder<S> {
+  // Sets this field as `repeated`
   pub fn repeated(mut self) -> FieldBuilder<S> {
     self.kind = FieldKind::Repeated;
     self
   }
 
+  // Sets this field as `optional`
   pub fn optional(mut self) -> FieldBuilder<S> {
     self.kind = FieldKind::Optional;
     self
   }
 
+  // Sets the [`FieldType`] for this field
   pub fn field_type(self, field_type: FieldType) -> FieldBuilder<SetFieldType<S>>
   where
     S::FieldType: field_builder::IsUnset,
@@ -71,11 +76,13 @@ impl<S: field_builder::State> FieldBuilder<S> {
     self.field_type_internal(field_type)
   }
 
+  // Adds an option to this field
   pub fn add_option(mut self, option: ProtoOption) -> Self {
     self.options.push(option);
     self
   }
 
+  // Adds multiple options to this field
   pub fn add_options<I>(mut self, options: I) -> Self
   where
     I: IntoIterator<Item = ProtoOption>,
@@ -84,6 +91,8 @@ impl<S: field_builder::State> FieldBuilder<S> {
     self
   }
 
+  // Adds an import to this field.
+  // When this field is cloned and reused in other messages, the receiving file will add this import to its list.
   pub fn add_import<T: AsRef<str>>(mut self, import: T) -> Self {
     self.imports.push(import.as_ref().into());
     self

@@ -13,17 +13,24 @@ mod sealed {
   pub struct Sealed;
 }
 
+#[doc(hidden)]
 #[derive(Clone, Debug)]
 pub struct Set<T>(PhantomData<fn() -> T>);
+#[doc(hidden)]
 #[derive(Clone, Debug)]
 pub struct Unset<T>(PhantomData<fn() -> T>);
 
+#[doc(hidden)]
 pub trait IsSet {}
+#[doc(hidden)]
 pub trait IsUnset {}
 
+#[doc(hidden)]
 impl<T> IsSet for Set<T> {}
+#[doc(hidden)]
 impl<T> IsUnset for Unset<T> {}
 
+#[doc(hidden)]
 #[derive(Debug, Clone)]
 pub struct Empty;
 
@@ -45,7 +52,7 @@ mod macros;
 
 mod field_type;
 #[macro_use]
-mod options;
+pub mod options;
 
 pub mod common_options {
   use std::sync::Arc;

@@ -205,28 +205,28 @@ impl WellKnown {
       WellKnown::HeaderNameLoose => {
         option_values.push((
           "well_known_regex".into(),
-          OptionValue::Identifier("KNOWN_REGEX_HTTP_HEADER_NAME".into()),
+          OptionValue::Enum("KNOWN_REGEX_HTTP_HEADER_NAME".into()),
         ));
         option_values.push(("strict".into(), OptionValue::Bool(false)))
       }
       WellKnown::HeaderNameStrict => {
         option_values.push((
           "well_known_regex".into(),
-          OptionValue::Identifier("KNOWN_REGEX_HTTP_HEADER_NAME".into()),
+          OptionValue::Enum("KNOWN_REGEX_HTTP_HEADER_NAME".into()),
         ));
         option_values.push(("strict".into(), OptionValue::Bool(true)))
       }
       WellKnown::HeaderValueLoose => {
         option_values.push((
           "well_known_regex".into(),
-          OptionValue::Identifier("KNOWN_REGEX_HTTP_HEADER_VALUE".into()),
+          OptionValue::Enum("KNOWN_REGEX_HTTP_HEADER_VALUE".into()),
         ));
         option_values.push(("strict".into(), OptionValue::Bool(false)))
       }
       WellKnown::HeaderValueStrict => {
         option_values.push((
           "well_known_regex".into(),
-          OptionValue::Identifier("KNOWN_REGEX_HTTP_HEADER_VALUE".into()),
+          OptionValue::Enum("KNOWN_REGEX_HTTP_HEADER_VALUE".into()),
         ));
         option_values.push(("strict".into(), OptionValue::Bool(true)))
       }

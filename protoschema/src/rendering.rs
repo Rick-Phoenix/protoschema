@@ -8,6 +8,7 @@ use crate::{
   ProtoOption,
 };
 
+// The struct containing all of the processed data for a protobuf file template
 #[derive(Debug, Clone, Template, Default)]
 #[template(path = "file.proto.j2")]
 pub struct FileTemplate {
@@ -21,6 +22,7 @@ pub struct FileTemplate {
   pub options: Box<[ProtoOption]>,
 }
 
+// The struct containing all of the processed data for a protobuf message template
 #[derive(Clone, Debug, Default, Template)]
 #[template(path = "message.proto.j2")]
 pub struct MessageTemplate {
@@ -37,6 +39,7 @@ pub struct MessageTemplate {
   pub reserved_ranges: Box<[Range<u32>]>,
 }
 
+// The struct containing all of the processed data for a protobuf enum template
 #[derive(Clone, Debug, Default, Template)]
 #[template(path = "enum.proto.j2")]
 pub struct EnumTemplate {
