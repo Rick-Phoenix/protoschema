@@ -11,11 +11,11 @@ enum {{+ name +}} {
   {{+ "reserved" +}} {%+ for range in reserved_ranges %}{{ range.start +}} to {{+ range.end }}{% if !loop.last %}, {%+ endif %}{% endfor %};
 {% endif ~%}
 {%~ filter indent(2) %}
-{%+ call opts::get_options(options) +%}
+{%~ call opts::get_options(options) %}
 {% endfilter %}
 
 {% filter indent(2) %}
-{% for (tag, name) in variants +%}
+{% for (tag, name) in variants ~%}
 {{+ name +}} = {{+ tag +}};
 {% endfor %}
 {% endfilter ~%}

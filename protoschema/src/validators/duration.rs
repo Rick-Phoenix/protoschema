@@ -6,17 +6,27 @@ use crate::{
   OptionValue, ProtoOption,
 };
 
+/// Used by the [`duration`](crate::duration) macro to define validation rules.
 #[derive(Clone, Debug, Builder)]
 pub struct DurationValidator<'a> {
+  /// Only the values in this list will be considered valid for this field.
   pub in_: Option<&'a [Duration]>,
+  /// The values in this list will be considered invalid for this field.
   pub not_in: Option<&'a [Duration]>,
+  /// Only this specific value will be considered valid for this field.
   pub const_: Option<Duration>,
+  /// This field's value will be valid only if it is smaller than the specified amount
   pub lt: Option<Duration>,
+  /// This field's value will be valid only if it is smaller than, or equal to, the specified amount
   pub lte: Option<Duration>,
+  /// This field's value will be valid only if it is greater than the specified amount
   pub gt: Option<Duration>,
+  /// This field's value will be valid only if it is greater than, or equal to, the specified amount
   pub gte: Option<Duration>,
+  /// Adds custom validation using one or more [`CelRule`]s to this field.
   pub cel: Option<&'a [CelRule]>,
   #[builder(with = || true)]
+  /// Marks the field as invalid if unset.
   pub required: Option<bool>,
   #[builder(setters(vis = "", name = ignore))]
   pub ignore: Option<Ignore>,
@@ -74,6 +84,7 @@ impl<'a> From<DurationValidator<'a>> for ProtoOption {
   }
 }
 
+#[doc(hidden)]
 #[track_caller]
 pub fn build_duration_validator_option<F, S>(config_fn: F) -> ProtoOption
 where

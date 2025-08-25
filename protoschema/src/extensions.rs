@@ -7,7 +7,7 @@ use crate::{
   fields::{self, Field, FieldBuilder, FieldData},
 };
 
-// A struct representing a protobuf extension
+/// A struct representing a protobuf extension
 #[derive(Clone, Debug, Default, Builder)]
 pub struct Extension {
   #[builder(setters(vis = "", name = fields_internal))]
@@ -16,7 +16,7 @@ pub struct Extension {
 }
 
 impl<S: extension_builder::State> ExtensionBuilder<S> {
-  // Sets the fields for this extension
+  /// Sets the fields for this extension
   pub fn fields<I, F>(self, fields: I) -> ExtensionBuilder<extension_builder::SetFields<S>>
   where
     S::Fields: extension_builder::IsUnset,
@@ -27,7 +27,7 @@ impl<S: extension_builder::State> ExtensionBuilder<S> {
   }
 }
 
-// The processed data for a protobuf extension
+/// The processed data for a protobuf extension
 #[derive(Clone, Debug, Default)]
 pub struct ExtensionData {
   pub fields: Box<[FieldData]>,
@@ -35,7 +35,7 @@ pub struct ExtensionData {
 }
 
 impl ExtensionData {
-  // Returns the shortest name for the target of the extension (the fully qualified name if the message is defined outside of the given package, and the short name in the opposite case)
+  /// Returns the shortest name for the target of the extension (the fully qualified name if the message is defined outside of the given package, and the short name in the opposite case)
   pub fn get_target(&self, current_file: &str, current_package: &str) -> Arc<str> {
     get_shortest_item_name(&self.import_path, current_file, current_package)
   }

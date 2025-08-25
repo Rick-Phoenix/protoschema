@@ -69,6 +69,7 @@ macro_rules! reusable_fields {
   };
 }
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! repeated_field {
   ($name:expr, $field_type:expr, $proto_type:ident $(, $validator:expr)?) => {
@@ -87,13 +88,29 @@ macro_rules! repeated_field {
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! field {
-  ($($optional:ident)? $name:expr, $field_type:expr, $proto_type:ident, $module_name:ident $(, $validator:expr)? ) => {
+macro_rules! optional_field {
+  ($name:expr, $field_type:expr, $proto_type:ident, $module_name:ident $(, $validator:expr)? ) => {
     $crate::paste! {
       $crate::fields::Field::builder()
       .name($name.into())
       .field_type($field_type)
-      $(.$optional())?
+      .optional()
+      $(
+        .add_option($crate::validators::$module_name::[< build_ $proto_type _validator_option >]($validator))
+        .add_import("buf/validate/validate.proto")
+      )?
+    }
+  };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! field {
+  ($name:expr, $field_type:expr, $proto_type:ident, $module_name:ident $(, $validator:expr)? ) => {
+    $crate::paste! {
+      $crate::fields::Field::builder()
+      .name($name.into())
+      .field_type($field_type)
       $(
         .add_option($crate::validators::$module_name::[< build_ $proto_type _validator_option >]($validator))
         .add_import("buf/validate/validate.proto")
@@ -105,6 +122,15 @@ macro_rules! field {
 #[doc(hidden)]
 macro_rules! field_impl {
   ($proto_type:ident, $module_name:ident $(, $import_path:expr)?) => {
+    #[doc = concat!("Evaluates to a protobuf ")]
+    #[doc = concat!(stringify!($proto_type))]
+    #[doc = concat!("field builder instance.")]
+    #[doc = concat!("")]
+    #[doc = concat!("The first argument is the name of the field, which can be a literal or an expression, optionally preceded by 'optional' or 'repeated'.")]
+    #[doc = concat!("")]
+    #[doc = concat!("The second, optional argument is a closure where validation rules can be defined.")]
+    #[doc = concat!("")]
+    #[doc = concat!("If the field is marked as repeated, the closure will receive two arguments, one being the [`RepeatedValidator`](crate::validators::repeated::RepeatedValidator) builder, and the other being the validator builder for the field. Otherwise, the only argument will be the latter.")]
     #[macro_export]
     macro_rules! $proto_type {
       (repeated $name:expr, $validator:expr) => {
@@ -131,8 +157,7 @@ macro_rules! field_impl {
       };
 
       (optional $name:expr, $validator:expr) => {
-        $crate::field!(
-          optional
+        $crate::optional_field!(
           $name,
           $crate::parse_field_type!(stringify!($proto_type)),
           $proto_type,
@@ -145,8 +170,7 @@ macro_rules! field_impl {
       };
 
       (optional $name:expr) => {
-        $crate::field!(
-          optional
+        $crate::optional_field!(
           $name,
           $crate::parse_field_type!(stringify!($proto_type)),
           $proto_type,
@@ -204,6 +228,20 @@ field_impl!(fixed32, numeric);
 field_impl!(double, numeric);
 field_impl!(float, numeric);
 
+/// Evaluates to an enum field builder instance.
+/// The first argument is an expression or ident evaluating to an [`EnumBuilder`](crate::enums::EnumBuilder) instance, optionally preceded by 'optional' or 'repeated'.
+/// The second argument is the name of the field, which can be a literal or an expression.
+/// The third, optional argument is a closure where validation rules can be defined.
+/// If the field is marked as repeated, the closure will receive two arguments, one being the [`RepeatedValidator`](crate::validators::repeated::RepeatedValidator) builder, and the other being the [`EnumValidator`](crate::validators::enums::EnumValidator) builder. Otherwise, the only argument will be the latter.
+/// # Examples
+/// ```
+/// let pkg = Package::new("my_pkg");
+/// let file = pkg.new_file("my_file");
+/// let my_enum = file.new_enum("my_enum");
+/// let my_field1 = enum_field!(
+///   repeated my_enum, "my_field1"
+/// );
+/// ```
 #[macro_export]
 macro_rules! enum_field {
   (repeated $enum_ident:expr, $name:expr $(, $validator:expr)?) => {
@@ -217,11 +255,11 @@ macro_rules! enum_field {
   };
 
   (optional $enum_ident:expr, $name:expr $(, $validator:expr)? ) => {
-    $crate::field!(
-      optional
+    $crate::optional_field!(
       $name,
       $enum_ident.get_type(),
-      enum
+      enum,
+      enums
       $(, $validator)?
     )
     .add_import(&$enum_ident.get_file())
@@ -239,6 +277,20 @@ macro_rules! enum_field {
   };
 }
 
+/// Evaluates to a message field builder instance.
+/// The first argument is an expression or ident evaluating to a [`MessageBuilder`](crate::message::MessageBuilder) instance, optionally preceded by 'optional' or 'repeated'.
+/// The second argument is the name of the field, which can be a literal or an expression.
+/// The third, optional argument is a closure where validation rules can be defined.
+/// If the field is marked as repeated, the closure will receive two arguments, one being the [`RepeatedValidator`](crate::validators::repeated::RepeatedValidator) builder, and the other being the [`MessageValidator`](crate::validators::message::MessageValidator) builder. Otherwise, the only argument will be the latter.
+/// /// # Examples
+/// ```
+/// let pkg = Package::new("my_pkg");
+/// let file = pkg.new_file("my_file");
+/// let my_msg = file.new_message("my_msg");
+/// let my_field1 = msg_field!(
+///   repeated my_msg, "my_field1"
+/// );
+/// ```
 #[macro_export]
 macro_rules! msg_field {
   (repeated $msg_ident:expr, $name:expr $(, $validator:expr)?) => {

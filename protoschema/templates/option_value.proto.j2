@@ -29,7 +29,7 @@
 {% when Self::String with (val) %}
   "{{ val }}"
 {% when Self::Duration with (val) %}
-  { seconds: {{ val.seconds }}, nanos: {{ val.nanos }} }
+  { seconds: {{+ val.seconds }}, nanos: {{+ val.nanos +}} }
 {% when Self::Timestamp with (val) %}
-  { seconds: {{ val.seconds }}, nanos: {{ val.nanos }} }
+  { seconds: {{+ val.seconds }}, nanos: {{+ val.nanos +}} }
 {% endmatch %}

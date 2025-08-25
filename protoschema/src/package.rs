@@ -27,7 +27,7 @@ pub(crate) struct PackageData {
   pub(crate) services: Vec<ServiceData>,
 }
 
-// A struct representing a protobuf package
+/// A struct representing a protobuf package.
 #[derive(Clone)]
 pub struct Package {
   path: Box<str>,
@@ -35,12 +35,12 @@ pub struct Package {
 }
 
 impl Package {
-  // Gets the name of this package
+  /// Gets the name of this package
   pub fn get_name(&self) -> Arc<str> {
     self.data.borrow().name.clone()
   }
 
-  // Creates a new package
+  /// Creates a new package
   pub fn new<T: AsRef<str>>(name: T) -> Self {
     Package {
       path: name.as_ref().replace(".", "/").into(),
@@ -51,8 +51,8 @@ impl Package {
     }
   }
 
-  // Creates a new file belonging to this package.
-  // The ".proto" suffix is added automatically.
+  /// Creates a new file belonging to this package.
+  /// The ".proto" suffix is added automatically to the name being given.
   pub fn new_file<T: AsRef<str>>(&self, name: T) -> FileBuilder {
     let mut arena = self.data.borrow_mut();
     let file_id = arena.files.len();
@@ -67,9 +67,9 @@ impl Package {
     }
   }
 
-  // Builds all of the FileTemplates for this package, and returns them.
-  // This is only useful if you want to manually process the template's data.
-  // To write the templates directly, use [`render_templates`](crate::package::render_templates)
+  /// Builds all of the FileTemplates for this package, and returns them.
+  /// This is only useful if you want to manually process the template's data.
+  /// To write the templates directly, use [`render_templates`](crate::package::Package::render_templates)
   pub fn build_templates(&self) -> Vec<FileTemplate> {
     let arena = self.data.borrow_mut();
     let templates: Vec<FileTemplate> = arena
@@ -80,9 +80,9 @@ impl Package {
     templates
   }
 
-  // Writes the protobuf files defined in this Package.
-  // The only argument it accepts is the proto_root, namely the root directory for the protobuf project.
-  // It will write the files by joining the root to the file names.
+  /// Writes the protobuf files defined in this Package schema.
+  /// The only argument it accepts is the proto_root, namely the root directory for the protobuf project.
+  /// It will write the files by joining the root to the file names.
   pub fn render_templates(&self, proto_root: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let templates = self.build_templates();
 

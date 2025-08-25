@@ -1,3 +1,36 @@
+/// Creates a new protobuf enum.
+///
+/// It receives an expression evaluating to a [`EnumBuilder`](crate::enums::EnumBuilder) instance as the first argument, and attaches to it the variants and options defined in this macro.
+/// The syntax for this macro is as follows:
+/// The first argument, as described above, must be followed by a comma.
+/// After the comma, you can use:
+/// `options = $options:expr` where $options should evaluate to IntoIter<Item = [`ProtoOption`](crate::options::ProtoOption)> (must be followed by a comma, even if at last position).
+/// `reserved_names = $names:expr` where $names should evalutate to IntoIter<Item = AsRef<str>> (must be followed by a comma, even if last)
+/// reserved = [ $items ], where $items is a comma separated list of numbers of ranges such as `1..5`. Following the protobuf syntax, these ranges will be inclusive.
+/// The variants for this enum, defined as a comma-separated list of `$number:literal => $name:expr`.
+/// # Examples
+/// ```
+/// let my_pkg = Package::new();
+/// let my_file = my_pkg.new_file("my_file");
+/// let reusable_variants = reusable_variants!(
+///   0 => "UNSPECIFIED"
+/// );
+///
+/// // For enums defined at the top level
+/// proto_enum!(
+///   my_file.new_enum("my_enum"),
+///   // Options, if defined, must be at the very top
+///   options = [ ... ],
+///   // Must be followed by a comma, even if last
+///   reserved_names = [ "ABC" ],
+///   // Accepts ranges (inclusive by default) and numbers
+///   reserved_numbers = [ 100, 205, 300..350 ]
+///   
+///   // Including reusable variants
+///   include(reusable_variants.clone()),
+///   1 => "ACTIVE"
+/// )
+/// ```
 #[macro_export]
 macro_rules! proto_enum {
   ($enum:expr, $($tokens:tt)*) => {
@@ -13,6 +46,15 @@ macro_rules! proto_enum {
   };
 }
 
+/// Defines some enum variants that can be included and reused among different enums.
+///
+/// # Examples
+/// ```
+/// enum_variants!(
+///   0 => "UNSPECIFIED",
+///   1 => "ACTIVE"
+/// )
+/// ```
 #[macro_export]
 macro_rules! enum_variants {
   ($($number:literal => $name:expr),+ $(,)?) => {

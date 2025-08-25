@@ -9,7 +9,7 @@ use crate::{
   sealed, Empty, IsSet, IsUnset, ProtoOption, Set, Unset,
 };
 
-// The builder for a protobuf service.
+/// The builder for a protobuf service.
 #[derive(Clone, Debug)]
 pub struct ServiceBuilder<S: ServiceState = Empty> {
   pub(crate) id: usize,
@@ -18,7 +18,7 @@ pub struct ServiceBuilder<S: ServiceState = Empty> {
   pub(crate) _phantom: PhantomData<fn() -> S>,
 }
 
-// A struct representing a protobuf service handler
+/// A struct representing a protobuf service handler
 #[derive(Clone, Debug, Builder)]
 #[builder(start_fn = new)]
 pub struct ServiceHandler {
@@ -49,7 +49,7 @@ use service_handler_builder::{
 };
 
 impl<S: HandlerState> ServiceHandlerBuilder<S> {
-  // Sets the options for this handler
+  /// Sets the options for this handler
   pub fn options<I>(self, options: I) -> ServiceHandlerBuilder<HandlerSetOptions<S>>
   where
     S::Options: HandlerIsUnset,
@@ -58,7 +58,7 @@ impl<S: HandlerState> ServiceHandlerBuilder<S> {
     self.options_internal(options.into_iter().collect())
   }
 
-  // Sets the request for this handler
+  /// Sets the request for this handler
   pub fn request(self, message: &MessageBuilder) -> ServiceHandlerBuilder<SetRequest<S>>
   where
     S::Request: HandlerIsUnset,
@@ -66,7 +66,7 @@ impl<S: HandlerState> ServiceHandlerBuilder<S> {
     self.request_internal(message.get_import_path())
   }
 
-  // Sets the response for this handler
+  /// Sets the response for this handler
   pub fn response(self, message: &MessageBuilder) -> ServiceHandlerBuilder<SetResponse<S>>
   where
     S::Response: HandlerIsUnset,
@@ -75,7 +75,7 @@ impl<S: HandlerState> ServiceHandlerBuilder<S> {
   }
 }
 
-// The aggregated data for a protobuf service
+/// The aggregated data for a protobuf service
 #[derive(Clone, Debug, Default)]
 pub struct ServiceData {
   pub name: Box<str>,
@@ -84,30 +84,30 @@ pub struct ServiceData {
 }
 
 impl<S: ServiceState> ServiceBuilder<S> {
-  // Clones the data from the package's pool for this service and returns it
+  /// Clones the data from the package's pool for this service and returns it
   pub fn get_data(self) -> ServiceData {
     self.arena.borrow().services[self.id].clone()
   }
 
-  // Gets the name of the containing file
+  /// Gets the name of the containing file
   pub fn get_file(&self) -> Arc<str> {
     let arena = self.arena.borrow();
     arena.files[self.file_id].name.clone()
   }
 
-  // Gets the name of the service
+  /// Gets the name of the service
   pub fn get_name(&self) -> Box<str> {
     let arena = self.arena.borrow();
 
     arena.services[self.id].name.clone()
   }
 
-  // Gets the name of the containing package
+  /// Gets the name of the containing package
   pub fn get_package(&self) -> Arc<str> {
     self.arena.borrow().name.clone()
   }
 
-  // Sets the handlers for this service
+  /// Sets the handlers for this service
   pub fn handlers<I>(self, handlers: I) -> ServiceBuilder<SetHandlers<S>>
   where
     S::Handlers: IsUnset,
@@ -134,7 +134,7 @@ impl<S: ServiceState> ServiceBuilder<S> {
     }
   }
 
-  // Sets the options for this service
+  /// Sets the options for this service
   pub fn options<I>(self, options: I) -> ServiceBuilder<SetOptions<S>>
   where
     S::Options: IsUnset,

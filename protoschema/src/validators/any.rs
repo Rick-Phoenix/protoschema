@@ -5,11 +5,16 @@ use crate::{
   OptionValue, ProtoOption,
 };
 
+/// Used by the [`any`](crate::any) macro to define validation rules.
 #[derive(Clone, Debug, Builder)]
 pub struct AnyValidator<'a> {
+  /// Only the type_urls defined in this list will be considered valid for this field.
   pub in_: Option<&'a [&'a str]>,
+  /// The type_urls defined in this list will be considered invalid for this field.
   pub not_in: Option<&'a [&'a str]>,
+  /// Adds custom validation using one or more [`CelRule`]s to this field.
   pub cel: Option<&'a [CelRule]>,
+  /// Marks the field as invalid if unset.
   #[builder(with = || true)]
   pub required: Option<bool>,
   #[builder(setters(vis = "", name = ignore))]
@@ -57,6 +62,7 @@ impl<'a> From<AnyValidator<'a>> for ProtoOption {
   }
 }
 
+#[doc(hidden)]
 #[track_caller]
 pub fn build_any_validator_option<F, S>(config_fn: F) -> ProtoOption
 where

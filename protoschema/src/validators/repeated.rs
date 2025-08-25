@@ -17,15 +17,24 @@ use crate::{
   OptionValue, ProtoOption,
 };
 
+/// A struct that can be used to generate a [`ProtoOption`] containing protovalidate rules for a repeated field.
+/// Used by the various kinds of field macros such as [`string`](crate::string) or [`int64`](crate::int64) to define validation rules when the field is marked as repeated.
 #[derive(Clone, Debug, Builder)]
 pub struct RepeatedValidator<'a> {
   #[builder(into)]
+  /// The rules to apply to the individual items in this field's list. Usually defined via the various field macros, which automatically convert field validator instances into the correct [`ProtoOption`] to place here.
   pub items: Option<ProtoOption>,
+  /// The minimum amount of items that this field must contain in order to be valid.
   pub min_items: Option<u64>,
+  /// The maximum amount of items that this field must contain in order to be valid.
   pub max_items: Option<u64>,
   #[builder(with = || true)]
+  /// Specifies that this field must contain only unique values (only applies to scalar fields).
   pub unique: Option<bool>,
+  /// Adds custom validation using one or more [`CelRule`]s to this field.
+  /// These will apply to the list as a whole. To apply rules to the individual items, use the items validator instead.
   pub cel: Option<&'a [CelRule]>,
+  /// Marks the field as required. Since repeated fields are always present in protobuf, this is essentially the same as setting min_items to 1
   #[builder(with = || true)]
   pub required: Option<bool>,
   #[builder(setters(vis = "", name = ignore))]
@@ -76,6 +85,7 @@ impl<'a> From<RepeatedValidator<'a>> for ProtoOption {
 macro_rules! repeated_validator {
   ($validator_type:ident) => {
     $crate::paste! {
+      #[doc(hidden)]
       #[track_caller]
       pub fn [< build_repeated_  $validator_type  _validator_option >]<'a, F, S: repeated_validator_builder::State>(config_fn: F) -> ProtoOption
       where

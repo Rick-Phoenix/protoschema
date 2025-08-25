@@ -5,7 +5,7 @@ use crate::{
   IsSet, IsUnset, ProtoOption, Set, Unset,
 };
 
-// The builder for a protobuf enum. Its methods are used to collect and store the information for that enum, which are later used to build a template for it.
+/// The builder for a protobuf enum. Its methods are used to collect and store the information for that enum, which are later used to build a template for it.
 #[derive(Clone, Debug)]
 pub struct EnumBuilder<S: EnumState = Empty> {
   pub(crate) id: usize,
@@ -13,7 +13,7 @@ pub struct EnumBuilder<S: EnumState = Empty> {
   pub(crate) _phantom: PhantomData<fn() -> S>,
 }
 
-// The stored information for a given enum.
+/// The stored information for a given enum.
 #[derive(Clone, Debug, Default)]
 pub struct EnumData {
   pub name: Arc<str>,
@@ -27,8 +27,8 @@ pub struct EnumData {
 }
 
 impl<S: EnumState> EnumBuilder<S> {
-  // Builds the full template for this enum and returns it.
-  // Mostly useful for debugging.
+  /// Builds the full template for this enum and returns it.
+  /// Mostly useful for debugging.
   pub fn get_data(&self) -> EnumTemplate {
     let arena = self.arena.borrow();
     arena.enums[self.id].clone().into()
@@ -39,31 +39,31 @@ impl<S: EnumState> EnumBuilder<S> {
     FieldType::Enum(self.get_import_path())
   }
 
-  // Returns the import path for this enum
+  /// Returns the import path for this enum
   pub fn get_import_path(&self) -> Arc<ImportedItemPath> {
     self.arena.borrow().enums[self.id].import_path.clone()
   }
 
-  // Returns the name of the file containing this enum
+  /// Returns the name of the file containing this enum
   pub fn get_file(&self) -> Arc<str> {
     let arena = self.arena.borrow();
     let file_id = arena.enums[self.id].file_id;
     arena.files[file_id].name.clone()
   }
 
-  // Returns the full name of this enum
+  /// Returns the full name of this enum
   pub fn get_full_name(&self) -> Arc<str> {
     let arena = self.arena.borrow();
 
     arena.enums[self.id].import_path.full_name.clone()
   }
 
-  // Returns the name of the package containing this enum
+  /// Returns the name of the package containing this enum
   pub fn get_package(&self) -> Arc<str> {
     self.arena.borrow().name.clone()
   }
 
-  // Returns the full name of this enum, with the package prefix included
+  /// Returns the full name of this enum, with the package prefix included
   pub fn get_full_name_with_package(&self) -> Arc<str> {
     self.arena.borrow().enums[self.id]
       .import_path
@@ -71,7 +71,7 @@ impl<S: EnumState> EnumBuilder<S> {
       .clone()
   }
 
-  // Sets the variants for this enum.
+  /// Sets the variants for this enum.
   pub fn variants<I, Str>(self, variants: I) -> EnumBuilder<SetVariants<S>>
   where
     S::Variants: IsUnset,
@@ -95,7 +95,7 @@ impl<S: EnumState> EnumBuilder<S> {
     }
   }
 
-  // Sets the options for this enum.
+  /// Sets the options for this enum.
   pub fn options<I>(self, options: I) -> EnumBuilder<SetOptions<S>>
   where
     S::Options: IsUnset,
@@ -115,7 +115,7 @@ impl<S: EnumState> EnumBuilder<S> {
     }
   }
 
-  // Sets the reserved names for this enum.
+  /// Sets the reserved names for this enum.
   pub fn reserved_names<I, Str>(self, names: I) -> EnumBuilder<SetReservedNames<S>>
   where
     S::ReservedNames: IsUnset,
@@ -137,7 +137,7 @@ impl<S: EnumState> EnumBuilder<S> {
     }
   }
 
-  // Sets the reserved numbers for this enum
+  /// Sets the reserved numbers for this enum
   pub fn reserved_numbers<I>(self, numbers: I) -> EnumBuilder<SetReservedNumbers<S>>
   where
     S::ReservedNumbers: IsUnset,
@@ -157,7 +157,8 @@ impl<S: EnumState> EnumBuilder<S> {
     }
   }
 
-  // Sets the reserved ranges for this enum
+  /// Sets the reserved ranges for this enum
+  /// Just like in protobuf, ranges are considered to be inclusive.
   pub fn reserved_ranges<I>(self, ranges: I) -> EnumBuilder<SetReservedRanges<S>>
   where
     S::ReservedRanges: IsUnset,

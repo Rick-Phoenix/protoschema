@@ -5,27 +5,44 @@ use crate::{
   OptionValue, ProtoOption,
 };
 
+/// Used by the [`string`](crate::string) macro to define validation rules.
 #[derive(Clone, Debug, Builder)]
 #[builder(derive(Clone))]
 pub struct StringValidator<'a> {
+  /// The exact character length that this field's value must have in order to be considered valid.
   pub len: Option<u64>,
+  /// The minimum character length for this field's value to be considered valid.
   pub min_len: Option<u64>,
+  /// The maximum character length for this field's value to be considered valid.
   pub max_len: Option<u64>,
+  /// The exact byte length that this field's value must have in order to be considered valid.
   pub len_bytes: Option<u64>,
+  /// The minimum byte length for this field's value to be considered valid.
   pub min_bytes: Option<u64>,
+  /// The minimum bytte length for this field's value to be considered valid.
   pub max_bytes: Option<u64>,
+  /// A regex pattern that this field's value should match in order to be considered valid.
   pub pattern: Option<&'a str>,
+  /// The prefix that this field's value should contain in order to be considered valid.
   pub prefix: Option<&'a str>,
+  /// The suffix that this field's value should contain in order to be considered valid.
   pub suffix: Option<&'a str>,
+  /// The substring that this field's value should contain in order to be considered valid.
   pub contains: Option<&'a str>,
+  /// The substring that this field's value must not contain in order to be considered valid.
   pub not_contains: Option<&'a str>,
+  /// Only the values in this list will be considered valid for this field.
   pub in_: Option<&'a [&'a str]>,
+  /// All the values in this list will be considered invalid for this field.
   pub not_in: Option<&'a [&'a str]>,
   #[builder(setters(vis = "", name = well_known))]
   pub well_known: Option<WellKnown>,
+  /// Only this specific value will be considered valid for this field.
   pub const_: Option<&'a str>,
+  /// Adds custom validation using one or more [`CelRule`]s to this field.
   pub cel: Option<&'a [CelRule]>,
   #[builder(with = || true)]
+  /// Marks the field as invalid if unset.
   pub required: Option<bool>,
   #[builder(setters(vis = "", name = ignore))]
   pub ignore: Option<Ignore>,
@@ -97,6 +114,7 @@ impl<'a> From<StringValidator<'a>> for ProtoOption {
   }
 }
 
+#[doc(hidden)]
 #[track_caller]
 pub fn build_string_validator_option<F, S>(config_fn: F) -> ProtoOption
 where
@@ -108,6 +126,7 @@ where
   validator.into()
 }
 
+/// All of the variants for protovalidate's well known string rules
 #[derive(Clone, Debug, Copy)]
 pub enum WellKnown {
   Email,
@@ -138,6 +157,9 @@ use string_validator_builder::{IsUnset, SetWellKnown, State};
 macro_rules! well_known_impl {
   ($name:ident) => {
     paste::paste! {
+      #[doc = concat!("Sets a rule for this field to match the WellKnown::")]
+      #[doc = concat!(stringify!($name))]
+      #[doc = concat!(" variant.")]
       pub fn [< $name:snake >](self) -> StringValidatorBuilder<'a, SetWellKnown<S>>
         where
           S::WellKnown: IsUnset,

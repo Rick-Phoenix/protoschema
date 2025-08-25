@@ -5,10 +5,13 @@ use crate::{
   OptionValue, ProtoOption,
 };
 
+/// Used by the [`msg_field`](crate::msg_field) macro to define validation rules.
 #[derive(Debug, Clone, Builder)]
 pub struct MessageValidator<'a> {
+  /// Adds custom validation using one or more [`CelRule`]s to this field.
   pub cel: Option<&'a [CelRule]>,
   #[builder(with = || true)]
+  /// Marks the field as invalid if unset.
   pub required: Option<bool>,
   #[builder(setters(vis = "", name = ignore))]
   pub ignore: Option<Ignore>,
@@ -40,6 +43,7 @@ impl<'a> From<MessageValidator<'a>> for ProtoOption {
   }
 }
 
+#[doc(hidden)]
 #[track_caller]
 pub fn build_message_validator_option<F, S>(config_fn: F) -> ProtoOption
 where

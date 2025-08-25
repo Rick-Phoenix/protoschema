@@ -2,10 +2,13 @@ use bon::Builder;
 
 use crate::{validators::OptionValueList, OptionValue, ProtoOption};
 
+/// Used by the [`bool`](crate::bool) macro to define validation rules.
 #[derive(Clone, Debug, Builder)]
 pub struct BoolValidator {
+  /// Only this specific value will be considered valid for this field.
   pub const_: Option<bool>,
   #[builder(with = || true)]
+  /// Marks the field as invalid if unset.
   pub required: Option<bool>,
 }
 
@@ -41,6 +44,7 @@ impl From<BoolValidator> for ProtoOption {
   }
 }
 
+#[doc(hidden)]
 #[track_caller]
 pub fn build_bool_validator_option<F, S>(config_fn: F) -> ProtoOption
 where

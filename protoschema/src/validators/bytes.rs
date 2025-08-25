@@ -30,22 +30,35 @@ macro_rules! insert_bytes_option {
   };
 }
 
+/// Used by the [`bytes`](crate::bytes) macro to define validation rules.
 #[derive(Clone, Debug, Builder)]
 pub struct BytesValidator<'a> {
+  /// Specifies the exact length for this bytes field to be considered valid.
   pub len: Option<u64>,
+  /// The minimum length for this field in order to be considered valid.
   pub min_len: Option<u64>,
+  /// The maximum length for this field in order to be considered valid.
   pub max_len: Option<u64>,
+  /// The pattern that this field must match in order to be valid.
   pub pattern: Option<&'a str>,
+  /// A prefix that this field must have in order to be valid.
   pub prefix: Option<&'a [u8]>,
+  /// A suffix that this field must have in order to be valid.
   pub suffix: Option<&'a [u8]>,
+  /// A subset of bytes that this field must contain in order to be valid.
   pub contains: Option<&'a [u8]>,
+  /// Only the values in this list will be considered valid for this field.
   pub in_: Option<&'a [&'a [u8]]>,
+  /// The values in this list will be considered invalid for this field.
   pub not_in: Option<&'a [&'a [u8]]>,
   #[builder(setters(vis = "", name = well_known))]
   pub well_known: Option<WellKnown>,
+  /// Only this specific value will be considered valid for this field.
   pub const_: Option<&'a [u8]>,
+  /// Adds custom validation using one or more [`CelRule`]s to this field.
   pub cel: Option<&'a [CelRule]>,
   #[builder(with = || true)]
+  /// Marks the field as invalid if unset.
   pub required: Option<bool>,
   #[builder(setters(vis = "", name = ignore))]
   pub ignore: Option<Ignore>,
@@ -114,6 +127,7 @@ impl<'a> From<BytesValidator<'a>> for ProtoOption {
   }
 }
 
+#[doc(hidden)]
 #[track_caller]
 pub fn build_bytes_validator_option<F, S>(config_fn: F) -> ProtoOption
 where

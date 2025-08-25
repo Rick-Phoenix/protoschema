@@ -6,20 +6,31 @@ use crate::{
   OptionValue, ProtoOption,
 };
 
+/// Used by the [`timestamp`](crate::timestamp) macro to define validation rules.
 #[derive(Clone, Debug, Builder)]
 pub struct TimestampValidator<'a> {
+  /// Only this specific value will be considered valid for this field.
   pub const_: Option<Timestamp>,
+  /// This field's value will be valid only if it is smaller than the specified amount.
   pub lt: Option<Timestamp>,
+  /// This field's value will be valid only if it is smaller than, or equal to, the specified amount.
   pub lte: Option<Timestamp>,
   #[builder(with = || true)]
+  /// This field's value will be valid only if it in the past.
   pub lt_now: Option<bool>,
+  /// This field's value will be valid only if it is greater than the specified amount.
   pub gt: Option<Timestamp>,
+  /// This field's value will be valid only if it is greater than, or equal to, the specified amount.
   pub gte: Option<Timestamp>,
   #[builder(with = || true)]
+  /// This field's value will be valid only if it in the future.
   pub gt_now: Option<bool>,
+  /// This field's value will be valid only if it is within the specified Duration (either in the past or future) from the moment when it's being validated.
   pub within: Option<Duration>,
+  /// Adds custom validation using one or more [`CelRule`]s to this field.
   pub cel: Option<&'a [CelRule]>,
   #[builder(with = || true)]
+  /// Marks the field as invalid if unset.
   pub required: Option<bool>,
   #[builder(setters(vis = "", name = ignore))]
   pub ignore: Option<Ignore>,
@@ -98,6 +109,7 @@ impl<'a> From<TimestampValidator<'a>> for ProtoOption {
   }
 }
 
+#[doc(hidden)]
 #[track_caller]
 pub fn build_timestamp_validator_option<F, S>(config_fn: F) -> ProtoOption
 where

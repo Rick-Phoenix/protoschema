@@ -5,15 +5,22 @@ use crate::{
   OptionValue, ProtoOption,
 };
 
+/// Used by the [`enum_field`](crate::enum_field) macro to define validation rules.
 #[derive(Clone, Debug, Builder)]
 pub struct EnumValidator<'a> {
+  /// Only the values in this list will be considered valid for this field.
   pub in_: Option<&'a [i32]>,
+  /// The values in this list will be considered invalid for this field.
   pub not_in: Option<&'a [i32]>,
+  /// Only this specific value will be considered valid for this field.
   pub const_: Option<i32>,
   #[builder(with = || true)]
+  /// Marks that this field will only accept values that are defined in the enum that it's referring to.
   pub defined_only: Option<bool>,
+  /// Adds custom validation using one or more [`CelRule`]s to this field.
   pub cel: Option<&'a [CelRule]>,
   #[builder(with = || true)]
+  /// Marks the field as invalid if unset.
   pub required: Option<bool>,
   #[builder(setters(vis = "", name = ignore))]
   pub ignore: Option<Ignore>,
@@ -67,6 +74,7 @@ impl<'a> From<EnumValidator<'a>> for ProtoOption {
   }
 }
 
+#[doc(hidden)]
 #[track_caller]
 pub fn build_enum_validator_option<F, S>(config_fn: F) -> ProtoOption
 where

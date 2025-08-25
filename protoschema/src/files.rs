@@ -12,7 +12,7 @@ use crate::{
   ProtoOption,
 };
 
-// The collected data for a protobuf file
+/// The collected data for a protobuf file
 #[derive(Clone, Debug, Default)]
 pub struct FileData {
   pub name: Arc<str>,
@@ -24,7 +24,7 @@ pub struct FileData {
   pub options: Vec<ProtoOption>,
 }
 
-// The builder for a protobuf file. Its methods are used to collect and store the data for a given file
+/// The builder for a protobuf file. Its methods are used to collect and store the data for a given file
 #[derive(Debug, Clone)]
 pub struct FileBuilder {
   pub(crate) id: usize,
@@ -40,20 +40,20 @@ impl FileData {
 }
 
 impl FileBuilder {
-  // Builds the full template for this file, and returns it.
-  // Mostly useful for debugging.
+  /// Builds the full template for this file, and returns it.
+  /// Mostly useful for debugging.
   pub fn get_data(&self) -> FileTemplate {
     let arena = self.arena.borrow();
     arena.files[self.id].build_template(&arena)
   }
 
-  // Returns this file's name
+  /// Returns this file's name
   pub fn get_name(&self) -> Arc<str> {
     self.arena.borrow().files[self.id].name.clone()
   }
 
-  // Creates a new message belonging to this file and returns its builder.
-  // If you want to define a message inside another message, use [`MessageBuilder::new_message`] instead.
+  /// Creates a new message belonging to this file and returns its builder.
+  /// If you want to define a message inside another message, use [`MessageBuilder::new_message`] instead.
   pub fn new_message<T: AsRef<str>>(&self, name: T) -> MessageBuilder {
     let file_name = self.get_name();
     let mut arena = self.arena.borrow_mut();
@@ -83,8 +83,8 @@ impl FileBuilder {
     }
   }
 
-  // Creates a new enum belonging to this file and returns its builder.
-  // If you want to define an enum inside another message, use [`MessageBuilder::new_enum`] instead.
+  /// Creates a new enum belonging to this file and returns its builder.
+  /// If you want to define an enum inside another message, use [`MessageBuilder::new_enum`] instead.
   pub fn new_enum<T: AsRef<str>>(&self, name: T) -> EnumBuilder {
     let file_name = self.get_name();
     let mut arena = self.arena.borrow_mut();
@@ -115,7 +115,8 @@ impl FileBuilder {
     }
   }
 
-  // Creates a new service belonging to this file and returns its builder.
+  /// Creates a new service belonging to this file and returns its builder.
+  /// Use the [`services`](crate::services) macro to define multiple services with a shorter syntax.
   pub fn new_service<T: AsRef<str>>(&self, name: T) -> ServiceBuilder {
     let mut arena = self.arena.borrow_mut();
     let service_id = arena.services.len();
@@ -135,7 +136,7 @@ impl FileBuilder {
     }
   }
 
-  // Adds the given options to this file's options.
+  /// Adds the given options to this file's options.
   pub fn add_options<I>(&self, options: I)
   where
     I: IntoIterator<Item = ProtoOption>,
@@ -144,6 +145,7 @@ impl FileBuilder {
     file.options.extend(options)
   }
 
+  /// Adds the given extension to this file.
   pub fn add_extension(&self, extension: Extension) {
     let file = &mut self.arena.borrow_mut().files[self.id];
 
@@ -175,7 +177,7 @@ impl FileBuilder {
     file.extensions.push(ext_data)
   }
 
-  // Adds the given imports to this file.
+  /// Adds the given imports to this file.
   pub fn add_imports<I, S>(&self, imports: I)
   where
     I: IntoIterator<Item = S>,

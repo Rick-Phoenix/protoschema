@@ -4,14 +4,14 @@ use askama::Template;
 
 pub use crate::field_type::{Duration, Timestamp};
 
-// A struct representing a protobuf option
+/// A struct representing a protobuf option
 #[derive(Clone, Debug)]
 pub struct ProtoOption {
   pub name: &'static str,
   pub value: Arc<OptionValue>,
 }
 
-// A helper to build a ProtoOption
+/// A helper to build a ProtoOption
 pub fn proto_option<T: Into<OptionValue>>(name: &'static str, value: T) -> ProtoOption {
   ProtoOption {
     name,
@@ -19,7 +19,7 @@ pub fn proto_option<T: Into<OptionValue>>(name: &'static str, value: T) -> Proto
   }
 }
 
-// An enum representing values for protobuf options
+/// An enum representing values for protobuf options
 #[derive(Clone, Debug, Template)]
 #[template(path = "option_value.proto.j2")]
 pub enum OptionValue {
@@ -35,49 +35,41 @@ pub enum OptionValue {
   Timestamp(Timestamp),
 }
 
-// A helper to build an OptionValue::List
-pub fn list_value<T: Into<Box<[OptionValue]>>>(i: T) -> OptionValue {
-  OptionValue::List(i.into())
+/// A helper to build a list of protobuf option values
+pub fn list_value<L, I>(l: L) -> OptionValue
+where
+  L: IntoIterator<Item = I>,
+  I: Into<OptionValue>,
+{
+  OptionValue::List(l.into_iter().map(|i| i.into()).collect())
 }
 
-// A helper to build an OptionValue::Message
-pub fn message_value<T: Into<Box<[(Box<str>, OptionValue)]>>>(i: T) -> OptionValue {
-  OptionValue::Message(i.into())
+/// A helper to build a list of enum values
+pub fn enum_values_list<L, I>(l: L) -> OptionValue
+where
+  L: IntoIterator<Item = I>,
+  I: AsRef<str>,
+{
+  OptionValue::List(
+    l.into_iter()
+      .map(|s| OptionValue::Enum(s.as_ref().into()))
+      .collect(),
+  )
 }
 
-// A helper to build an OptionValue::Int
-pub fn int_value<T: Into<i64>>(n: T) -> OptionValue {
-  OptionValue::Int(n.into())
-}
-
-// A helper to build an OptionValue::Uint
-pub fn uint_value<T: Into<u64>>(n: T) -> OptionValue {
-  OptionValue::Uint(n.into())
-}
-
-// A helper to build an OptionValue::Float
-pub fn float_value<T: Into<f64>>(n: T) -> OptionValue {
-  OptionValue::Float(n.into())
-}
-
-// A helper to build an OptionValue::String
-pub fn string_value<T: AsRef<str>>(str: T) -> OptionValue {
-  OptionValue::String(str.as_ref().into())
-}
-
-// A helper to build an OptionValue::Enum
-pub fn enum_value<T: AsRef<str>>(name: T) -> OptionValue {
-  OptionValue::String(name.as_ref().into())
-}
-
-// A helper to build an OptionValue::Duration
-pub fn duration_value(d: Duration) -> OptionValue {
-  OptionValue::Duration(d)
-}
-
-// A helper to build an OptionValue::Timestamp
-pub fn timestamp_value(d: Timestamp) -> OptionValue {
-  OptionValue::Timestamp(d)
+/// A helper to build an OptionValue::Message.
+/// Used by the [`message_option`](crate::message_option) macro to easily compose message option values.
+pub fn message_value<T, N, V>(v: T) -> OptionValue
+where
+  T: IntoIterator<Item = (N, V)>,
+  N: AsRef<str>,
+  V: Into<OptionValue>,
+{
+  OptionValue::Message(
+    v.into_iter()
+      .map(|(name, val)| (name.as_ref().into(), val.into()))
+      .collect(),
+  )
 }
 
 macro_rules! option_value_conversion {
@@ -88,6 +80,12 @@ macro_rules! option_value_conversion {
       }
     }
   };
+}
+
+impl From<&str> for OptionValue {
+  fn from(value: &str) -> Self {
+    OptionValue::String(value.into())
+  }
 }
 
 option_value_conversion!(Box<[(Box<str>, OptionValue)]>, Message);
@@ -111,15 +109,4 @@ impl OptionValue {
       _ => true,
     }
   }
-}
-
-#[macro_export]
-macro_rules! proto_str_list {
-  ($($val:expr),* $(,)?) => {
-    $crate::OptionValue::List(vec![
-      $(
-        OptionValue::String($val.to_string())
-      ),*
-    ])
-  };
 }

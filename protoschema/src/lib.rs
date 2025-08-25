@@ -50,7 +50,7 @@ pub mod validators;
 #[macro_use]
 mod macros;
 
-mod field_type;
+pub mod field_type;
 #[macro_use]
 pub mod options;
 

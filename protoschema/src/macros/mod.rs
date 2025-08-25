@@ -3,10 +3,20 @@ mod extensions_macros;
 mod fields_macros;
 mod maps_macros;
 mod oneofs_macros;
+mod options_macros;
 mod parse_reserved;
 mod services_macros;
 
-#[doc(hidden)]
+/// A macro to define a single [`CelRule`](crate::validators::cel::CelRule).
+///
+/// # Examples
+/// ```
+/// cel_rule!(
+///   id = "password_not_matching",
+///   msg = "the two passwords do not match",
+///   expr = "this.password == this.repeated_password"
+/// )
+/// ```
 #[macro_export]
 macro_rules! cel_rule {
   (id = $id:expr, msg = $msg:expr, expr = $expr:expr) => {
@@ -18,7 +28,23 @@ macro_rules! cel_rule {
   };
 }
 
-#[doc(hidden)]
+/// A macro to define multiple [`CelRule`](crate::validators::cel::CelRule)s.
+///
+/// # Examples
+/// ```
+/// cel_rules!(
+///   {
+///     id = "password_not_matching",
+///     msg = "the two passwords do not match",
+///     expr = "this.password == this.repeated_password"
+///   },
+///   {
+///     id = "other_rule",
+///     msg = "something else went wrong",
+///     expr = "this.something != this.expected"
+///   }
+/// )
+/// ```
 #[macro_export]
 macro_rules! cel_rules {
   (
@@ -39,8 +65,56 @@ macro_rules! cel_rules {
   };
 }
 
+/// The macro that is used to define most if not all of the data for a given protobuf message.
+///
+/// It receives a [`MessageBuilder`](crate::message::MessageBuilder) instance's ident as the first argument, the (optional) options for the message right after, and the rest of the data after that.
+/// # Examples
+/// ```
+/// use protoschema::{package::Package, message, options::proto_option, string, reusable_fields};
+///
+/// let my_pkg = Package::new("mypkg.v1");
+/// let my_file = my_pkg.new_file("my_file");
+/// let my_opt = proto_option("my_opt", true);
+/// let reusable_fields = reusable_fields!(
+///   25 => string!("field1"),
+///   26 => string!("field2")
+/// );
+///
+///
+/// message!(
+///   my_file,
+///   // Options can only be defined at the very top
+///   options  = [ my_opt.clone() ],
+///   // reserved_names must always be followed by a comma because it's an expression, even if it's the last item in the list
+///   reserved_names = [ "abc", "deg" ],
+///   // Accepts both numbers and ranges
+///   reserved = [ 5, 12, 23..29 ],
+///
+///   // Single field
+///   1 => string!("abc"),
+///   // Included reusable fields
+///   include(reusable_fields.clone()),
+/// )
+/// ```
+///
+/// It's also possible to define enums and oneofs inside of this macro. They follow the same syntax as their respective macros, namely [`proto_enum`](crate::proto_enum) and [`oneof`](crate::oneof)
+///
+/// ```
+/// message!(
+///   enum "MyEnum" {
+///     options = [ ... ],
+///     reserved_names = [ "ABCDE" ],
+///     0 => "UNSPECIFIED"
+///   }
+///
+///   oneof "MyOneOf" {
+///     options = [ ... ],
+///     1 => string!("abc")
+///   }
+/// )
+/// ```
 #[macro_export]
-macro_rules! message_body {
+macro_rules! message {
   ($msg_builder:expr, options = $options:expr, $($tokens:tt)*) => {
     $crate::_internal_message_body! {
       @builder($msg_builder)

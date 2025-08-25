@@ -13,10 +13,13 @@ macro_rules! impl_ignore {
       where
         S::Ignore: [< $builder:snake >]::IsUnset,
       {
+        /// Rules defined for this field will be ignored if the field is set to its protobuf zero value.
+        /// No-op for fields that track presence such as optional fields, or messages in proto3.
         pub fn ignore_if_zero_value(self) -> $builder<'a, [< $builder:snake >]::SetIgnore<S>> {
           self.ignore(Ignore::IfZeroValue)
         }
 
+        /// Rules set for this field will always be ignored.
         pub fn ignore_always(self) -> $builder<'a, [< $builder:snake >]::SetIgnore<S>> {
           self.ignore(Ignore::Always)
         }
@@ -101,7 +104,7 @@ fn get_option_name(raw_name: &str) -> Box<str> {
 }
 
 #[macro_use]
-pub mod macros {
+mod macros {
   macro_rules! insert_cel_rule {
     ($validator:ident, $values:ident) => {
       if let Some(cel_rules) = $validator.cel {

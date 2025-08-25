@@ -17,16 +17,27 @@ use crate::{
   OptionValue, ProtoOption,
 };
 
+/// Used to define validation rules for map fields by the [`map`](crate::map), [`enum_map`](crate::enum_map) and [`msg_map`](crate::msg_map) macros.
 #[derive(Clone, Debug, Builder)]
 pub struct MapValidator<'a> {
   #[builder(into)]
+  /// The options that will apply to this map's keys.
+  /// This is mostly useful when calling the map definition macros, which will automatically convert validators into the option to use here.
   pub keys: Option<ProtoOption>,
   #[builder(into)]
+  /// The options that will apply to this map's values.
+  /// This is mostly useful when calling the map definition macros, which will automatically convert validators into the option to use here.
   pub values: Option<ProtoOption>,
+  /// The minimum amount of key-value pairs that this field should have in order to be valid.
   pub min_pairs: Option<u64>,
+  /// The maximum amount of key-value pairs that this field should have in order to be valid.
   pub max_pairs: Option<u64>,
+  /// Adds custom validation using one or more [`CelRule`]s to this field.
+  /// These will apply to the map field as a whole.
+  /// To apply cel rules to the individual keys or values, use the validators for those instead.
   pub cel: Option<&'a [CelRule]>,
   #[builder(with = || true)]
+  /// Marks the field as required. This is essentially the same as setting min_pairs to 1.
   pub required: Option<bool>,
   #[builder(setters(vis = "", name = ignore))]
   pub ignore: Option<Ignore>,
@@ -77,6 +88,7 @@ impl<'a> From<MapValidator<'a>> for ProtoOption {
 macro_rules! map_validator {
   ($keys_type:ident, $values_type:ident) => {
     $crate::paste! {
+      #[doc(hidden)]
       #[track_caller]
       pub fn [< build_map_ $keys_type _keys_ $values_type _values  _validator >]<'a, F, S>(config_fn: F) -> ProtoOption
       where
