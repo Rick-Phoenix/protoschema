@@ -72,11 +72,15 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
   let subsection_msg = section_msg.new_message("Subsection");
   let sub_subsection_msg = subsection_msg.new_message("SubSubsection");
 
-  extension!(file, post_metadata_msg {
+  extension!(file, MessageOptions {
     15 => string!("abc").add_options(test_opts.clone()),
   });
 
-  extension!(file, section_msg {
+  extension!(file, FileOptions {
+    15 => string!("abc").add_options(test_opts.clone()),
+  });
+
+  extension!(file, EnumOptions {
     15 => string!("abc").add_options(test_opts.clone()),
   });
 

@@ -1,6 +1,7 @@
 use std::{collections::HashSet, marker::PhantomData, sync::Arc};
 
 use crate::{
+  common_resources::DESCRIPTOR_PROTO_FILE,
   enums::{EnumBuilder, EnumData},
   extensions::{Extension, ExtensionData},
   field_type::ImportedItemPath,
@@ -149,7 +150,7 @@ impl FileBuilder {
   pub fn add_extension(&self, extension: Extension) {
     let file = &mut self.arena.borrow_mut().files[self.id];
 
-    file.conditionally_add_import(&extension.import_path.file);
+    file.imports.insert(DESCRIPTOR_PROTO_FILE.clone());
 
     let built_fields: Vec<FieldData> = extension
       .fields
@@ -170,7 +171,7 @@ impl FileBuilder {
       .collect();
 
     let ext_data = ExtensionData {
-      import_path: extension.import_path,
+      kind: extension.kind,
       fields: built_fields.into_boxed_slice(),
     };
 

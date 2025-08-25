@@ -1,18 +1,42 @@
-use std::sync::Arc;
-
 use bon::Builder;
 
-use crate::{
-  field_type::{get_shortest_item_name, ImportedItemPath},
-  fields::{self, Field, FieldBuilder, FieldData},
-};
+use crate::fields::{self, Field, FieldBuilder, FieldData};
+
+/// The kind of proto3 extension
+#[derive(Debug, Clone, Copy)]
+pub enum ExtensionKind {
+  MessageOptions,
+  FieldOptions,
+  ServiceOptions,
+  MethodOptions,
+  OneofOptions,
+  FileOptions,
+  EnumOptions,
+  EnumValueOptions,
+}
+
+impl ExtensionKind {
+  /// Returns the name of the message being extended
+  pub fn get_target(&self) -> &str {
+    match self {
+      ExtensionKind::MessageOptions => "google.protobuf.MessageOptions",
+      ExtensionKind::FieldOptions => "google.protobuf.FieldOptions",
+      ExtensionKind::ServiceOptions => "google.protobuf.ServiceOptions",
+      ExtensionKind::MethodOptions => "google.protobuf.MethodOptions",
+      ExtensionKind::OneofOptions => "google.protobuf.OneofOptions",
+      ExtensionKind::FileOptions => "google.protobuf.FileOptions",
+      ExtensionKind::EnumOptions => "google.protobuf.EnumOptions",
+      ExtensionKind::EnumValueOptions => "google.protobuf.EnumValueOptions",
+    }
+  }
+}
 
 /// A struct representing a protobuf extension
-#[derive(Clone, Debug, Default, Builder)]
+#[derive(Clone, Debug, Builder)]
 pub struct Extension {
+  pub kind: ExtensionKind,
   #[builder(setters(vis = "", name = fields_internal))]
   pub fields: Box<[Field]>,
-  pub import_path: Arc<ImportedItemPath>,
 }
 
 impl<S: extension_builder::State> ExtensionBuilder<S> {
@@ -28,15 +52,8 @@ impl<S: extension_builder::State> ExtensionBuilder<S> {
 }
 
 /// The processed data for a protobuf extension
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct ExtensionData {
+  pub kind: ExtensionKind,
   pub fields: Box<[FieldData]>,
-  pub import_path: Arc<ImportedItemPath>,
-}
-
-impl ExtensionData {
-  /// Returns the shortest name for the target of the extension (the fully qualified name if the message is defined outside of the given package, and the short name in the opposite case)
-  pub fn get_target(&self, current_file: &str, current_package: &str) -> Arc<str> {
-    get_shortest_item_name(&self.import_path, current_file, current_package)
-  }
 }

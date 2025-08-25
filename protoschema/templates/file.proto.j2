@@ -15,7 +15,7 @@ import "{{ import }}";
 {%~ endfor %}
 
 {%~ for extension in extensions ~%}
-extend {{+ extension.get_target(name.as_ref(), package.as_ref()) +}} {
+extend {{+ extension.kind.get_target() +}} {
   {% for field in extension.fields ~%}
   {{+ field.kind +}}{{+ field.field_type.render_name(name.as_ref(), package.as_ref() ) +}} {{+ field.name +}} = {{+ field.tag +}}
   {%- if !field.options.is_empty() +%} [
