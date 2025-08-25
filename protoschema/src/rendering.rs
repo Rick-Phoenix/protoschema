@@ -4,7 +4,7 @@ use askama::Template;
 
 use crate::{
   enums::EnumData, extensions::ExtensionData, fields::FieldData, files::FileData,
-  message::MessageData, oneofs::OneofData, package::PackageData, services::ServiceData,
+  messages::MessageData, oneofs::OneofData, packages::PackageData, services::ServiceData,
   ProtoOption,
 };
 

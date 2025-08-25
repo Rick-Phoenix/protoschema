@@ -1,7 +1,7 @@
 use std::{marker::PhantomData, ops::Range, sync::Arc};
 
 use crate::{
-  field_type::ImportedItemPath, package::Arena, rendering::EnumTemplate, sealed, Empty, FieldType,
+  field_type::ImportedItemPath, packages::Arena, rendering::EnumTemplate, sealed, Empty, FieldType,
   IsSet, IsUnset, ProtoOption, Set, Unset,
 };
 

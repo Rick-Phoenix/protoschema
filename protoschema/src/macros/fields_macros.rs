@@ -214,7 +214,7 @@ field_impl!(any, any, "google/protobuf/any.proto");
 field_impl!(duration, duration, "google/protobuf/duration.proto");
 field_impl!(timestamp, timestamp, "google/protobuf/timestamp.proto");
 field_impl!(bytes, bytes);
-field_impl!(bool, booleans);
+field_impl!(bool, bool);
 field_impl!(int64, numeric);
 field_impl!(int32, numeric);
 field_impl!(sint64, numeric);
@@ -235,6 +235,8 @@ field_impl!(float, numeric);
 /// If the field is marked as repeated, the closure will receive two arguments, one being the [`RepeatedValidator`](crate::validators::repeated::RepeatedValidator) builder, and the other being the [`EnumValidator`](crate::validators::enums::EnumValidator) builder. Otherwise, the only argument will be the latter.
 /// # Examples
 /// ```
+/// use protoschema::{Package, enum_field};
+///
 /// let pkg = Package::new("my_pkg");
 /// let file = pkg.new_file("my_file");
 /// let my_enum = file.new_enum("my_enum");
@@ -278,12 +280,14 @@ macro_rules! enum_field {
 }
 
 /// Evaluates to a message field builder instance.
-/// The first argument is an expression or ident evaluating to a [`MessageBuilder`](crate::message::MessageBuilder) instance, optionally preceded by 'optional' or 'repeated'.
+/// The first argument is an expression or ident evaluating to a [`MessageBuilder`](crate::messages::MessageBuilder) instance, optionally preceded by 'optional' or 'repeated'.
 /// The second argument is the name of the field, which can be a literal or an expression.
 /// The third, optional argument is a closure where validation rules can be defined.
 /// If the field is marked as repeated, the closure will receive two arguments, one being the [`RepeatedValidator`](crate::validators::repeated::RepeatedValidator) builder, and the other being the [`MessageValidator`](crate::validators::message::MessageValidator) builder. Otherwise, the only argument will be the latter.
 /// /// # Examples
 /// ```
+/// use protoschema::{Package, msg_field};
+///
 /// let pkg = Package::new("my_pkg");
 /// let file = pkg.new_file("my_file");
 /// let my_msg = file.new_message("my_msg");

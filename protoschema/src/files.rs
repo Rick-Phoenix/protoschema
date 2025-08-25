@@ -5,8 +5,8 @@ use crate::{
   extensions::{Extension, ExtensionData},
   field_type::ImportedItemPath,
   fields::FieldData,
-  message::{MessageBuilder, MessageData},
-  package::Arena,
+  messages::{MessageBuilder, MessageData},
+  packages::Arena,
   rendering::FileTemplate,
   services::{ServiceBuilder, ServiceData},
   ProtoOption,
@@ -116,7 +116,7 @@ impl FileBuilder {
   }
 
   /// Creates a new service belonging to this file and returns its builder.
-  /// Use the [`services`](crate::services) macro to define multiple services with a shorter syntax.
+  /// Use the [`services`](crate::services!) macro to define multiple services with a shorter syntax.
   pub fn new_service<T: AsRef<str>>(&self, name: T) -> ServiceBuilder {
     let mut arena = self.arena.borrow_mut();
     let service_id = arena.services.len();

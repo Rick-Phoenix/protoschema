@@ -1,13 +1,32 @@
-#![allow(dead_code)]
-
 use std::marker::PhantomData;
 
 pub use paste::paste;
 
+#[doc(inline)]
 pub use crate::{
   field_type::{FieldType, MapKey},
-  options::{OptionValue, ProtoOption},
+  options::*,
+  packages::Package,
 };
+
+pub mod common_resources;
+pub mod enums;
+pub mod errors;
+pub mod extensions;
+pub mod field_type;
+pub mod fields;
+pub mod files;
+pub mod messages;
+pub mod oneofs;
+pub mod packages;
+pub mod rendering;
+pub mod services;
+pub mod validators;
+#[macro_use]
+pub mod options;
+
+#[macro_use]
+pub mod macros;
 
 mod sealed {
   pub struct Sealed;
@@ -34,26 +53,6 @@ impl<T> IsUnset for Unset<T> {}
 #[derive(Debug, Clone)]
 pub struct Empty;
 
-pub mod common_resources;
-pub mod enums;
-pub mod errors;
-pub mod extensions;
-pub mod fields;
-pub mod files;
-mod message;
-pub mod oneofs;
-pub mod package;
-pub mod rendering;
-pub mod services;
-pub mod validators;
-
-#[macro_use]
-mod macros;
-
-pub mod field_type;
-#[macro_use]
-pub mod options;
-
 pub mod common_options {
   use std::sync::Arc;
 
@@ -62,6 +61,13 @@ pub mod common_options {
   pub fn oneof_required() -> ProtoOption {
     ProtoOption {
       name: "(buf.validate.oneof).required",
+      value: Arc::new(OptionValue::Bool(true)),
+    }
+  }
+
+  pub fn allow_alias() -> ProtoOption {
+    ProtoOption {
+      name: "allow_alias",
       value: Arc::new(OptionValue::Bool(true)),
     }
   }

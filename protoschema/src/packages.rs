@@ -11,7 +11,7 @@ use askama::Template;
 use crate::{
   enums::EnumData,
   files::{FileBuilder, FileData},
-  message::MessageData,
+  messages::MessageData,
   rendering::FileTemplate,
   services::ServiceData,
 };
@@ -69,7 +69,7 @@ impl Package {
 
   /// Builds all of the FileTemplates for this package, and returns them.
   /// This is only useful if you want to manually process the template's data.
-  /// To write the templates directly, use [`render_templates`](crate::package::Package::render_templates)
+  /// To write the templates directly, use [`render_templates`](crate::packages::Package::render_templates)
   pub fn build_templates(&self) -> Vec<FileTemplate> {
     let arena = self.data.borrow_mut();
     let templates: Vec<FileTemplate> = arena

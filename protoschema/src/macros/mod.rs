@@ -11,11 +11,13 @@ mod services_macros;
 ///
 /// # Examples
 /// ```
-/// cel_rule!(
+/// use protoschema::cel_rule;
+///
+/// let rule = cel_rule!(
 ///   id = "password_not_matching",
 ///   msg = "the two passwords do not match",
 ///   expr = "this.password == this.repeated_password"
-/// )
+/// );
 /// ```
 #[macro_export]
 macro_rules! cel_rule {
@@ -28,23 +30,7 @@ macro_rules! cel_rule {
   };
 }
 
-/// A macro to define multiple [`CelRule`](crate::validators::cel::CelRule)s.
-///
-/// # Examples
-/// ```
-/// cel_rules!(
-///   {
-///     id = "password_not_matching",
-///     msg = "the two passwords do not match",
-///     expr = "this.password == this.repeated_password"
-///   },
-///   {
-///     id = "other_rule",
-///     msg = "something else went wrong",
-///     expr = "this.something != this.expected"
-///   }
-/// )
-/// ```
+#[doc(hidden)]
 #[macro_export]
 macro_rules! cel_rules {
   (
@@ -67,10 +53,10 @@ macro_rules! cel_rules {
 
 /// The macro that is used to define most if not all of the data for a given protobuf message.
 ///
-/// It receives a [`MessageBuilder`](crate::message::MessageBuilder) instance's ident as the first argument, the (optional) options for the message right after, and the rest of the data after that.
+/// It receives a [`MessageBuilder`](crate::messages::MessageBuilder) instance's ident as the first argument, the (optional) options for the message right after, and the rest of the data after that.
 /// # Examples
 /// ```
-/// use protoschema::{package::Package, message, options::proto_option, string, reusable_fields};
+/// use protoschema::{Package, message, proto_option, string, reusable_fields};
 ///
 /// let my_pkg = Package::new("mypkg.v1");
 /// let my_file = my_pkg.new_file("my_file");
@@ -82,7 +68,7 @@ macro_rules! cel_rules {
 ///
 ///
 /// message!(
-///   my_file,
+///   my_file.new_message("my_msg"),
 ///   // Options can only be defined at the very top
 ///   options  = [ my_opt.clone() ],
 ///   // reserved_names must always be followed by a comma because it's an expression, even if it's the last item in the list
@@ -94,24 +80,35 @@ macro_rules! cel_rules {
 ///   1 => string!("abc"),
 ///   // Included reusable fields
 ///   include(reusable_fields.clone()),
-/// )
+/// );
 /// ```
 ///
 /// It's also possible to define enums and oneofs inside of this macro. They follow the same syntax as their respective macros, namely [`proto_enum`](crate::proto_enum) and [`oneof`](crate::oneof)
 ///
 /// ```
+/// use protoschema::{message, Package, proto_option, string};
+///
+/// let my_pkg = Package::new("my_pkg");
+/// let my_file = my_pkg.new_file("my_file");
+/// let my_option = proto_option("my_option", true);
+/// let my_list_of_options = [ my_option.clone(), my_option.clone() ];
+///
 /// message!(
+///   my_file.new_message("my_msg"),
+///   1 => string!("my_field"),
+///
 ///   enum "MyEnum" {
-///     options = [ ... ],
+///     options = [ my_option ],
 ///     reserved_names = [ "ABCDE" ],
 ///     0 => "UNSPECIFIED"
 ///   }
 ///
 ///   oneof "MyOneOf" {
-///     options = [ ... ],
-///     1 => string!("abc")
+///     options = my_list_of_options,
+///     2 => string!("abc"),
+///     3 => string!("deg"),
 ///   }
-/// )
+/// );
 /// ```
 #[macro_export]
 macro_rules! message {

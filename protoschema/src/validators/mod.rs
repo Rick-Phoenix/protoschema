@@ -164,7 +164,7 @@ mod macros {
 }
 
 pub mod any;
-pub mod booleans;
+pub mod bool;
 pub mod bytes;
 pub mod cel;
 pub mod duration;

@@ -3,7 +3,7 @@ use bon::Builder;
 use crate::{
   validators::{
     any::*,
-    booleans::*,
+    bool::*,
     bytes::*,
     cel::CelRule,
     duration::*,

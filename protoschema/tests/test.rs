@@ -2,10 +2,10 @@ use std::path::Path;
 
 use proto_types::Duration;
 use protoschema::{
-  enum_field, enum_map, enum_option, enum_variants, extension, message, message_option, msg_field,
-  msg_map,
+  enum_field, enum_map, enum_option, enum_variants, extension, map, message, message_option,
+  msg_field, msg_map,
   options::{list_value, proto_option},
-  package::Package,
+  packages::Package,
   proto_enum, services, string,
 };
 
@@ -88,15 +88,15 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
   services!(
     file,
     MyService {
-      options = test_opts.clone();
-      GetUser(msg => msg2) { test_opts.clone() };
-      GetUser2(msg => msg2);
+      options = test_opts.clone(),
+      GetUser(msg => msg2) { test_opts.clone() },
+      GetUser2(msg => msg2),
     };
 
     MyService2 {
-      options = test_opts.clone();
-      GetUser(msg => msg2) { test_opts.clone() };
-      GetUser2(msg => msg2);
+      options = test_opts.clone(),
+      GetUser(msg => msg2) { test_opts.clone() },
+      GetUser2(msg => msg2),
     };
   );
 
@@ -109,7 +109,8 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
     cel = [{ id = "abc", msg = "abc", expr = "abc" }],
 
     3 => string!(repeated "abc", |r, i| r.items(i.min_len(4).ignore_if_zero_value())),
-    4 => enum_map!("abc", <string, example_enum>, |m, k, v| m.min_pairs(3).keys(k.min_len(15)).values(v.defined_only())),
+    4 => protoschema::enum_map!("abc", <string, example_enum>, |m, k, v| m.min_pairs(3).keys(k.min_len(15)).values(v.defined_only())),
+    5 => map!("my_map", <sint64, string>),
     6 => enum_field!(example_enum, "enum_with_validator", |v| v.defined_only()),
     7 => enum_field!(repeated example_enum, "repeated_enum_field", |r, i| r.items(i.defined_only())),
     8 => msg_map!("abc", <string, msg2>, |m, k, _| m.min_pairs(15).keys(k.min_len(25))),

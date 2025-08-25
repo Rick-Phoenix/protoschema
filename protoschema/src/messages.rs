@@ -5,7 +5,7 @@ use crate::{
   field_type::ImportedItemPath,
   fields::{self, FieldBuilder, FieldData},
   oneofs::{Oneof, OneofData},
-  package::Arena,
+  packages::Arena,
   rendering::MessageTemplate,
   sealed,
   validators::cel::CelRule,
@@ -39,7 +39,7 @@ pub struct MessageData {
 
 impl<S: MessageState> MessageBuilder<S> {
   /// Sets the Cel rules for this message to be used with protovalidate.
-  /// Cel rules can be easily defined with the [`cel_rule`](crate::cel_rule) macro, or directly within the [`message`](crate::message) macro.
+  /// Cel rules can be easily defined with the [`cel_rule`](crate::cel_rule) macro, or directly within the [`message`](crate::message!) macro.
   pub fn cel_rules<I>(self, rules: I) -> MessageBuilder<S>
   where
     I: IntoIterator<Item = CelRule>,

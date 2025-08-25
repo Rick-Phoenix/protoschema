@@ -5,31 +5,34 @@
 /// The first argument, as described above, must be followed by a comma.
 /// After the comma, you can use:
 /// `options = $options:expr` where $options should evaluate to IntoIter<Item = [`ProtoOption`](crate::options::ProtoOption)> (must be followed by a comma, even if at last position).
-/// `reserved_names = $names:expr` where $names should evalutate to IntoIter<Item = AsRef<str>> (must be followed by a comma, even if last)
+/// `reserved_names = $names:expr` where $names should evaluate to `IntoIter<Item = AsRef<str>>` (must be followed by a comma, even if last)
 /// reserved = [ $items ], where $items is a comma separated list of numbers of ranges such as `1..5`. Following the protobuf syntax, these ranges will be inclusive.
 /// The variants for this enum, defined as a comma-separated list of `$number:literal => $name:expr`.
 /// # Examples
 /// ```
-/// let my_pkg = Package::new();
+/// use protoschema::{Package, enum_variants, proto_enum, proto_option};
+///
+/// let my_pkg = Package::new("my_pkg");
 /// let my_file = my_pkg.new_file("my_file");
-/// let reusable_variants = reusable_variants!(
+/// let reusable_variants = enum_variants!(
 ///   0 => "UNSPECIFIED"
 /// );
+/// let my_opt = proto_option("my_opt", true);
 ///
 /// // For enums defined at the top level
-/// proto_enum!(
+/// let my_enum = proto_enum!(
 ///   my_file.new_enum("my_enum"),
 ///   // Options, if defined, must be at the very top
-///   options = [ ... ],
+///   options = [ my_opt.clone() ],
 ///   // Must be followed by a comma, even if last
 ///   reserved_names = [ "ABC" ],
 ///   // Accepts ranges (inclusive by default) and numbers
-///   reserved_numbers = [ 100, 205, 300..350 ]
+///   reserved = [ 100, 205, 300..350 ]
 ///   
 ///   // Including reusable variants
 ///   include(reusable_variants.clone()),
 ///   1 => "ACTIVE"
-/// )
+/// );
 /// ```
 #[macro_export]
 macro_rules! proto_enum {
@@ -50,10 +53,13 @@ macro_rules! proto_enum {
 ///
 /// # Examples
 /// ```
-/// enum_variants!(
+/// use protoschema::enum_variants;
+///
+/// let variants = enum_variants!(
 ///   0 => "UNSPECIFIED",
 ///   1 => "ACTIVE"
-/// )
+/// );
+///
 /// ```
 #[macro_export]
 macro_rules! enum_variants {

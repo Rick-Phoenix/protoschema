@@ -4,9 +4,9 @@ use bon::Builder;
 
 use crate::{
   field_type::{get_shortest_item_name, ImportedItemPath},
-  message::MessageBuilder,
-  package::Arena,
-  sealed, Empty, IsSet, IsUnset, ProtoOption, Set, Unset,
+  messages::MessageBuilder,
+  packages::Arena,
+  sealed, Empty, IsUnset, ProtoOption, Set, Unset,
 };
 
 /// The builder for a protobuf service.
@@ -168,21 +168,6 @@ pub trait ServiceState: Sized {
 mod members {
   pub struct handlers;
   pub struct options;
-}
-
-#[doc(hidden)]
-trait IsComplete: ServiceState {
-  #[doc(hidden)]
-  const SEALED: sealed::Sealed;
-}
-
-#[doc(hidden)]
-impl<S: ServiceState> IsComplete for S
-where
-  S::Handlers: IsSet,
-  S::Options: IsSet,
-{
-  const SEALED: sealed::Sealed = sealed::Sealed;
 }
 
 #[doc(hidden)]

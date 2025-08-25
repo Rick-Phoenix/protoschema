@@ -1,7 +1,9 @@
 /// A macro to easily define key-value pairs for a message [`OptionValue`](crate::options::OptionValue)
 /// # Examples
 /// ```
-/// message_option!("name" => "cats", "are_cute" => true),
+/// use protoschema::message_option;
+///
+/// let my_option_value = message_option!("name" => "cats", "are_cute" => true);
 /// ```
 #[macro_export]
 macro_rules! message_option {
@@ -17,7 +19,9 @@ macro_rules! message_option {
 ///
 /// # Examples
 /// ```
-/// let my_option = ProtoOption { name: "my_option", value: enum_option!("MY_ENUM_VALUE") };
+/// use protoschema::{proto_option, enum_option};
+///
+/// let my_option = proto_option("my_option", enum_option!("MY_ENUM_VALUE"));
 /// ```
 #[macro_export]
 macro_rules! enum_option {

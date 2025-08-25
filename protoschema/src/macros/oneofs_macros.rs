@@ -3,11 +3,14 @@
 /// After that, the fields for this oneof can be defined as a comma separated list of `$number:literal => $field:expr`, with $field evaluating to a [`FieldBuilder`](crate::fields::FieldBuilder).
 /// # Examples
 /// ```
-/// oneof!(
+/// use protoschema::{oneof, proto_option, string};
+///
+/// let my_opt = proto_option("my_opt", true);
+/// let oneof = oneof!(
 ///   "my_oneof",
-///   options = [ ... ],
+///   options = [ my_opt ],
 ///   1 => string!("abc")
-/// )
+/// );
 /// ```
 #[macro_export]
 macro_rules! oneof {
