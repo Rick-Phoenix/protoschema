@@ -318,3 +318,41 @@ macro_rules! msg_field {
     .add_import(&$msg_ident.get_file())
   };
 }
+
+/// Expands to a [`FieldBuilder`](crate::fields::FieldBuilder) for a google.protobuf.FieldMask type of field.
+/// # Examples
+/// ```
+/// use protoschema::{field_mask};
+///
+/// let my_field = field_mask!("field_mask");
+/// ```
+#[macro_export]
+macro_rules! field_mask {
+  ($name:expr $(, $validator:expr)?) => {
+    $crate::fields::Field::builder()
+    .name($name.into())
+    .field_type($crate::FieldType::FieldMask)
+    .add_import("google/protobuf/field_mask.proto")
+    $(
+      .add_option($crate::validators::$module_name::[< build_ $proto_type _validator_option >]($validator))
+      .add_import("buf/validate/validate.proto")
+    )?
+  };
+}
+
+/// Expands to a [`FieldBuilder`](crate::fields::FieldBuilder) for a google.protobuf.Empty type of field.
+/// # Examples
+/// ```
+/// use protoschema::{empty};
+///
+/// let my_field = empty!("empty");
+/// ```
+#[macro_export]
+macro_rules! empty {
+  ($name:expr) => {
+    $crate::fields::Field::builder()
+      .name($name.into())
+      .field_type($crate::FieldType::Empty)
+      .add_import("google/protobuf/empty.proto")
+  };
+}
