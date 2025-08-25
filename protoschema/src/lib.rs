@@ -1,5 +1,6 @@
 use std::marker::PhantomData;
 
+#[doc(hidden)]
 pub use paste::paste;
 
 #[doc(inline)]

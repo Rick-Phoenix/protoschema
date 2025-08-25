@@ -2,11 +2,12 @@ use std::path::Path;
 
 use proto_types::Duration;
 use protoschema::{
-  enum_field, enum_map, enum_option, enum_variants, extension, map, message, message_option,
-  msg_field, msg_map,
+  common_options::allow_alias,
+  enum_field, enum_map, enum_option, enum_variants, extension, message, message_option, msg_field,
+  msg_map,
   options::{list_value, proto_option},
   packages::Package,
-  proto_enum, services, string,
+  proto_enum, reusable_fields, services, string, timestamp, uint64,
 };
 
 #[test]
@@ -14,12 +15,25 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
   let package = Package::new("myapp.v1");
 
   let second_package = Package::new("myapp.v2");
-  let external_file = second_package.new_file("myapp/v2/abcde");
-  let imported_msg = external_file.new_message("ExternalMsg");
-  let imported_nested_msg = imported_msg.new_message("NestedMsg");
-  let imported_enum = imported_msg.new_enum("ExternalEnum");
+  let external_file = second_package.new_file("post");
+  let post_msg = external_file.new_message("Post");
+  let post_status_enum = external_file.new_enum("post_status");
+  let post_metadata_msg = post_msg.new_message("Metadata");
+  let post_category_enum = post_msg.new_enum("post_category");
 
-  let file = package.new_file("abc");
+  let file = package.new_file("user");
+
+  let example_option = proto_option(
+    "example",
+    message_option!(
+      "num_list" => list_value([1, 2, 4, 5]),
+      "string_list" => list_value(["hello", "there", "general", "kenobi"]),
+      "list_of_messages" => list_value([
+        message_option!("name" => "cats", "are_cute" => true),
+        message_option!("name" => "dogs", "are_cute" => true),
+      ]),
+    ),
+  );
 
   let test_opts = [
     proto_option("string_opt", "abcde"),
@@ -51,134 +65,126 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
     ),
   ];
 
-  let msg = file.new_message("MyMsg");
-  let msg2 = file.new_message("MyMsg2");
-  let msg3 = msg.new_message("NestedMsg");
+  file.add_options(test_opts.clone());
 
-  let field = msg_field!(imported_nested_msg, "my_msg_field");
+  let user_msg = file.new_message("User");
+  let section_msg = file.new_message("Section");
+  let subsection_msg = section_msg.new_message("Subsection");
+  let sub_subsection_msg = subsection_msg.new_message("SubSubsection");
+
+  extension!(file, post_metadata_msg {
+    15 => string!("abc").add_options(test_opts.clone()),
+  });
+
+  extension!(file, section_msg {
+    15 => string!("abc").add_options(test_opts.clone()),
+  });
 
   let reusable_variants = enum_variants!(
-    0 => "UNSPECIFIED",
-    2 => "BCD"
-  );
-
-  let example_enum = proto_enum!(
-    file.new_enum("file_enum"),
-    reserved_names = ["abcde"],
-    reserved = [ 405, 200..205 ],
-    options = test_opts.clone(),
-    0 => "UNSPECIFIED",
-    1 => "ABC"
-  );
-
-  proto_enum!(
-    file.new_enum("file_enum2"),
     0 => "UNSPECIFIED"
   );
 
-  file.add_options(test_opts.clone());
+  let reusable_fields = reusable_fields!(
+    100 => timestamp!("created_at"),
+    101 => timestamp!("updated_at"),
+  );
 
-  let msgclone = msg.clone();
+  let user_status_enum = proto_enum!(
+    file.new_enum("user_status"),
+    options = [ allow_alias() ],
+    reserved = [ 405, 200..205 ],
+    include(reusable_variants),
+    1 => "ACTIVE",
+    2 => "INACTIVE",
+    2 => "PASSIVE"
+  );
 
-  extension!(file, msgclone {
-    15 => string!("abc").add_options(test_opts.clone()),
-    19 => string!("abc").add_options(test_opts.clone()),
-  });
+  let referrers_enum = proto_enum!(
+    file.new_enum("referrers"),
+
+    include(reusable_variants),
+
+    1 => "GITHUB",
+    2 => "REDDIT"
+  );
 
   services!(
     file,
-    MyService {
-      options = test_opts.clone(),
-      GetUser(msg => msg2) { test_opts.clone() },
-      GetUser2(msg => msg2),
-    };
-
-    MyService2 {
-      options = test_opts.clone(),
-      GetUser(msg => msg2) { test_opts.clone() },
-      GetUser2(msg => msg2),
+    MyService1 {
+      options = [ example_option.clone() ],
+      Handler1(user_msg => section_msg) { [ example_option.clone() ] },
+      Handler2(post_msg => post_metadata_msg),
     };
   );
 
   message! {
-    msg3,
+    user_msg,
 
-    options = test_opts.clone(),
+    options = [ example_option.clone() ],
     reserved_names = [ "one", "two" ],
     reserved = [ 405, 200..205 ],
-    cel = [{ id = "abc", msg = "abc", expr = "abc" }],
+    cel = [
+      {
+        id = "passwords_match",
+        msg = "the passwords do not match",
+        expr = "this.password == this.repeated_password"
+      }
+    ],
 
-    3 => string!(repeated "abc", |r, i| r.items(i.min_len(4).ignore_if_zero_value())),
-    4 => protoschema::enum_map!("abc", <string, example_enum>, |m, k, v| m.min_pairs(3).keys(k.min_len(15)).values(v.defined_only())),
-    5 => map!("my_map", <sint64, string>),
-    6 => enum_field!(example_enum, "enum_with_validator", |v| v.defined_only()),
-    7 => enum_field!(repeated example_enum, "repeated_enum_field", |r, i| r.items(i.defined_only())),
-    8 => msg_map!("abc", <string, msg2>, |m, k, _| m.min_pairs(15).keys(k.min_len(25))),
+    include(reusable_fields),
+    1 => uint64!("id", |id| id.gt(0)),
+    2 => msg_field!(repeated user_msg, "best_friend"),
+    3 => string!("password", |pw| pw.min_len(8)),
+    4 => string!("repeated_password", |pw| pw.min_len(8)),
+    5 => enum_field!(user_status_enum, "last_status", |status| status.defined_only()),
+    6 => enum_map!("last_30_days_statuses", <int32, user_status_enum>, |m, k, v| m.min_pairs(30).keys(k.lt(31)).values(v.defined_only())),
+    7 => msg_map!("friends", <uint64, user_msg>),
+    8 => msg_field!(post_msg, "last_post"),
+    9 => enum_field!(post_status_enum, "last_post_status"),
+    10 => msg_field!(post_metadata_msg, "last_post_metadata"),
 
-    enum "my_enum" {
-      options = test_opts.clone(),
+
+    enum "favorite_category" {
+      include(reusable_variants),
+
+      1 => "PETS",
+      2 => "COOKING"
+    }
+
+    enum "tier" {
+      options = [ example_option.clone() ],
       reserved_names = [ "one", "two" ],
       reserved = [ 405, 200..205 ],
       include(reusable_variants),
+
+      1 => "SILVER",
+      2 => "GOLD"
     }
 
-    enum "my_enum2" {
-      options = test_opts.clone(),
-      reserved_names = [ "one", "two" ],
-      reserved = [ 405, 200..205 ],
-      include(reusable_variants),
-    }
+    oneof "contact" {
+      options = [ example_option.clone() ],
 
-    oneof "my_oneof" {
-      options = test_opts.clone(),
-
-      12 => field.clone().add_options(test_opts.clone())
+      11 => string!("email", |v| v.email()),
+      12 => enum_field!(referrers_enum, "referrer"),
     }
   };
 
   message! {
-    msg,
+    subsection_msg,
 
-    options = test_opts.clone(),
-    reserved_names = [ "one", "two" ],
-    reserved = [ 405, 200..205 ],
-    cel = [{ id = "abc", msg = "abc", expr = "abc" }],
+    options = [ example_option.clone() ],
 
-    2 => string!(optional "abc").add_options(test_opts.clone()),
-    3 => string!(repeated "abc", |r, i| r.items(i.min_len(4).ignore_if_zero_value())),
-    4 => enum_map!("abc", <string, example_enum>, |m, k, v| m.min_pairs(3).keys(k.min_len(15)).values(v.defined_only())),
-    5 => enum_field!(optional example_enum, "enum_without_validator"),
-    6 => enum_field!(example_enum, "enum_with_validator", |v| v.defined_only()),
-    7 => enum_field!(repeated example_enum, "repeated_enum_field", |r, i| r.items(i.defined_only())),
-    8 => msg_map!("abc", <string, msg2>, |m, k, _| m.min_pairs(15).keys(k.min_len(25))),
-    9 => enum_field!(imported_enum, "imported_enum"),
-    10 => field.clone(),
-
-    enum "my_enum" {
-      options = test_opts.clone(),
-      reserved_names = [ "one", "two" ],
-      reserved = [ 405, 200..205 ],
-      include(reusable_variants),
-    }
-
-    enum "my_enum2" {
-      options = test_opts.clone(),
-      reserved_names = [ "one", "two" ],
-      reserved = [ 405, 200..205 ],
-      include(reusable_variants),
-    }
-
-    oneof "my_oneof" {
-      options = test_opts.clone(),
-
-      12 => field.clone().add_options(test_opts.clone())
-    }
+    1 => string!("name"),
+    2 => msg_field!(post_msg, "top_trending_post"),
   };
 
-  extension!(file, msg2 {
-    15 => string!("abc").add_options(test_opts.clone()),
-    19 => string!("abc").add_options(test_opts.clone()),
-  });
+  message! {
+    sub_subsection_msg,
+
+    1 => uint64!("id"),
+    2 => string!("name"),
+    3 => enum_field!(post_category_enum, "category"),
+  };
 
   let proto_root = Path::new("proto");
   package.render_templates(proto_root)?;

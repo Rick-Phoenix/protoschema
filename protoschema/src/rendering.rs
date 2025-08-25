@@ -52,7 +52,8 @@ pub struct EnumTemplate {
 }
 
 impl From<EnumData> for EnumTemplate {
-  fn from(value: EnumData) -> Self {
+  fn from(mut value: EnumData) -> Self {
+    value.variants.sort_by_key(|t| t.0);
     EnumTemplate {
       name: value.name.clone(),
       variants: value.variants,

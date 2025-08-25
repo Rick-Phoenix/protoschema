@@ -93,6 +93,7 @@ impl<S: field_builder::State> FieldBuilder<S> {
 
   /// Adds an import to this field.
   /// When this field is cloned and reused in other messages, the receiving file will automatically add this import to its list.
+  /// For the most common cases, this crate will automatically add the necessary imports, so make sure to use this only if you notice that an import is missing.
   pub fn add_import<T: AsRef<str>>(mut self, import: T) -> Self {
     self.imports.push(import.as_ref().into());
     self

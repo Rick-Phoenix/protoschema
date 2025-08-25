@@ -178,6 +178,7 @@ impl FileBuilder {
   }
 
   /// Adds the given imports to this file.
+  /// For the most common cases, this crate will automatically add the necessary imports, so make sure to use this only if you notice that an import is missing.
   pub fn add_imports<I, S>(&self, imports: I)
   where
     I: IntoIterator<Item = S>,
