@@ -10,7 +10,7 @@ pub use crate::{
   packages::Package,
 };
 
-pub mod common_resources;
+pub mod common;
 pub mod enums;
 pub mod errors;
 pub mod extensions;
@@ -53,30 +53,3 @@ impl<T> IsUnset for Unset<T> {}
 #[doc(hidden)]
 #[derive(Debug, Clone)]
 pub struct Empty;
-
-pub mod common_options {
-  use std::sync::Arc;
-
-  use crate::{OptionValue, ProtoOption};
-
-  pub fn oneof_required() -> ProtoOption {
-    ProtoOption {
-      name: "(buf.validate.oneof).required",
-      value: Arc::new(OptionValue::Bool(true)),
-    }
-  }
-
-  pub fn allow_alias() -> ProtoOption {
-    ProtoOption {
-      name: "allow_alias",
-      value: Arc::new(OptionValue::Bool(true)),
-    }
-  }
-
-  pub fn deprecated() -> ProtoOption {
-    ProtoOption {
-      name: "deprecated",
-      value: Arc::new(OptionValue::Bool(true)),
-    }
-  }
-}

@@ -1,5 +1,7 @@
 use std::{marker::PhantomData, ops::Range, sync::Arc};
 
+use bon::Builder;
+
 use crate::{
   field_type::ImportedItemPath, packages::Arena, rendering::EnumTemplate, sealed, Empty, FieldType,
   IsSet, IsUnset, ProtoOption, Set, Unset,
@@ -13,11 +15,20 @@ pub struct EnumBuilder<S: EnumState = Empty> {
   pub(crate) _phantom: PhantomData<fn() -> S>,
 }
 
+/// A struct representing an enum value
+#[derive(Clone, Debug, Default, Builder)]
+pub struct EnumVariant {
+  #[builder(into)]
+  pub name: Box<str>,
+  #[builder(into, default)]
+  pub options: Box<[ProtoOption]>,
+}
+
 /// The stored information for a given enum.
 #[derive(Clone, Debug, Default)]
 pub struct EnumData {
   pub name: Arc<str>,
-  pub variants: Box<[(i32, Box<str>)]>,
+  pub variants: Box<[(i32, EnumVariant)]>,
   pub import_path: Arc<ImportedItemPath>,
   pub file_id: usize,
   pub reserved_numbers: Box<[i32]>,
@@ -72,20 +83,16 @@ impl<S: EnumState> EnumBuilder<S> {
   }
 
   /// Sets the variants for this enum.
-  pub fn variants<I, Str>(self, variants: I) -> EnumBuilder<SetVariants<S>>
+  pub fn variants<I>(self, variants: I) -> EnumBuilder<SetVariants<S>>
   where
     S::Variants: IsUnset,
-    I: IntoIterator<Item = (i32, Str)>,
-    Str: AsRef<str>,
+    I: IntoIterator<Item = (i32, EnumVariant)>,
   {
     {
       let mut arena = self.arena.borrow_mut();
       let enum_ = &mut arena.enums[self.id];
 
-      enum_.variants = variants
-        .into_iter()
-        .map(|(num, name)| (num, name.as_ref().into()))
-        .collect();
+      enum_.variants = variants.into_iter().collect();
     }
 
     EnumBuilder {

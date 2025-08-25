@@ -3,8 +3,14 @@ use std::{collections::HashSet, ops::Range, sync::Arc};
 use askama::Template;
 
 use crate::{
-  enums::EnumData, extensions::ExtensionData, fields::FieldData, files::FileData,
-  messages::MessageData, oneofs::OneofData, packages::PackageData, services::ServiceData,
+  enums::{EnumData, EnumVariant},
+  extensions::ExtensionData,
+  fields::FieldData,
+  files::FileData,
+  messages::MessageData,
+  oneofs::OneofData,
+  packages::PackageData,
+  services::ServiceData,
   ProtoOption,
 };
 
@@ -44,7 +50,7 @@ pub struct MessageTemplate {
 #[template(path = "enum.proto.j2")]
 pub struct EnumTemplate {
   pub name: Arc<str>,
-  pub variants: Box<[(i32, Box<str>)]>,
+  pub variants: Box<[(i32, EnumVariant)]>,
   pub reserved_numbers: Box<[i32]>,
   pub reserved_ranges: Box<[Range<i32>]>,
   pub reserved_names: Box<[Box<str>]>,

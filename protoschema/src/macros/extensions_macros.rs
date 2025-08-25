@@ -1,7 +1,8 @@
 /// A macro that creates an [`Extension`](crate::extensions::Extension) and adds it to a [`FileBuilder`](crate::files::FileBuilder).
 /// The first argument is the ident for the [`FileBuilder`](crate::files::FileBuilder) where this extension will go.
-/// The second argument is an ident that will be matched with a variant of [`ExtensionKind`](crate::extensions::ExtensionKind) enum.
+/// The second argument is an ident that will be matched with a variant of [`ExtensionKind`](crate::extensions::ExtensionKind) enum (i.e. MessageOptions, FileOptions, etc).
 /// The fields for the extension are defined as a comma separated list of `$field_number:literal => $field:expr` surrounded by curly brackets, where $field evalutes to a [`FieldBuilder`](crate::fields::FieldBuilder) instance.
+/// Options for the fields themselves can be defined by calling [`add_option`](crate::fields::FieldBuilder::add_option) on the field builder.
 /// # Examples
 /// ```
 /// use protoschema::{Package, extension, string};

@@ -2,7 +2,7 @@ use std::path::Path;
 
 use proto_types::Duration;
 use protoschema::{
-  common_options::allow_alias,
+  common::allow_alias,
   enum_field, enum_map, enum_option, enum_variants, extension, message, message_option, msg_field,
   msg_map,
   options::{list_value, proto_option},
@@ -85,7 +85,7 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
   });
 
   let reusable_variants = enum_variants!(
-    0 => "UNSPECIFIED"
+    0 => "UNSPECIFIED",
   );
 
   let reusable_fields = reusable_fields!(
@@ -97,8 +97,8 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
     file.new_enum("user_status"),
     options = [ allow_alias() ],
     reserved = [ 405, 200..205 ],
-    include(reusable_variants),
-    1 => "ACTIVE",
+    include(reusable_variants.clone()),
+    1 => "ACTIVE" { [example_option.clone()] },
     2 => "INACTIVE",
     2 => "PASSIVE"
   );
@@ -106,7 +106,7 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
   let referrers_enum = proto_enum!(
     file.new_enum("referrers"),
 
-    include(reusable_variants),
+    include(reusable_variants.clone()),
 
     1 => "GITHUB",
     2 => "REDDIT"
@@ -149,7 +149,7 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
 
 
     enum "favorite_category" {
-      include(reusable_variants),
+      include(reusable_variants.clone()),
 
       1 => "PETS",
       2 => "COOKING"
@@ -159,7 +159,7 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
       options = [ example_option.clone() ],
       reserved_names = [ "one", "two" ],
       reserved = [ 405, 200..205 ],
-      include(reusable_variants),
+      include(reusable_variants.clone()),
 
       1 => "SILVER",
       2 => "GOLD"

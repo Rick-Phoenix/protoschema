@@ -1,7 +1,7 @@
 use std::{collections::HashSet, marker::PhantomData, sync::Arc};
 
 use crate::{
-  common_resources::DESCRIPTOR_PROTO_FILE,
+  common::DESCRIPTOR_PROTO_FILE,
   enums::{EnumBuilder, EnumData},
   extensions::{Extension, ExtensionData},
   field_type::ImportedItemPath,

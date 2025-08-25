@@ -15,8 +15,15 @@ enum {{+ name +}} {
 {% endfilter %}
 
 {% filter indent(2) %}
-{% for (tag, name) in variants ~%}
-{{+ name +}} = {{+ tag +}};
+{% for (tag, variant) in variants ~%}
+{{+ variant.name +}} = {{+ tag +}}
+{% if !variant.options.is_empty() +%} [
+{% filter indent(2) ~%}
+{% for opt in variant.options ~%}
+{{+ opt.name +}} = {{+ opt.value.render()? }}{% if !loop.last %}, {%+ endif ~%}
+{% endfor +%}
+{%~ endfilter %}
+]{% endif %};
 {% endfor %}
 {% endfilter ~%}
 }

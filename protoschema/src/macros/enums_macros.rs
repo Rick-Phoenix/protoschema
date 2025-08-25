@@ -7,7 +7,7 @@
 /// `options = $options:expr` where $options should evaluate to IntoIter<Item = [`ProtoOption`](crate::options::ProtoOption)> (must be followed by a comma, even if at last position).
 /// `reserved_names = $names:expr` where $names should evaluate to `IntoIter<Item = AsRef<str>>` (must be followed by a comma, even if last)
 /// reserved = [ $items ], where $items is a comma separated list of numbers of ranges such as `1..5`. Following the protobuf syntax, these ranges will be inclusive.
-/// The variants for this enum, defined as a comma-separated list of `$number:literal => $name:expr`.
+/// The variants for this enum, defined as a comma-separated list of `$number:literal => $name:expr` with the optional options (that's a mouthful) being defined as an expression in curly brackets.
 /// # Examples
 /// ```
 /// use protoschema::{Package, enum_variants, proto_enum, proto_option};
@@ -18,6 +18,7 @@
 ///   0 => "UNSPECIFIED"
 /// );
 /// let my_opt = proto_option("my_opt", true);
+/// let my_list_of_opts = [ my_opt.clone(), my_opt.clone() ];
 ///
 /// // For enums defined at the top level
 /// let my_enum = proto_enum!(
@@ -31,7 +32,9 @@
 ///   
 ///   // Including reusable variants
 ///   include(reusable_variants.clone()),
-///   1 => "ACTIVE"
+///   1 => "ACTIVE" { my_list_of_opts.clone() },
+///   2 => "CONNECTED" { [ my_opt.clone() ] },
+///   3 => "DISCONNECTED"
 /// );
 /// ```
 #[macro_export]
@@ -53,18 +56,26 @@ macro_rules! proto_enum {
 ///
 /// # Examples
 /// ```
-/// use protoschema::enum_variants;
+/// use protoschema::{enum_variants, proto_option};
+///
+/// let my_opt = proto_option("my_opt", true);
+/// let my_list_of_opts = [ my_opt.clone(), my_opt.clone() ];
 ///
 /// let variants = enum_variants!(
-///   0 => "UNSPECIFIED",
-///   1 => "ACTIVE"
+///   0 => "UNSPECIFIED" { my_list_of_opts.clone() },
+///   1 => "ACTIVE" { [ my_opt.clone() ] },
+///   2 => "DISCONNECTED"
 /// );
 ///
 /// ```
 #[macro_export]
 macro_rules! enum_variants {
-  ($($number:literal => $name:expr),+ $(,)?) => {
-    [ $(($number, $name)),* ]
+  ($($number:literal => $name:literal $({ $options:expr })?),+ $(,)?) => {
+    [ $(($number, $crate::enums::EnumVariant::builder()
+      .name($name)
+      $(.options($options))?
+      .build()
+      )),* ]
   };
 }
 
@@ -197,14 +208,18 @@ macro_rules! proto_enum_impl {
     @reserved_names($($reserved_names:tt)*),
     @variants($($variants:tt)*),
     @included_variants($($included_variants:tt)*),
-    @rest($(,)? $tag:literal => $variant:expr, $($rest:tt)*)
+    @rest($(,)? $tag:literal => $variant:literal $({ $enum_value_options:expr })?, $($rest:tt)*)
   ) => {
     $crate::proto_enum_impl! {
       @builder($enum),
       @options($($options)*),
       @reserved($($reserved)*),
       @reserved_names($($reserved_names)*),
-      @variants($($variants)* ($tag, $variant),),
+      @variants($($variants)*
+        ($tag, $crate::enums::EnumVariant::builder().name($variant)
+        $(.options($enum_value_options))?
+        .build()
+        ),),
       @included_variants($($included_variants)*),
       @rest($($rest)*)
     }
@@ -218,14 +233,18 @@ macro_rules! proto_enum_impl {
     @reserved_names($($reserved_names:tt)*),
     @variants($($variants:tt)*),
     @included_variants($($included_variants:tt)*),
-    @rest($(,)? $tag:literal => $variant:expr)
+    @rest($(,)? $tag:literal => $variant:literal $({ $enum_value_options:expr })?)
   ) => {
     $crate::proto_enum_impl! {
       @builder($enum),
       @options($($options)*),
       @reserved($($reserved)*),
       @reserved_names($($reserved_names)*),
-      @variants($($variants)* ($tag, $variant)),
+      @variants($($variants)* ($tag, $crate::enums::EnumVariant::builder()
+        .name($variant)
+        $(.options($enum_value_options))?
+        .build()
+      )),
       @included_variants($($included_variants)*),
       @rest()
     }
