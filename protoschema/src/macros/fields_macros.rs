@@ -19,7 +19,7 @@ macro_rules! parse_fields {
     @rest($(,)? include($reusable_fields:expr) $($rest:tt)*)
   ) => {
     $crate::parse_fields!(
-      @included_fields($($included_fields)* $reusable_fields,)
+      @included_fields($($included_fields)* $reusable_fields.clone(),)
       @fields($($fields)*)
       @rest($($rest)*)
     )
@@ -78,11 +78,11 @@ macro_rules! parse_field_type {
 /// );
 ///
 /// message!(my_msg1,
-///   include(my_common_fields.clone()),
+///   include(my_common_fields),
 ///   4 => uint64!("other_field")
 /// );
 /// message!(my_msg2,
-///   include(my_common_fields.clone()),
+///   include(my_common_fields),
 ///   4 => uint64!("some_other_field")
 /// );
 /// ```

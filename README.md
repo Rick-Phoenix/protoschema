@@ -53,7 +53,7 @@ let my_reusable_variants = enum_variants!(
 let my_oneof = oneof!(
   "my_oneof",
   options = [ my_reusable_option.clone() ],
-  include(my_reusable_fields.clone()),
+  include(my_reusable_fields),
 );
 
 let my_pkg = Package::new("my_pkg.v1");
@@ -66,20 +66,20 @@ message!(
   // This is an expression like any other, so any IntoIter<Item = ProtoOption> can work
   options = my_list_of_options.clone(),
   // Including all fields at once
-  include(my_reusable_fields.clone()),
+  include(my_reusable_fields),
   5 => uint64!("internal_ref"),
 
   // Including a reusable oneof
-  include_oneof(my_oneof.clone()),
+  include_oneof(my_oneof),
 
   enum "my_nested_enum" {
-    include(my_reusable_variants.clone()),
+    include(my_reusable_variants),
   }
 );
 
 let my_other_enum = proto_enum!(
   my_file.new_enum("my_other_enum"),
-  include(my_reusable_variants.clone())
+  include(my_reusable_variants)
 );
 ```
 
@@ -218,7 +218,7 @@ let my_enum = proto_enum!(
   // Common options such as allow_alias have helpers for them
   options = [ my_opt.clone(), allow_alias() ],
   // Including reusable variants as a group
-  include(reusable_variants.clone()),
+  include(reusable_variants),
   // Options for enum values are defined like this
   1 => "PASSIVE" { [ my_opt.clone() ] },
   1 => "INACTIVE",
@@ -266,7 +266,7 @@ let my_oneof = oneof!(
   "my_oneof",
   options = [ my_reusable_option.clone() ],
   // Fields can be included as a block
-  include(my_reusable_fields.clone()),
+  include(my_reusable_fields),
   // Or individually
   3 => string!("id")
 );
@@ -282,7 +282,7 @@ message!(
   4 => string!("my_field"),
 
   oneof "my_oneof" {
-    include(my_reusable_fields.clone()),
+    include(my_reusable_fields),
     3 => string!("id")
   }
 );
@@ -354,7 +354,7 @@ use proto_types::Duration;
 use protoschema::{
   common::allow_alias,
   enum_field, enum_map, enum_option, enum_variants, extension, message, message_option, msg_field,
-  msg_map, oneof, 
+  msg_map, oneof,
   options::{list_value, proto_option},
   packages::Package,
   proto_enum, reusable_fields, services, string, timestamp, uint64,
@@ -443,7 +443,7 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
     file.new_enum("user_status"),
     options = [ allow_alias() ],
     reserved = [ 405, 200..205 ],
-    include(reusable_variants.clone()),
+    include(reusable_variants),
     1 => "ACTIVE" { [example_option.clone()] },
     2 => "INACTIVE",
     2 => "PASSIVE"
@@ -457,7 +457,7 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
   let referrers_enum = proto_enum!(
     file.new_enum("referrers"),
 
-    include(reusable_variants.clone()),
+    include(reusable_variants),
 
     1 => "GITHUB",
     2 => "REDDIT"
@@ -501,7 +501,7 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
 
 
     enum "favorite_category" {
-      include(reusable_variants.clone()),
+      include(reusable_variants),
 
       1 => "PETS",
       2 => "COOKING"
@@ -511,7 +511,7 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
       options = [ example_option.clone() ],
       reserved_names = [ "one", "two" ],
       reserved = [ 405, 200..205 ],
-      include(reusable_variants.clone()),
+      include(reusable_variants),
 
       1 => "SILVER",
       2 => "GOLD"

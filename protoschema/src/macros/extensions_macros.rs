@@ -22,7 +22,7 @@
 ///     // Add a normal field
 ///     150 => string!("abc"),
 ///     // Include reusable fields
-///     include(shared_fields.clone())
+///     include(shared_fields)
 ///   }
 /// );
 /// ```

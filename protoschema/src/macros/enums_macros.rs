@@ -33,7 +33,7 @@
 ///   reserved = [ 100, 205, 300..350 ]
 ///   
 ///   // Include reusable variants
-///   include(reusable_variants.clone()),
+///   include(reusable_variants),
 ///   // Define normal variants
 ///   1 => "ACTIVE" { my_list_of_opts.clone() },
 ///   2 => "CONNECTED" { [ my_opt.clone() ] },
@@ -136,7 +136,7 @@ macro_rules! proto_enum_impl {
       @reserved($($reserved)*),
       @reserved_names($($reserved_names)*),
       @variants($($variants)*),
-      @included_variants($($included_variants)* $variants_block,),
+      @included_variants($($included_variants)* $variants_block.clone(),),
       @rest($($rest)*)
     }
   };

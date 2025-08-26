@@ -93,7 +93,7 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
     file.new_enum("user_status"),
     options = [ allow_alias() ],
     reserved = [ 405, 200..205 ],
-    include(reusable_variants.clone()),
+    include(reusable_variants),
     1 => "ACTIVE" { [example_option.clone()] },
     2 => "INACTIVE",
     2 => "PASSIVE"
@@ -107,7 +107,7 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
   let referrers_enum = proto_enum!(
     file.new_enum("referrers"),
 
-    include(reusable_variants.clone()),
+    include(reusable_variants),
 
     1 => "GITHUB",
     2 => "REDDIT"
@@ -151,7 +151,7 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
 
 
     enum "favorite_category" {
-      include(reusable_variants.clone()),
+      include(reusable_variants),
 
       1 => "PETS",
       2 => "COOKING"
@@ -161,7 +161,7 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
       options = [ example_option.clone() ],
       reserved_names = [ "one", "two" ],
       reserved = [ 405, 200..205 ],
-      include(reusable_variants.clone()),
+      include(reusable_variants),
 
       1 => "SILVER",
       2 => "GOLD"

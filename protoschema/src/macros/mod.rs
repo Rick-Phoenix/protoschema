@@ -82,7 +82,7 @@ macro_rules! cel_rules {
 ///   // Single field
 ///   10 => string!("abc"),
 ///   // Included reusable fields
-///   include(my_common_fields.clone()),
+///   include(my_common_fields),
 /// );
 /// ```
 ///
@@ -203,7 +203,7 @@ macro_rules! _internal_message_body {
       @builder($builder)
       @fields($($fields)*)
       @fields_blocks($($fields_blocks)*)
-      @oneofs($($oneofs)* $oneof,)
+      @oneofs($($oneofs)* $oneof.clone(),)
       @enums($($enums)*)
       @reserved($($reserved)*)
       @reserved_names($($reserved_names)*)
@@ -227,7 +227,7 @@ macro_rules! _internal_message_body {
     $crate::_internal_message_body! {
       @builder($builder)
       @fields($($fields)*)
-      @fields_blocks($($fields_blocks)* $block,)
+      @fields_blocks($($fields_blocks)* $block.clone(),)
       @oneofs($($oneofs)*)
       @enums($($enums)*)
       @reserved($($reserved)*)

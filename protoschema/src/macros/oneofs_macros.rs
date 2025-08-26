@@ -21,7 +21,7 @@
 ///   // Add a normal field
 ///   1 => string!("abc"),
 ///   // Include some reusable fields
-///   include(my_common_fields.clone())
+///   include(my_common_fields)
 /// );
 /// ```
 #[macro_export]
