@@ -152,6 +152,9 @@ let my_map = map!("my_map", <uint64, string>, |map, keys, values|
 
 ## 📦 Define a package and a file
 
+> **Note**: The package path and the .proto suffix are automatically added to file names.
+> So in the example below, the full path to the file from the root of the proto project will be `my_pkg/v1/my_file.proto`
+
 ```rust
 use protoschema::{Package};
 
@@ -246,7 +249,7 @@ message!(
 );
 ```
 
-## Define a oneof
+## 1️⃣ Define a oneof
 
 Just like enums, oneofs can be defined within the [`message`] macro, or on their own, using the [`oneof`] macro.
 
@@ -339,6 +342,18 @@ extension!(
     1559 => string!("my_extension_field")
   }
 );
+```
+
+## 📝 How to render the files
+
+After all of your items are defined, you just need to call [`render_templates`](crate::packages::Package::render_templates) with the path to the root of your proto project, and all the files will be written inside of it.
+
+```rust
+use protoschema::{Package};
+
+let package = Package::new("mypkg.v1"); 
+let proto_root = Path::new("proto");
+package.render_templates(proto_root)?;
 ```
 
 ## Complete example
