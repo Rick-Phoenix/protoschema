@@ -2,10 +2,10 @@ syntax = "proto3";
 
 package myapp.v1;
 
-import "google/protobuf/timestamp.proto";
-import "myapp/v2/post.proto";
 import "buf/validate/validate.proto";
 import "google/protobuf/descriptor.proto";
+import "google/protobuf/timestamp.proto";
+import "myapp/v2/post.proto";
 
 option string_opt = "abcde";
 

@@ -1,4 +1,4 @@
-use std::{collections::HashSet, ops::Range, sync::Arc};
+use std::{ops::Range, sync::Arc};
 
 use askama::Template;
 use convert_case::{Case, Casing};
@@ -20,7 +20,7 @@ use crate::{
 #[template(path = "file.proto.j2")]
 pub struct FileTemplate {
   pub name: Arc<str>,
-  pub imports: HashSet<Arc<str>>,
+  pub imports: Vec<Arc<str>>,
   pub package: Arc<str>,
   pub messages: Vec<MessageTemplate>,
   pub enums: Vec<EnumTemplate>,
@@ -112,12 +112,15 @@ impl FileData {
       .map(|id| package.services[*id].clone())
       .collect();
 
+    let mut sorted_imports: Vec<Arc<str>> = imports.iter().cloned().collect();
+    sorted_imports.sort();
+
     FileTemplate {
       name: self.name.clone(),
       package: package.name.clone(),
       messages: file_messages,
       options: self.options.clone().into_boxed_slice(),
-      imports,
+      imports: sorted_imports,
       extensions: self.extensions.clone(),
       enums: built_enums,
       services,

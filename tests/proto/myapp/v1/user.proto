@@ -3,9 +3,9 @@ syntax = "proto3";
 package myapp.v1;
 
 import "buf/validate/validate.proto";
-import "myapp/v2/post.proto";
-import "google/protobuf/timestamp.proto";
 import "google/protobuf/descriptor.proto";
+import "google/protobuf/timestamp.proto";
+import "myapp/v2/post.proto";
 
 extend google.protobuf.MessageOptions {
   string my_custom_message_option = 1565;
