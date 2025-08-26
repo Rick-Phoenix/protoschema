@@ -82,8 +82,20 @@ impl Package {
   }
 
   /// Writes the protobuf files defined in this Package schema.
+  ///
   /// The only argument it accepts is the proto_root, namely the root directory for the protobuf project.
   /// It will write the files by joining the root to the file names.
+  ///
+  /// # Examples
+  /// With this input:
+  /// ```rust
+  #[doc = include_str!("../tests/test.rs")]
+  /// ```
+  ///
+  /// The following file would be generated at `proto/myapp/v1/user.proto`
+  /// ```proto
+  #[doc = include_str!("../proto/myapp/v1/user.proto")]
+  /// ```
   pub fn render_templates(&self, proto_root: &Path) -> Result<(), TemplatingError> {
     let templates = self.build_templates();
 
