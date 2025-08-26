@@ -5,15 +5,23 @@
 /// Options for the fields themselves can be defined by calling [`add_option`](crate::fields::FieldBuilder::add_option) on the field builder.
 /// # Examples
 /// ```
-/// use protoschema::{Package, extension, string};
+/// use protoschema::{Package, extension, string, reusable_fields};
 ///
 /// let package = Package::new("mypkg");
 /// let file = package.new_file("myfile");
 ///
+/// let shared_fields = reusable_fields!(
+///   151 => string!("metadata_1"),
+///   152 => string!("metadata_2"),
+/// );
+///
 /// extension!(
 ///   file,
 ///   MessageOptions {
-///     150 => string!("abc")
+///     // Add a normal field
+///     150 => string!("abc"),
+///     // Include reusable fields
+///     include(shared_fields.clone())
 ///   }
 /// );
 /// ```

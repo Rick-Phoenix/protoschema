@@ -14,24 +14,27 @@
 ///
 /// let my_pkg = Package::new("my_pkg");
 /// let my_file = my_pkg.new_file("my_file");
+///
+/// let my_opt = proto_option("my_opt", true);
+/// let my_list_of_opts = [ my_opt.clone(), my_opt.clone() ];
+///
 /// let reusable_variants = enum_variants!(
 ///   0 => "UNSPECIFIED"
 /// );
-/// let my_opt = proto_option("my_opt", true);
-/// let my_list_of_opts = [ my_opt.clone(), my_opt.clone() ];
 ///
 /// // For enums defined at the top level
 /// let my_enum = proto_enum!(
 ///   my_file.new_enum("my_enum"),
 ///   // Options, if defined, must be at the very top
-///   options = [ my_opt.clone() ],
+///   options = [ my_opt.clone() ], // Or `options = my_list_of_opts.clone()`
 ///   // Must be followed by a comma, even if last
 ///   reserved_names = [ "ABC" ],
 ///   // Accepts ranges (inclusive by default) and numbers
 ///   reserved = [ 100, 205, 300..350 ]
 ///   
-///   // Including reusable variants
+///   // Include reusable variants
 ///   include(reusable_variants.clone()),
+///   // Define normal variants
 ///   1 => "ACTIVE" { my_list_of_opts.clone() },
 ///   2 => "CONNECTED" { [ my_opt.clone() ] },
 ///   3 => "DISCONNECTED"

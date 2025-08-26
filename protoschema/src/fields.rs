@@ -42,7 +42,6 @@ pub struct Field {
   #[builder(setters(vis = "", name = field_type_internal))]
   pub field_type: FieldType,
   pub name: Arc<str>,
-  pub tag: u32,
 }
 
 /// A struct representing the processed data for a protobuf field, after it's been added to a message or extension
@@ -52,7 +51,6 @@ pub struct FieldData {
   pub kind: FieldKind,
   pub field_type: FieldType,
   pub name: Arc<str>,
-  pub tag: u32,
 }
 
 impl<S: field_builder::State> FieldBuilder<S> {

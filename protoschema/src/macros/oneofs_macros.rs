@@ -3,13 +3,24 @@
 /// After that, the fields for this oneof can be defined as a comma separated list of `$number:literal => $field:expr`, with $field evaluating to a [`FieldBuilder`](crate::fields::FieldBuilder).
 /// # Examples
 /// ```
-/// use protoschema::{oneof, proto_option, string};
+/// use protoschema::{oneof, proto_option, string, reusable_fields, uint64};
+///
+/// let my_common_fields = reusable_fields!(
+///   1 => uint64!("id"),
+///   2 => string!("username"),
+///   3 => string!("email")
+/// );
 ///
 /// let my_opt = proto_option("my_opt", true);
+/// let my_list_of_options = [ my_opt.clone(), my_opt.clone() ];
+///
 /// let oneof = oneof!(
 ///   "my_oneof",
-///   options = [ my_opt ],
-///   1 => string!("abc")
+///   options = [ my_opt ], // Or `options = my_list_of_options.clone()`
+///   // Add a normal field
+///   1 => string!("abc"),
+///   // Include some reusable fields
+///   include(my_common_fields.clone())
 /// );
 /// ```
 #[macro_export]

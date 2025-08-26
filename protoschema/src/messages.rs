@@ -26,7 +26,7 @@ pub struct MessageBuilder<S: MessageState = Empty> {
 pub struct MessageData {
   pub name: Arc<str>,
   pub import_path: Arc<ImportedItemPath>,
-  pub fields: Box<[FieldData]>,
+  pub fields: Box<[(u32, FieldData)]>,
   pub oneofs: Box<[OneofData]>,
   pub reserved_numbers: Box<[u32]>,
   pub reserved_ranges: Box<[Range<u32>]>,
@@ -206,31 +206,35 @@ impl<S: MessageState> MessageBuilder<S> {
   pub fn fields<I, F>(self, fields: I) -> MessageBuilder<SetFields<S>>
   where
     S::Fields: IsUnset,
-    I: IntoIterator<Item = FieldBuilder<F>>,
+    I: IntoIterator<Item = (u32, FieldBuilder<F>)>,
     F: fields::IsComplete,
   {
     {
       let mut arena = self.arena.borrow_mut();
 
-      let final_fields: Vec<FieldData> = fields
+      let mut final_fields: Vec<(u32, FieldData)> = fields
         .into_iter()
-        .map(|field| {
+        .map(|(tag, field)| {
           let field = field.build();
           let file_id = self.file_id;
 
-          for import in &field.imports {
-            arena.files[file_id].conditionally_add_import(import);
+          for import in field.imports {
+            arena.files[file_id].conditionally_add_import(&import);
           }
 
-          FieldData {
-            name: field.name.clone(),
-            tag: field.tag,
-            options: field.options.into_boxed_slice(),
-            kind: field.kind,
-            field_type: field.field_type,
-          }
+          (
+            tag,
+            FieldData {
+              name: field.name,
+              options: field.options.into_boxed_slice(),
+              kind: field.kind,
+              field_type: field.field_type,
+            },
+          )
         })
         .collect();
+
+      final_fields.sort_by_key(|t| t.0);
 
       arena.messages[self.id].fields = final_fields.into_boxed_slice()
     }
@@ -255,27 +259,31 @@ impl<S: MessageState> MessageBuilder<S> {
       let oneofs_data: Vec<OneofData> = oneofs
         .into_iter()
         .map(|of| {
-          let built_fields: Vec<FieldData> = of
+          let mut built_fields: Vec<(u32, FieldData)> = of
             .fields
-            .iter()
-            .map(|f| {
-              f.imports.iter().for_each(|i| {
-                arena.files[self.file_id].conditionally_add_import(i);
+            .into_iter()
+            .map(|(tag, field)| {
+              field.imports.into_iter().for_each(|i| {
+                arena.files[self.file_id].conditionally_add_import(&i);
               });
 
-              FieldData {
-                name: f.name.clone(),
-                tag: f.tag,
-                options: f.options.clone().into_boxed_slice(),
-                kind: f.kind,
-                field_type: f.field_type.clone(),
-              }
+              (
+                tag,
+                FieldData {
+                  name: field.name.clone(),
+                  options: field.options.clone().into_boxed_slice(),
+                  kind: field.kind,
+                  field_type: field.field_type.clone(),
+                },
+              )
             })
             .collect();
 
+          built_fields.sort_by_key(|t| t.0);
+
           OneofData {
-            name: of.name.clone(),
-            options: of.options.clone(),
+            name: of.name,
+            options: of.options,
             fields: built_fields.into_boxed_slice(),
           }
         })

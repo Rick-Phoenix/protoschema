@@ -32,7 +32,7 @@ macro_rules! parse_fields {
   ) => {
     $crate::parse_fields!(
       @included_fields($($included_fields)*)
-      @fields($($fields)* $field.tag($tag),)
+      @fields($($fields)* ($tag, $field),)
       @rest($($rest)*)
     )
   };
@@ -44,7 +44,7 @@ macro_rules! parse_fields {
   ) => {
     $crate::parse_fields!(
       @included_fields($($included_fields)*)
-      @fields($($fields)* $field.tag($tag))
+      @fields($($fields)* ($tag, $field))
       @rest()
     )
   };
@@ -60,10 +60,35 @@ macro_rules! parse_field_type {
   };
 }
 
+/// Defines some fields that can be included as a group in multiple messages.
+/// # Examples
+/// ```
+/// use protoschema::{reusable_fields, uint64, timestamp, message, Package};
+///
+/// let my_pkg = Package::new("my_pkg");
+/// let my_file = my_pkg.new_file("my_file");
+/// let my_msg1 = my_file.new_message("my_msg1");
+/// let my_msg2 = my_file.new_message("my_msg2");
+///
+/// let my_common_fields = reusable_fields!(
+///   1 => uint64!("id"),
+///   2 => timestamp!("created_at"),
+///   3 => timestamp!("updated_at")
+/// );
+///
+/// message!(my_msg1,
+///   include(my_common_fields.clone()),
+///   4 => uint64!("other_field")
+/// );
+/// message!(my_msg2,
+///   include(my_common_fields.clone()),
+///   4 => uint64!("some_other_field")
+/// );
+/// ```
 #[macro_export]
 macro_rules! reusable_fields {
   ($($tag:literal => $field:expr),+ $(,)?) => {
-    [ $($field.tag($tag)),+ ]
+    [ $(($tag, $field)),+ ]
   };
 }
 

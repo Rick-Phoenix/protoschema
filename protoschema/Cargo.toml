@@ -9,15 +9,10 @@ edition.workspace = true
 
 [dependencies]
 askama = { workspace = true }
-chrono = { workspace = true }
 bon = { workspace = true }
 paste = { workspace = true }
-maplit = { workspace = true }
 regex = { workspace = true }
 proto-types = { workspace = true }
-crabtime = { workspace = true }
-unstringify = { workspace = true }
-quote = { workspace = true }
 thiserror = { workspace = true }
 
 [package.metadata.docs.rs]

@@ -35,7 +35,7 @@ pub struct MessageTemplate {
   pub name: Arc<str>,
   pub package: Arc<str>,
   pub file: Arc<str>,
-  pub fields: Box<[FieldData]>,
+  pub fields: Box<[(u32, FieldData)]>,
   pub messages: Vec<MessageTemplate>,
   pub oneofs: Box<[OneofData]>,
   pub enums: Vec<EnumTemplate>,

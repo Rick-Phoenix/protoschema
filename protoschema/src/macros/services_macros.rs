@@ -41,16 +41,19 @@ macro_rules! service {
 ///
 /// let my_pkg = Package::new("my_pkg");
 /// let my_file = my_pkg.new_file("my_file");
+///
+/// let my_opt = proto_option("my_opt", true);
+/// let my_list_of_options = [ my_opt.clone(), my_opt.clone() ];
+///
 /// let my_request = my_file.new_message("MyRequest");
 /// let my_response = my_file.new_message("MyResponse");
-/// let my_option = proto_option("my_opt", true);
 ///
 /// services!(
 ///   my_file,
 ///   MyService {
 ///     // Options can only be defined at the top of a service's block
-///     options = [ my_option.clone() ],
-///     GetUser(my_request => my_response) { [ my_option.clone() ] },
+///     options = [ my_opt.clone() ], // Or `options = my_list_of_options.clone()`
+///     GetUser(my_request => my_response) { [ my_opt.clone() ] },
 ///     GetData(my_request => my_response),
 ///   };
 ///

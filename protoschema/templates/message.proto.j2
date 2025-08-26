@@ -1,7 +1,7 @@
 {% import "opt.proto.j2" as opts %}
 
-{%- macro render_field(field, file, package) -%}
-{{+ field.kind +}}{{+ field.field_type.render_name(file, package) +}} {{+ field.name +}} = {{+ field.tag }}
+{%- macro render_field(tag, field, file, package) -%}
+{{+ field.kind +}}{{+ field.field_type.render_name(file, package) +}} {{+ field.name +}} = {{+ tag }}
 {%~ endmacro %}
 
 message {{+ name +}} {
@@ -37,8 +37,8 @@ oneof {{+ oneof.name +}} {
     {% call opts::get_options(oneof.options) %}
   {%~ endfilter %}
 
-  {%+ for field in oneof.fields ~%}
-  {%+ call render_field(field, file.as_ref(), package.as_ref()) %}
+  {%+ for (tag, field) in oneof.fields ~%}
+  {%+ call render_field(tag, field, file.as_ref(), package.as_ref()) %}
   {%- if !field.options.is_empty() +%} [
   {% call opts::field_opts(&field.options) +%}
   ] {%- endif -%};
@@ -47,9 +47,9 @@ oneof {{+ oneof.name +}} {
 {%+ endfilter %}
 {%- endfor ~%}
 
-{% for field in fields ~%}
+{% for (tag, field) in fields ~%}
 {%+ filter indent(2) ~%}
-{%+ call render_field(field, file.as_ref(), package.as_ref()) %}
+{%+ call render_field(tag, field, file.as_ref(), package.as_ref()) %}
 {% endfilter %}
   {%- if !field.options.is_empty() +%} [
   {% call opts::field_opts(&field.options) +%}

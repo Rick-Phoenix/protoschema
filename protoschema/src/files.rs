@@ -152,23 +152,27 @@ impl FileBuilder {
 
     file.imports.insert(DESCRIPTOR_PROTO_FILE.clone());
 
-    let built_fields: Vec<FieldData> = extension
+    let mut built_fields: Vec<(u32, FieldData)> = extension
       .fields
       .into_iter()
-      .map(|f| {
-        f.imports.into_iter().for_each(|i| {
+      .map(|(tag, field)| {
+        field.imports.into_iter().for_each(|i| {
           file.conditionally_add_import(&i);
         });
 
-        FieldData {
-          name: f.name,
-          field_type: f.field_type,
-          kind: f.kind,
-          options: f.options.into_boxed_slice(),
-          tag: f.tag,
-        }
+        (
+          tag,
+          FieldData {
+            name: field.name,
+            field_type: field.field_type,
+            kind: field.kind,
+            options: field.options.into_boxed_slice(),
+          },
+        )
       })
       .collect();
+
+    built_fields.sort_by_key(|t| t.0);
 
     let ext_data = ExtensionData {
       kind: extension.kind,

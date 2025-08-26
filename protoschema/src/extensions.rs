@@ -36,7 +36,7 @@ impl ExtensionKind {
 pub struct Extension {
   pub kind: ExtensionKind,
   #[builder(setters(vis = "", name = fields_internal))]
-  pub fields: Box<[Field]>,
+  pub fields: Box<[(u32, Field)]>,
 }
 
 impl<S: extension_builder::State> ExtensionBuilder<S> {
@@ -44,10 +44,15 @@ impl<S: extension_builder::State> ExtensionBuilder<S> {
   pub fn fields<I, F>(self, fields: I) -> ExtensionBuilder<extension_builder::SetFields<S>>
   where
     S::Fields: extension_builder::IsUnset,
-    I: IntoIterator<Item = FieldBuilder<F>>,
+    I: IntoIterator<Item = (u32, FieldBuilder<F>)>,
     F: fields::IsComplete,
   {
-    self.fields_internal(fields.into_iter().map(|f| f.build()).collect())
+    self.fields_internal(
+      fields
+        .into_iter()
+        .map(|(tag, field)| (tag, field.build()))
+        .collect(),
+    )
   }
 }
 
@@ -55,5 +60,5 @@ impl<S: extension_builder::State> ExtensionBuilder<S> {
 #[derive(Clone, Debug)]
 pub struct ExtensionData {
   pub kind: ExtensionKind,
-  pub fields: Box<[FieldData]>,
+  pub fields: Box<[(u32, FieldData)]>,
 }

@@ -56,30 +56,33 @@ macro_rules! cel_rules {
 /// It receives a [`MessageBuilder`](crate::messages::MessageBuilder) instance's ident as the first argument, the (optional) options for the message right after, and the rest of the data after that.
 /// # Examples
 /// ```
-/// use protoschema::{Package, message, proto_option, string, reusable_fields};
+/// use protoschema::{Package, message, proto_option, string, reusable_fields, uint64, timestamp};
 ///
 /// let my_pkg = Package::new("mypkg.v1");
 /// let my_file = my_pkg.new_file("my_file");
 /// let my_opt = proto_option("my_opt", true);
-/// let reusable_fields = reusable_fields!(
-///   25 => string!("field1"),
-///   26 => string!("field2")
+/// let my_list_of_options = [ my_opt.clone(), my_opt.clone() ];
+///
+/// let my_common_fields = reusable_fields!(
+///   1 => uint64!("id"),
+///   2 => timestamp!("created_at"),
+///   3 => timestamp!("updated_at")
 /// );
 ///
 ///
 /// message!(
 ///   my_file.new_message("my_msg"),
 ///   // Options can only be defined at the very top
-///   options  = [ my_opt.clone() ],
+///   options  = [ my_opt.clone() ], // Or `options = my_list_of_options.clone()`
 ///   // reserved_names must always be followed by a comma because it's an expression, even if it's the last item in the list
 ///   reserved_names = [ "abc", "deg" ],
 ///   // Accepts both numbers and ranges
 ///   reserved = [ 5, 12, 23..29 ],
 ///
 ///   // Single field
-///   1 => string!("abc"),
+///   10 => string!("abc"),
 ///   // Included reusable fields
-///   include(reusable_fields.clone()),
+///   include(my_common_fields.clone()),
 /// );
 /// ```
 ///
@@ -355,7 +358,7 @@ macro_rules! _internal_message_body {
   ) => {
     $crate::_internal_message_body! {
       @builder($builder)
-      @fields($($fields)* $field.tag($tag),)
+      @fields($($fields)* ($tag, $field),)
       @fields_blocks($($fields_blocks)*)
       @oneofs($($oneofs)*)
       @enums($($enums)*)
@@ -380,7 +383,7 @@ macro_rules! _internal_message_body {
   ) => {
     $crate::_internal_message_body! {
       @builder($builder)
-      @fields($($fields)* $field.tag($tag))
+      @fields($($fields)* ($tag, $field))
       @fields_blocks($($fields_blocks)*)
       @oneofs($($oneofs)*)
       @enums($($enums)*)

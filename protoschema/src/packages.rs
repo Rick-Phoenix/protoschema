@@ -10,6 +10,7 @@ use askama::Template;
 
 use crate::{
   enums::EnumData,
+  errors::TemplatingError,
   files::{FileBuilder, FileData},
   messages::MessageData,
   rendering::FileTemplate,
@@ -83,14 +84,33 @@ impl Package {
   /// Writes the protobuf files defined in this Package schema.
   /// The only argument it accepts is the proto_root, namely the root directory for the protobuf project.
   /// It will write the files by joining the root to the file names.
-  pub fn render_templates(&self, proto_root: &Path) -> Result<(), Box<dyn std::error::Error>> {
+  pub fn render_templates(&self, proto_root: &Path) -> Result<(), TemplatingError> {
     let templates = self.build_templates();
 
     for template in templates {
       let path = proto_root.join(template.name.as_ref());
-      create_dir_all(path.parent().unwrap())?;
-      let mut file = File::create(path)?;
-      template.write_into(&mut file)?;
+
+      create_dir_all(
+        path
+          .parent()
+          .ok_or(TemplatingError::MissingParentDirectory(path.clone()))?,
+      )
+      .map_err(|e| TemplatingError::DirCreationFailure {
+        dir: path.clone(),
+        source: e,
+      })?;
+
+      let mut file = File::create(&path).map_err(|e| TemplatingError::FileCreationFailure {
+        file: path.clone(),
+        source: e,
+      })?;
+
+      template
+        .write_into(&mut file)
+        .map_err(|e| TemplatingError::TemplateWritingFailure {
+          file: path.clone(),
+          source: e,
+        })?;
     }
 
     Ok(())
