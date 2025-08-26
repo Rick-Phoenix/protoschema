@@ -19,9 +19,9 @@ pub struct EnumBuilder<S: EnumState = Empty> {
 #[derive(Clone, Debug, Default, Builder)]
 pub struct EnumVariant {
   #[builder(into)]
-  pub name: Box<str>,
+  pub name: Arc<str>,
   #[builder(into, default)]
-  pub options: Box<[ProtoOption]>,
+  pub options: Arc<[ProtoOption]>,
 }
 
 /// The stored information for a given enum.
