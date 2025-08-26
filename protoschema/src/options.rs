@@ -11,7 +11,7 @@ pub struct ProtoOption {
   pub value: Arc<OptionValue>,
 }
 
-/// A helper to build a ProtoOption
+/// A helper to build a [`ProtoOption`]
 pub fn proto_option<T: Into<OptionValue>>(name: &'static str, value: T) -> ProtoOption {
   ProtoOption {
     name,
@@ -57,7 +57,7 @@ where
   )
 }
 
-/// A helper to build an OptionValue::Message.
+/// A helper to build an [`OptionValue`]::Message.
 /// Used by the [`message_option`](crate::message_option) macro to easily compose message option values.
 pub fn message_value<T, N, V>(v: T) -> OptionValue
 where

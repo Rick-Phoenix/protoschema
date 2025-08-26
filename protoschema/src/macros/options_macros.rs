@@ -1,4 +1,5 @@
 /// A macro to easily define key-value pairs for a message [`OptionValue`](crate::options::OptionValue)
+///
 /// # Examples
 /// ```
 /// use protoschema::message_option;
@@ -14,7 +15,8 @@ macro_rules! message_option {
   };
 }
 
-/// A macro to define an enum [`OptionValue`](crate::options::OptionValue)
+/// A macro to define an enum [`OptionValue`](crate::options::OptionValue).
+///
 /// Since both strings and enum variants are defined by using strings, only the latter have a From impl, whereas for enums, this macro must be used
 ///
 /// # Examples

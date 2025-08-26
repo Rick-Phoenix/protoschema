@@ -32,6 +32,7 @@ macro_rules! service {
 }
 
 /// Creates a list of new services and adds them to a [`FileBuilder`](crate::files::FileBuilder).
+///
 /// The first argument is the ident of the FileBuilder where these services will be added.
 /// After that, the syntax is very similar to the protobuf syntax, and it consists of an ident for the service's name, followed by a block inside curly brackets where the service's options can optionally be defined at the top, followed by the handlers, which are defined like in protobuf, where the idents between parentheses should refer to the [`MessageBuilder`](crate::messages::MessageBuilder) instance of the message being received/returned from a handler.
 ///

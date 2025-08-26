@@ -1,5 +1,6 @@
 use std::{fmt::Display, sync::Arc};
 
+#[doc(inline)]
 pub use proto_types::{Duration, Timestamp};
 
 /// Protobuf map key types
@@ -53,7 +54,7 @@ pub struct ImportedItemPath {
   pub package: Arc<str>,
 }
 
-/// The various types of protobuf fields, including some well known types such as `any` or `duration`
+/// The various types of protobuf fields, including some well known types such as [`any`](::proto_types::Any) or [`duration`](::proto_types::Duration)
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum FieldType {
   Double,

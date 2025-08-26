@@ -61,6 +61,7 @@ macro_rules! parse_field_type {
 }
 
 /// Defines some fields that can be included as a group in multiple messages.
+///
 /// # Examples
 /// ```
 /// use protoschema::{reusable_fields, uint64, timestamp, message, Package};
@@ -147,7 +148,7 @@ macro_rules! field_impl {
   ($proto_type:ident, $module_name:ident $(, $import_path:expr)?) => {
     #[doc = concat!("Evaluates to a protobuf ")]
     #[doc = concat!(stringify!($proto_type))]
-    #[doc = concat!("field builder instance.")]
+    #[doc = concat!("[`FieldBuilder`](crate::fields::FieldBuilder) instance.")]
     #[doc = concat!("")]
     #[doc = concat!("The first argument is the name of the field, which can be a literal or an expression, optionally preceded by 'optional' or 'repeated'.")]
     #[doc = concat!("")]
@@ -251,7 +252,8 @@ field_impl!(fixed32, numeric);
 field_impl!(double, numeric);
 field_impl!(float, numeric);
 
-/// Evaluates to an enum field builder instance.
+/// Evaluates to an enum [`FieldBuilder`](crate::fields::FieldBuilder) instance.
+///
 /// The first argument is an expression or ident evaluating to an [`EnumBuilder`](crate::enums::EnumBuilder) instance, optionally preceded by 'optional' or 'repeated'.
 /// The second argument is the name of the field, which can be a literal or an expression.
 /// The third, optional argument is a closure where validation rules can be defined.
@@ -302,7 +304,8 @@ macro_rules! enum_field {
   };
 }
 
-/// Evaluates to a message field builder instance.
+/// Evaluates to a message [`FieldBuilder`](crate::fields::FieldBuilder) instance.
+///
 /// The first argument is an expression or ident evaluating to a [`MessageBuilder`](crate::messages::MessageBuilder) instance, optionally preceded by 'optional' or 'repeated'.
 /// The second argument is the name of the field, which can be a literal or an expression.
 /// The third, optional argument is a closure where validation rules can be defined.

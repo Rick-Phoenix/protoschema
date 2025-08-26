@@ -39,104 +39,11 @@ option lists = {
 };
 
 extend google.protobuf.MessageOptions {
-  string abc = 15 [
-    string_opt = "abcde", 
-    duration_opt = { seconds: 3600, nanos: 0 }, 
-    enum_value = UNSPECIFIED, 
-    message_option = {
-      subject: "hobbits", 
-      location: "isengard" 
-    }, 
-    lists = {
-      num_list: [ 1, 2, 4, 5], 
-      string_list: [
-        "hello", 
-        "there", 
-        "general", 
-        "kenobi"
-      ], 
-      list_of_messages: [
-        {
-          name: "cats", 
-          are_cute: true 
-        }, 
-        {
-          name: "dogs", 
-          are_cute: true 
-        }
-      ] 
-    }
-  ];
-
-  bytes bytes_test = 20 [
-    (buf.validate.field) = {
-      bytes: {
-        prefix: "\x01\x02" 
-      } 
-    }
-  ];
+  string abc = 15;
 }
 
 extend google.protobuf.FileOptions {
-  string abc = 15 [
-    string_opt = "abcde", 
-    duration_opt = { seconds: 3600, nanos: 0 }, 
-    enum_value = UNSPECIFIED, 
-    message_option = {
-      subject: "hobbits", 
-      location: "isengard" 
-    }, 
-    lists = {
-      num_list: [ 1, 2, 4, 5], 
-      string_list: [
-        "hello", 
-        "there", 
-        "general", 
-        "kenobi"
-      ], 
-      list_of_messages: [
-        {
-          name: "cats", 
-          are_cute: true 
-        }, 
-        {
-          name: "dogs", 
-          are_cute: true 
-        }
-      ] 
-    }
-  ];
-}
-
-extend google.protobuf.EnumOptions {
-  string abc = 15 [
-    string_opt = "abcde", 
-    duration_opt = { seconds: 3600, nanos: 0 }, 
-    enum_value = UNSPECIFIED, 
-    message_option = {
-      subject: "hobbits", 
-      location: "isengard" 
-    }, 
-    lists = {
-      num_list: [ 1, 2, 4, 5], 
-      string_list: [
-        "hello", 
-        "there", 
-        "general", 
-        "kenobi"
-      ], 
-      list_of_messages: [
-        {
-          name: "cats", 
-          are_cute: true 
-        }, 
-        {
-          name: "dogs", 
-          are_cute: true 
-        }
-      ] 
-    }
-  ];
+  string abc = 15;
 }
 
 

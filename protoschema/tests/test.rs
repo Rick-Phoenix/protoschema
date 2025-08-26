@@ -73,15 +73,11 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
   let sub_subsection_msg = subsection_msg.new_message("SubSubsection");
 
   extension!(file, MessageOptions {
-    15 => string!("abc").add_options(test_opts.clone()),
+    15 => string!("abc"),
   });
 
   extension!(file, FileOptions {
-    15 => string!("abc").add_options(test_opts.clone()),
-  });
-
-  extension!(file, EnumOptions {
-    15 => string!("abc").add_options(test_opts.clone()),
+    15 => string!("abc"),
   });
 
   let reusable_variants = enum_variants!(

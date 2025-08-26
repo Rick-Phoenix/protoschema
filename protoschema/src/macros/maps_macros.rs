@@ -17,7 +17,7 @@ macro_rules! map_impl {
   };
 }
 
-/// Evaluates to a protobuf map field.
+/// Evaluates to a protobuf map [`FieldBuilder`](crate::fields::FieldBuilder).
 ///
 /// Use [`enum_map`](crate::enum_map) or [`msg_map`](crate::msg_map) if the values for the map are messages or enums.
 /// The first argument is the name of the field, followed by `<$key_type, $value_type>`, which are two idents describing the field types.
@@ -46,6 +46,7 @@ macro_rules! map {
 }
 
 /// Evaluates to a protobuf map field, where the values are of the specified enum type.
+///
 /// The first argument is the name of the field, followed by `<$key_type, $enum_ident>`, where $key_type is a plain ident for the type of the keys, and the $enum_ident is an ident pointing to a [`EnumBuilder`](crate::enums::EnumBuilder) instance.
 /// The last, optional argument is a closure that will receive three arguments, the first being a [`MapValidator`](crate::validators::map::MapValidator) instance, and the other two being the field validator instances for the given key type and the [`EnumValidator`](crate::validators::enums::EnumValidator) builder.
 /// # Examples
@@ -75,6 +76,7 @@ macro_rules! enum_map {
 }
 
 /// Evaluates to a protobuf map field, where the values are of the specified message type.
+///
 /// The first argument is the name of the field, followed by `<$key_type, $msg_ident>`, where $key_type is a plain ident for the type of the keys, and the $msg_ident is an ident pointing to a [`MessageBuilder`](crate::messages::MessageBuilder) instance.
 /// The last, optional argument is a closure that will receive three arguments, the first being a [`MapValidator`](crate::validators::map::MapValidator) instance, and the other two being the field validator instances for the given key type and the [`MessageValidator`](crate::validators::message::MessageValidator) builder.
 ///
