@@ -1,6 +1,7 @@
 use std::{collections::HashSet, ops::Range, sync::Arc};
 
 use askama::Template;
+use convert_case::{Case, Casing};
 
 use crate::{
   enums::{EnumData, EnumVariant},
@@ -60,9 +61,19 @@ pub struct EnumTemplate {
 impl From<EnumData> for EnumTemplate {
   fn from(mut value: EnumData) -> Self {
     value.variants.sort_by_key(|t| t.0);
+
+    let full_variants: Vec<(i32, EnumVariant)> = value
+      .variants
+      .into_iter()
+      .map(|(tag, mut variant)| {
+        variant.name = format!("{}_{}", value.name.to_case(Case::UpperSnake), variant.name).into();
+        (tag, variant)
+      })
+      .collect();
+
     EnumTemplate {
       name: value.name.clone(),
-      variants: value.variants,
+      variants: full_variants.into_boxed_slice(),
       reserved_numbers: value.reserved_numbers,
       reserved_ranges: value.reserved_ranges,
       reserved_names: value.reserved_names,
