@@ -42,9 +42,9 @@ pub struct BytesValidator<'a> {
   pub max_len: Option<u64>,
   /// The pattern that this field must match in order to be valid.
   pub pattern: Option<Regex>,
-  /// A prefix that this field must have in order to be valid.
+  /// A prefix that this field must contain in order to be valid.
   pub prefix: Option<&'a [u8]>,
-  /// A suffix that this field must have in order to be valid.
+  /// A suffix that this field must contain in order to be valid.
   pub suffix: Option<&'a [u8]>,
   /// A subset of bytes that this field must contain in order to be valid.
   pub contains: Option<&'a [u8]>,

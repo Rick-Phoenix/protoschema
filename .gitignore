@@ -1,6 +1,7 @@
 **/target/*
 *.proto
 !tests.proto
+!user.proto
 expanded.rs
 
 # Caches

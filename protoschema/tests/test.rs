@@ -2,7 +2,6 @@ use std::path::Path;
 
 use proto_types::Duration;
 use protoschema::{
-  bytes,
   common::allow_alias,
   enum_field, enum_map, enum_option, enum_variants, extension, message, message_option, msg_field,
   msg_map,
