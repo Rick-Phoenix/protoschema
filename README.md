@@ -155,6 +155,8 @@ let my_map = map!("my_map", <uint64, string>, |map, keys, values|
 > **Note**: The package path and the .proto suffix are automatically added to file names.
 > So in the example below, the full path to the file from the root of the proto project will be `my_pkg/v1/my_file.proto`
 
+> **Tip**: In order to avoid rebuilding the results needlessly, this should ideally be done in a separate crate, from which you will directly use [prost-build](https://crates.io/crates/prost-build) to build the newly-generated proto files, which you can then import from the consuming applications.
+
 ```rust
 use protoschema::{Package};
 
@@ -202,6 +204,10 @@ let my_nested_enum = my_msg.new_enum("my_nested_enum");
 ```
 
 Then, you can populate it with the [`proto_enum`] macro, where you can define options, reserved names/numbers, variants, and also include reusable variants defined with the [`enum_variants`] macro.
+<br/>
+
+**Note**: You do not need to add the enum name as a prefix to the variants. It will be added automatically.
+So if an enum is named "my_enum", and the variant is "UNSPECIFIED", the output will show "MY_ENUM_UNSPECIFIED".
 
 ```rust
 use protoschema::{Package, enum_variants, proto_enum, proto_option, common::allow_alias};
@@ -350,10 +356,14 @@ After all of your items are defined, you just need to call [`render_templates`](
 
 ```rust
 use protoschema::{Package};
+use std::path::Path;
 
-let package = Package::new("mypkg.v1"); 
-let proto_root = Path::new("proto");
-package.render_templates(proto_root)?;
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+  let package = Package::new("mypkg.v1"); 
+  let proto_root = Path::new("proto");
+  package.render_templates(proto_root)?;
+  Ok(())
+}
 ```
 
 ## Complete example
@@ -378,14 +388,6 @@ use protoschema::{
 #[test]
 fn main_test() -> Result<(), Box<dyn std::error::Error>> {
   let package = Package::new("myapp.v1");
-
-  let second_package = Package::new("myapp.v2");
-  let external_file = second_package.new_file("post");
-  let post_msg = external_file.new_message("Post");
-  let post_status_enum = external_file.new_enum("post_status");
-  let post_metadata_msg = post_msg.new_message("Metadata");
-  let post_category_enum = post_msg.new_enum("post_category");
-
   let file = package.new_file("user");
 
   let example_option = proto_option(
@@ -417,32 +419,17 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
         "location" => "isengard",
       ),
     ),
-    proto_option(
-      "lists",
-      message_option!(
-        "num_list" => list_value([1, 2, 4, 5]),
-        "string_list" => list_value(["hello", "there", "general", "kenobi"]),
-        "list_of_messages" => list_value([
-          message_option!("name" => "cats", "are_cute" => true),
-          message_option!("name" => "dogs", "are_cute" => true),
-        ]),
-      ),
-    ),
+    example_option.clone(),
   ];
 
   file.add_options(test_opts.clone());
 
-  let user_msg = file.new_message("User");
-  let section_msg = file.new_message("Section");
-  let subsection_msg = section_msg.new_message("Subsection");
-  let sub_subsection_msg = subsection_msg.new_message("SubSubsection");
-
   extension!(file, MessageOptions {
-    15 => string!("abc"),
+    1565 => string!("my_custom_message_option"),
   });
 
   extension!(file, FileOptions {
-    15 => string!("abc"),
+    1565 => string!("my_custom_file_option"),
   });
 
   let reusable_variants = enum_variants!(
@@ -453,6 +440,23 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
     100 => timestamp!("created_at"),
     101 => timestamp!("updated_at"),
   );
+
+  let user_msg = file.new_message("User");
+  let section_msg = file.new_message("Section");
+  let subsection_msg = section_msg.new_message("Subsection");
+  let sub_subsection_msg = subsection_msg.new_message("SubSubsection");
+
+  let second_package = Package::new("myapp.v2");
+  let external_file = second_package.new_file("post");
+  let post_msg = external_file.new_message("Post");
+  // Defining variants using the builder syntax
+  let post_status_enum = external_file
+    .new_enum("post_status")
+    .variants(reusable_variants.clone());
+  let post_category_enum = post_msg
+    .new_enum("post_category")
+    .variants(reusable_variants.clone());
+  let post_metadata_msg = post_msg.new_message("Metadata");
 
   let user_status_enum = proto_enum!(
     file.new_enum("user_status"),
@@ -570,9 +574,9 @@ syntax = "proto3";
 
 package myapp.v1;
 
-import "google/protobuf/timestamp.proto";
-import "myapp/v2/post.proto";
 import "google/protobuf/descriptor.proto";
+import "myapp/v2/post.proto";
+import "google/protobuf/timestamp.proto";
 import "buf/validate/validate.proto";
 
 option string_opt = "abcde";
@@ -586,7 +590,7 @@ option message_option = {
   location: "isengard" 
 };
 
-option lists = {
+option example = {
   num_list: [ 1, 2, 4, 5], 
   string_list: [
     "hello", 
@@ -607,11 +611,11 @@ option lists = {
 };
 
 extend google.protobuf.MessageOptions {
-  string abc = 15;
+  string my_custom_message_option = 1565;
 }
 
 extend google.protobuf.FileOptions {
-  string abc = 15;
+  string my_custom_file_option = 1565;
 }
 
 
@@ -621,8 +625,8 @@ enum user_status {
 
   option allow_alias = true;
 
-  UNSPECIFIED = 0;
-  ACTIVE = 1 [
+  USER_STATUS_UNSPECIFIED = 0;
+  USER_STATUS_ACTIVE = 1 [
     example = {
       num_list: [ 1, 2, 4, 5], 
       string_list: [
@@ -643,15 +647,15 @@ enum user_status {
       ] 
     }
   ];
-  INACTIVE = 2;
-  PASSIVE = 2;
+  USER_STATUS_INACTIVE = 2;
+  USER_STATUS_PASSIVE = 2;
 }
 
 enum referrers {
 
-  UNSPECIFIED = 0;
-  GITHUB = 1;
-  REDDIT = 2;
+  REFERRERS_UNSPECIFIED = 0;
+  REFERRERS_GITHUB = 1;
+  REFERRERS_REDDIT = 2;
 }
 
 message User {
@@ -659,7 +663,7 @@ message User {
   reserved 405;
   reserved 200 to 205;
 
-  option (buf.validate.cel).message = {
+  option (buf.validate.message) = {
     cel: [
       {
         id: "passwords_match", 
@@ -714,16 +718,16 @@ message User {
       ] 
     };
 
-    UNSPECIFIED = 0;
-    SILVER = 1;
-    GOLD = 2;
+    TIER_UNSPECIFIED = 0;
+    TIER_SILVER = 1;
+    TIER_GOLD = 2;
   }
 
   enum favorite_category {
 
-    UNSPECIFIED = 0;
-    PETS = 1;
-    COOKING = 2;
+    FAVORITE_CATEGORY_UNSPECIFIED = 0;
+    FAVORITE_CATEGORY_PETS = 1;
+    FAVORITE_CATEGORY_COOKING = 2;
   }
 
 

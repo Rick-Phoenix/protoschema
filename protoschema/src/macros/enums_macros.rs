@@ -8,6 +8,9 @@
 /// `reserved_names = $names:expr` where $names should evaluate to `IntoIter<Item = AsRef<str>>` (must be followed by a comma, even if last)
 /// reserved = [ $items ], where $items is a comma separated list of numbers of ranges such as `1..5`. Following the protobuf syntax, these ranges will be inclusive.
 /// The variants for this enum, defined as a comma-separated list of `$number:literal => $name:expr` with the optional options (that's a mouthful) being defined as an expression in curly brackets.
+/// <br/>
+/// **Note**: You do not need to add the enum name as a prefix to the variants. It will be added automatically.
+/// So if an enum is named "my_enum", and the variant is "UNSPECIFIED", the output will show "MY_ENUM_UNSPECIFIED".
 /// # Examples
 /// ```
 /// use protoschema::{Package, enum_variants, proto_enum, proto_option};
@@ -56,6 +59,8 @@ macro_rules! proto_enum {
 }
 
 /// Defines some enum variants that can be included and reused among different enums.
+/// The prefix with the enum name will be added when these fields are included in an enum.
+/// So if an enum is named "my_enum", and the variant is "UNSPECIFIED", the output will show "MY_ENUM_UNSPECIFIED".
 ///
 /// # Examples
 /// ```

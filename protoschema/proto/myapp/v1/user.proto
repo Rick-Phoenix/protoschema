@@ -2,10 +2,41 @@ syntax = "proto3";
 
 package myapp.v1;
 
-import "google/protobuf/descriptor.proto";
 import "google/protobuf/timestamp.proto";
-import "buf/validate/validate.proto";
 import "myapp/v2/post.proto";
+import "buf/validate/validate.proto";
+import "google/protobuf/descriptor.proto";
+
+option string_opt = "abcde";
+
+option duration_opt = { seconds: 3600, nanos: 0 };
+
+option enum_value = UNSPECIFIED;
+
+option message_option = {
+  subject: "hobbits", 
+  location: "isengard" 
+};
+
+option example = {
+  num_list: [ 1, 2, 4, 5], 
+  string_list: [
+    "hello", 
+    "there", 
+    "general", 
+    "kenobi"
+  ], 
+  list_of_messages: [
+    {
+      name: "cats", 
+      are_cute: true 
+    }, 
+    {
+      name: "dogs", 
+      are_cute: true 
+    }
+  ] 
+};
 
 extend google.protobuf.MessageOptions {
   string my_custom_message_option = 1565;
@@ -23,7 +54,27 @@ enum user_status {
   option allow_alias = true;
 
   USER_STATUS_UNSPECIFIED = 0;
-  USER_STATUS_ACTIVE = 1;
+  USER_STATUS_ACTIVE = 1 [
+    example = {
+      num_list: [ 1, 2, 4, 5], 
+      string_list: [
+        "hello", 
+        "there", 
+        "general", 
+        "kenobi"
+      ], 
+      list_of_messages: [
+        {
+          name: "cats", 
+          are_cute: true 
+        }, 
+        {
+          name: "dogs", 
+          are_cute: true 
+        }
+      ] 
+    }
+  ];
   USER_STATUS_INACTIVE = 2;
   USER_STATUS_PASSIVE = 2;
 }
@@ -50,10 +101,50 @@ message User {
     ] 
   };
 
+  option example = {
+    num_list: [ 1, 2, 4, 5], 
+    string_list: [
+      "hello", 
+      "there", 
+      "general", 
+      "kenobi"
+    ], 
+    list_of_messages: [
+      {
+        name: "cats", 
+        are_cute: true 
+      }, 
+      {
+        name: "dogs", 
+        are_cute: true 
+      }
+    ] 
+  };
+
   enum tier {
     reserved "one", "two";
     reserved 405;
     reserved 200 to 205;
+
+    option example = {
+      num_list: [ 1, 2, 4, 5], 
+      string_list: [
+        "hello", 
+        "there", 
+        "general", 
+        "kenobi"
+      ], 
+      list_of_messages: [
+        {
+          name: "cats", 
+          are_cute: true 
+        }, 
+        {
+          name: "dogs", 
+          are_cute: true 
+        }
+      ] 
+    };
 
     TIER_UNSPECIFIED = 0;
     TIER_SILVER = 1;
@@ -76,6 +167,26 @@ message User {
 
 
   oneof contact {
+    option example = {
+      num_list: [ 1, 2, 4, 5], 
+      string_list: [
+        "hello", 
+        "there", 
+        "general", 
+        "kenobi"
+      ], 
+      list_of_messages: [
+        {
+          name: "cats", 
+          are_cute: true 
+        }, 
+        {
+          name: "dogs", 
+          are_cute: true 
+        }
+      ] 
+    };
+
     string email = 11 [
       (buf.validate.field) = {
         string: {
@@ -157,6 +268,26 @@ message Section {
 
   message Subsection {
 
+    option example = {
+      num_list: [ 1, 2, 4, 5], 
+      string_list: [
+        "hello", 
+        "there", 
+        "general", 
+        "kenobi"
+      ], 
+      list_of_messages: [
+        {
+          name: "cats", 
+          are_cute: true 
+        }, 
+        {
+          name: "dogs", 
+          are_cute: true 
+        }
+      ] 
+    };
+
     message SubSubsection {
 
 
@@ -176,7 +307,47 @@ message Section {
 }
 
 service MyService1 {
-  rpc Handler1 (User) returns (Section);
+  option example = {
+    num_list: [ 1, 2, 4, 5], 
+    string_list: [
+      "hello", 
+      "there", 
+      "general", 
+      "kenobi"
+    ], 
+    list_of_messages: [
+      {
+        name: "cats", 
+        are_cute: true 
+      }, 
+      {
+        name: "dogs", 
+        are_cute: true 
+      }
+    ] 
+  };
+
+  rpc Handler1 (User) returns (Section) {
+    option example = {
+      num_list: [ 1, 2, 4, 5], 
+      string_list: [
+        "hello", 
+        "there", 
+        "general", 
+        "kenobi"
+      ], 
+      list_of_messages: [
+        {
+          name: "cats", 
+          are_cute: true 
+        }, 
+        {
+          name: "dogs", 
+          are_cute: true 
+        }
+      ] 
+    };
+  };
 
   rpc Handler2 (myapp.v2.Post) returns (myapp.v2.Post.Metadata);
 }
