@@ -4,7 +4,7 @@ use proto_types::Duration;
 use protoschema::{
   common::allow_alias,
   enum_field, enum_map, enum_option, enum_variants, extension, message, message_option, msg_field,
-  msg_map,
+  msg_map, oneof,
   options::{list_value, proto_option},
   packages::Package,
   proto_enum, reusable_fields, services, string, timestamp, uint64,
@@ -99,6 +99,11 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
     2 => "PASSIVE"
   );
 
+  let reusable_oneof = oneof!("activity",
+    102 => enum_field!(user_status_enum, "user_current_status"),
+    103 => timestamp!("account_deletion_date")
+  );
+
   let referrers_enum = proto_enum!(
     file.new_enum("referrers"),
 
@@ -132,6 +137,7 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
     ],
 
     include(reusable_fields),
+    include_oneof(reusable_oneof),
     1 => uint64!("id", |id| id.gt(0)),
     2 => msg_field!(repeated user_msg, "best_friend"),
     3 => string!("password", |pw| pw.min_len(8)),

@@ -27,7 +27,7 @@ pub struct MessageData {
   pub name: Arc<str>,
   pub import_path: Arc<ImportedItemPath>,
   pub fields: Box<[(u32, FieldData)]>,
-  pub oneofs: Box<[OneofData]>,
+  pub oneofs: Vec<OneofData>,
   pub reserved_numbers: Box<[u32]>,
   pub reserved_ranges: Box<[Range<u32>]>,
   pub reserved_names: Box<[Box<str>]>,
@@ -247,8 +247,8 @@ impl<S: MessageState> MessageBuilder<S> {
     }
   }
 
-  /// Sets the oneofs for this message
-  pub fn oneofs<I>(self, oneofs: I) -> MessageBuilder<SetOneofs<S>>
+  /// Adds the given oneofs to this message
+  pub fn add_oneofs<I>(self, oneofs: I) -> MessageBuilder<SetOneofs<S>>
   where
     S::Oneofs: IsUnset,
     I: IntoIterator<Item = Oneof>,
@@ -289,7 +289,7 @@ impl<S: MessageState> MessageBuilder<S> {
         })
         .collect();
 
-      arena.messages[self.id].oneofs = oneofs_data.into_boxed_slice();
+      arena.messages[self.id].oneofs.extend(oneofs_data);
     }
 
     MessageBuilder {

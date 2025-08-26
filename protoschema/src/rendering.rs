@@ -137,7 +137,7 @@ impl MessageData {
       package: self.import_path.package.clone(),
       file: self.import_path.file.clone(),
       fields: self.fields.clone(),
-      oneofs: self.oneofs.clone(),
+      oneofs: self.oneofs.clone().into_boxed_slice(),
       options: self.options.clone().into_boxed_slice(),
       messages: built_messages,
       enums,

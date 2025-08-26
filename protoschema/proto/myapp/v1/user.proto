@@ -2,10 +2,10 @@ syntax = "proto3";
 
 package myapp.v1;
 
+import "google/protobuf/timestamp.proto";
 import "google/protobuf/descriptor.proto";
 import "myapp/v2/post.proto";
 import "buf/validate/validate.proto";
-import "google/protobuf/timestamp.proto";
 
 option string_opt = "abcde";
 
@@ -156,6 +156,13 @@ message User {
     UNSPECIFIED = 0;
     PETS = 1;
     COOKING = 2;
+  }
+
+
+  oneof activity {
+    user_status user_current_status = 102;
+
+    google.protobuf.Timestamp account_deletion_date = 103;
   }
 
 

@@ -38,6 +38,11 @@ pub struct EnumData {
 }
 
 impl<S: EnumState> EnumBuilder<S> {
+  #[doc(hidden)]
+  pub fn get_id(&self) -> usize {
+    self.id
+  }
+
   /// Builds the full template for this enum and returns it.
   /// Mostly useful for debugging.
   pub fn get_data(&self) -> EnumTemplate {

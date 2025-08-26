@@ -69,6 +69,9 @@ message!(
   include(my_reusable_fields.clone()),
   5 => uint64!("internal_ref"),
 
+  // Including a reusable oneof
+  include_oneof(my_oneof.clone()),
+
   enum "my_nested_enum" {
     include(my_reusable_variants.clone()),
   }
@@ -159,6 +162,8 @@ let my_file = my_pkg.new_file("my_file");
 
 ## 📩 Define a new message (simple version)
 
+Head over to the complete example section at the bottom for a complete example.
+
 ```rust
 use protoschema::{Package};
 
@@ -176,9 +181,9 @@ let my_nested_message = my_msg.new_message("MyNestedMsg");
 
 There are two ways to define an enum.
 
-One is to create it as its separate builder (what I am going to show now), and the other is to define it as part of the [`message`] macro, if the enum is supposed to be defined inside a message.
+One is to create it as its separate builder, and the other is to define it as part of the [`message`] macro, if the enum is supposed to be defined inside a message.
 
-So to define an enum at the top level, or just on its own, you first have to create an [`EnumBuilder`](crate::enums::EnumBuilder) like this:
+To define an enum at the top level, or just on its own, you first have to create an [`EnumBuilder`](crate::enums::EnumBuilder) like this:
 
 ```rust
 use protoschema::{Package};
@@ -218,6 +223,68 @@ let my_enum = proto_enum!(
   1 => "PASSIVE" { [ my_opt.clone() ] },
   1 => "INACTIVE",
   2 => "ACTIVE"
+);
+```
+
+Alternatively, you can define it directly inside the [`message`] macro, using the same syntax as the [`proto_enum`] macro:
+
+```rust
+use protoschema::{Package, message, string};
+
+let my_pkg = Package::new("my_pkg.v1");
+let my_file = my_pkg.new_file("my_file");
+
+let my_msg = my_file.new_message("MyMessage");
+
+message!(
+  my_msg,
+  1 => string!("my_field"),
+
+  enum "my_enum" {
+    0 => "UNSPECIFIED"
+  }
+);
+```
+
+## Define a oneof
+
+Just like enums, oneofs can be defined within the [`message`] macro, or on their own, using the [`oneof`] macro.
+
+```rust
+use protoschema::{reusable_fields, oneof, proto_option, string, Package, message};
+
+let my_reusable_option = proto_option("something_i_use", "very_very_often");
+let my_list_of_options = [ my_reusable_option.clone(), my_reusable_option.clone() ];
+
+let my_reusable_fields = reusable_fields!(
+  1 => string!("email"),
+  2 => string!("nickname"),
+);
+
+// Defining the oneof individually
+let my_oneof = oneof!(
+  "my_oneof",
+  options = [ my_reusable_option.clone() ],
+  // Fields can be included as a block
+  include(my_reusable_fields.clone()),
+  // Or individually
+  3 => string!("id")
+);
+
+let my_pkg = Package::new("my_pkg.v1");
+let my_file = my_pkg.new_file("my_file");
+
+let my_msg = my_file.new_message("MyMessage");
+
+// Or directly as part of a message, using the same syntax
+message!(
+  my_msg,
+  4 => string!("my_field"),
+
+  oneof "my_oneof" {
+    include(my_reusable_fields.clone()),
+    3 => string!("id")
+  }
 );
 ```
 
@@ -287,7 +354,7 @@ use proto_types::Duration;
 use protoschema::{
   common::allow_alias,
   enum_field, enum_map, enum_option, enum_variants, extension, message, message_option, msg_field,
-  msg_map,
+  msg_map, oneof, 
   options::{list_value, proto_option},
   packages::Package,
   proto_enum, reusable_fields, services, string, timestamp, uint64,
@@ -382,6 +449,11 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
     2 => "PASSIVE"
   );
 
+  let reusable_oneof = oneof!("activity",
+    102 => enum_field!(user_status_enum, "user_current_status"),
+    103 => timestamp!("account_deletion_date")
+  );
+
   let referrers_enum = proto_enum!(
     file.new_enum("referrers"),
 
@@ -415,6 +487,7 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
     ],
 
     include(reusable_fields),
+    include_oneof(reusable_oneof),
     1 => uint64!("id", |id| id.gt(0)),
     2 => msg_field!(repeated user_msg, "best_friend"),
     3 => string!("password", |pw| pw.min_len(8)),
@@ -482,10 +555,10 @@ syntax = "proto3";
 
 package myapp.v1;
 
-import "google/protobuf/descriptor.proto";
-import "myapp/v2/post.proto";
-import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
+import "myapp/v2/post.proto";
+import "google/protobuf/descriptor.proto";
+import "buf/validate/validate.proto";
 
 option string_opt = "abcde";
 
@@ -636,6 +709,13 @@ message User {
     UNSPECIFIED = 0;
     PETS = 1;
     COOKING = 2;
+  }
+
+
+  oneof activity {
+    user_status user_current_status = 102;
+
+    google.protobuf.Timestamp account_deletion_date = 103;
   }
 
 

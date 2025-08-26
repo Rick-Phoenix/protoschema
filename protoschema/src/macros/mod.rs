@@ -169,7 +169,7 @@ macro_rules! _internal_message_body {
 
       let mut new_msg = $builder
         .fields(fields_list)
-        .oneofs(oneofs_list)
+        .add_oneofs(oneofs_list)
       $(
         .cel_rules($cel_rules)
       )?
@@ -184,6 +184,31 @@ macro_rules! _internal_message_body {
         @numbers()
         @rest($($reserved)*)
       }
+    }
+  };
+
+  // Handle included oneof
+  (
+    @builder($builder:expr)
+    @fields($($fields:tt)*)
+    @fields_blocks($($fields_blocks:tt)*)
+    @oneofs($($oneofs:tt)*)
+    @enums($($enums:tt)*)
+    @reserved($($reserved:tt)*)
+    @reserved_names($($reserved_names:tt)*)
+    @cel($($cel:tt)*)
+    @input($(,)? include_oneof($oneof:expr) $($rest:tt)*)
+  ) => {
+    $crate::_internal_message_body! {
+      @builder($builder)
+      @fields($($fields)*)
+      @fields_blocks($($fields_blocks)*)
+      @oneofs($($oneofs)* $oneof,)
+      @enums($($enums)*)
+      @reserved($($reserved)*)
+      @reserved_names($($reserved_names)*)
+      @cel($($cel)*)
+      @input($($rest)*)
     }
   };
 
