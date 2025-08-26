@@ -51,7 +51,7 @@ impl<S: MessageState> MessageBuilder<S> {
 
       let rules: Vec<OptionValue> = rules.into_iter().map(|r| r.into()).collect();
       let option = ProtoOption {
-        name: "(buf.validate.cel).message",
+        name: "(buf.validate.message)",
         value: OptionValue::Message(
           vec![("cel".into(), OptionValue::List(rules.into_boxed_slice()))].into(),
         )
