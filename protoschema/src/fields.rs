@@ -37,7 +37,7 @@ pub struct Field {
   pub options: Vec<ProtoOption>,
   #[builder(field)]
   pub imports: Vec<Arc<str>>,
-  #[builder(setters(vis = "", name = kind_internal))]
+  #[builder(field)]
   pub kind: FieldKind,
   #[builder(setters(vis = "", name = field_type_internal))]
   pub field_type: FieldType,
@@ -55,19 +55,15 @@ pub struct FieldData {
 
 impl<S: field_builder::State> FieldBuilder<S> {
   /// Marks this field as `repeated`
-  pub fn repeated(self) -> FieldBuilder<field_builder::SetKind<S>>
-  where
-    S::Kind: IsUnset,
-  {
-    self.kind_internal(FieldKind::Repeated)
+  pub fn repeated(mut self) -> FieldBuilder<S> {
+    self.kind = FieldKind::Repeated;
+    self
   }
 
   /// Marks this field as `optional`
-  pub fn optional(self) -> FieldBuilder<field_builder::SetKind<S>>
-  where
-    S::Kind: IsUnset,
-  {
-    self.kind_internal(FieldKind::Optional)
+  pub fn optional(mut self) -> FieldBuilder<S> {
+    self.kind = FieldKind::Optional;
+    self
   }
 
   /// Sets the [`FieldType`] for this field
