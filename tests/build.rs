@@ -1,53 +1,15 @@
 use std::path::Path;
 
-use proto_types::Duration;
+use prost_build::Config;
+use protocheck_build::compile_protos_with_validators;
 use protoschema::{
-  common::allow_alias,
-  enum_field, enum_map, enum_option, enum_variants, extension, message, message_option, msg_field,
-  msg_map, oneof,
-  options::{list_value, proto_option},
-  packages::Package,
-  proto_enum, reusable_fields, services, string, timestamp, uint64,
+  common::allow_alias, enum_field, enum_map, enum_variants, extension, message, msg_field, msg_map,
+  oneof, packages::Package, proto_enum, reusable_fields, services, string, timestamp, uint64,
 };
 
-#[test]
-fn main_test() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
   let package = Package::new("myapp.v1");
   let file = package.new_file("user");
-
-  let example_option = proto_option(
-    "example",
-    message_option!(
-      "num_list" => list_value([1, 2, 4, 5]),
-      "string_list" => list_value(["hello", "there", "general", "kenobi"]),
-      "list_of_messages" => list_value([
-        message_option!("name" => "cats", "are_cute" => true),
-        message_option!("name" => "dogs", "are_cute" => true),
-      ]),
-    ),
-  );
-
-  let test_opts = [
-    proto_option("string_opt", "abcde"),
-    proto_option(
-      "duration_opt",
-      Duration {
-        seconds: 3600,
-        nanos: 0,
-      },
-    ),
-    proto_option("enum_value", enum_option!("UNSPECIFIED")),
-    proto_option(
-      "message_option",
-      message_option!(
-        "subject" => "hobbits",
-        "location" => "isengard",
-      ),
-    ),
-    example_option.clone(),
-  ];
-
-  file.add_options(test_opts.clone());
 
   extension!(file, MessageOptions {
     1565 => string!("my_custom_message_option"),
@@ -88,7 +50,7 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
     options = [ allow_alias() ],
     reserved = [ 405, 200..205 ],
     include(reusable_variants),
-    1 => "ACTIVE" { [example_option.clone()] },
+    1 => "ACTIVE",
     2 => "INACTIVE",
     2 => "PASSIVE"
   );
@@ -110,8 +72,7 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
   services!(
     file,
     MyService1 {
-      options = [ example_option.clone() ],
-      Handler1(user_msg => section_msg) { [ example_option.clone() ] },
+      Handler1(user_msg => section_msg),
       Handler2(post_msg => post_metadata_msg),
     };
   );
@@ -119,7 +80,6 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
   message! {
     user_msg,
 
-    options = [ example_option.clone() ],
     reserved_names = [ "one", "two" ],
     reserved = [ 405, 200..205 ],
     cel = [
@@ -152,7 +112,6 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     enum "tier" {
-      options = [ example_option.clone() ],
       reserved_names = [ "one", "two" ],
       reserved = [ 405, 200..205 ],
       include(reusable_variants),
@@ -162,8 +121,6 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     oneof "contact" {
-      options = [ example_option.clone() ],
-
       11 => string!("email", |v| v.email()),
       12 => enum_field!(referrers_enum, "referrer"),
     }
@@ -171,8 +128,6 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
 
   message! {
     subsection_msg,
-
-    options = [ example_option.clone() ],
 
     1 => string!("name"),
     2 => msg_field!(post_msg, "top_trending_post"),
@@ -188,5 +143,33 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
 
   let proto_root = Path::new("proto");
   package.render_templates(proto_root)?;
+  second_package.render_templates(proto_root)?;
+
+  println!("cargo:rerun-if-changed=proto/");
+  println!("cargo:rerun-if-changed=proto_deps/");
+
+  let out_dir = std::path::PathBuf::from(std::env::var("OUT_DIR").expect("Could not find OUT_DIR"));
+  let final_descriptor_path = out_dir.join("file_descriptor_set.bin");
+
+  let proto_include_paths = &["proto", "proto_deps"];
+
+  let proto_files = &["proto/myapp/v1/user.proto", "proto/myapp/v2/post.proto"];
+
+  let mut config = Config::new();
+  config
+    .file_descriptor_set_path(final_descriptor_path.clone())
+    .bytes(["."])
+    .enable_type_names()
+    .type_attribute(".", "#[derive(::serde::Serialize, ::serde::Deserialize)]")
+    .out_dir(out_dir.clone());
+
+  compile_protos_with_validators(&mut config, proto_files, proto_include_paths, &["myapp.v1"])?;
+
+  config.compile_protos(proto_files, proto_include_paths)?;
+
+  println!(
+    "cargo:rustc-env=PROTO_DESCRIPTOR_SET={}",
+    final_descriptor_path.display()
+  );
   Ok(())
 }

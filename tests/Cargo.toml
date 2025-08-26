@@ -1,0 +1,16 @@
+[package]
+name = "tests"
+version = "0.1.0"
+publish = false
+edition.workspace = true
+
+[dependencies]
+prost = "0.14.1"
+proto-types = { workspace = true }
+protocheck = { workspace = true }
+
+[build-dependencies]
+prost-build = "0.14.1"
+proto-types = { workspace = true }
+protocheck-build = { workspace = true }
+protoschema = { path = "../protoschema/" }

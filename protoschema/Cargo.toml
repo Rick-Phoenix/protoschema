@@ -17,6 +17,12 @@ paste = { workspace = true }
 regex = { workspace = true }
 proto-types = { workspace = true }
 thiserror = { workspace = true }
+convert_case = { workspace = true }
+
+# [dev-dependencies]
+# protocheck-build = { workspace = true }
+# proto-types = { workspace = true }
+# prost-build = { workspace = true }
 
 [package.metadata.docs.rs]
 all-features = true
