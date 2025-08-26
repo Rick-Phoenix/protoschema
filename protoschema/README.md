@@ -1,1 +1,1 @@
-/home/rick/protoschema/README.md
+../README.md
