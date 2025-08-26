@@ -1,4 +1,5 @@
 use bon::Builder;
+use regex::Regex;
 
 use crate::{
   validators::{cel::CelRule, validate_lists, Ignore, OptionValueList},
@@ -40,7 +41,7 @@ pub struct BytesValidator<'a> {
   /// The maximum length for this field in order to be considered valid.
   pub max_len: Option<u64>,
   /// The pattern that this field must match in order to be valid.
-  pub pattern: Option<&'a str>,
+  pub pattern: Option<Regex>,
   /// A prefix that this field must have in order to be valid.
   pub prefix: Option<&'a [u8]>,
   /// A suffix that this field must have in order to be valid.
@@ -101,7 +102,13 @@ impl<'a> From<BytesValidator<'a>> for ProtoOption {
       insert_option!(validator, values, len, uint);
     }
 
-    insert_option!(validator, values, pattern, string);
+    if let Some(pattern) = validator.pattern {
+      values.push((
+        "pattern".into(),
+        OptionValue::String(pattern.as_str().into()),
+      ))
+    }
+
     insert_bytes_option!(validator, values, contains);
     insert_bytes_option!(validator, values, prefix);
     insert_bytes_option!(validator, values, suffix);
@@ -179,7 +186,6 @@ impl WellKnown {
 
 fn format_bytes_as_proto_string_literal(bytes: &[u8]) -> String {
   let mut result = String::new();
-  result.push('"');
 
   for &byte in bytes {
     match byte {
@@ -194,6 +200,5 @@ fn format_bytes_as_proto_string_literal(bytes: &[u8]) -> String {
     }
   }
 
-  result.push('"');
   result
 }

@@ -1,4 +1,5 @@
 use bon::Builder;
+use regex::Regex;
 
 use crate::{
   validators::{cel::CelRule, validate_lists, Ignore, OptionValueList},
@@ -22,7 +23,7 @@ pub struct StringValidator<'a> {
   /// The minimum bytte length for this field's value to be considered valid.
   pub max_bytes: Option<u64>,
   /// A regex pattern that this field's value should match in order to be considered valid.
-  pub pattern: Option<&'a str>,
+  pub pattern: Option<Regex>,
   /// The prefix that this field's value should contain in order to be considered valid.
   pub prefix: Option<&'a str>,
   /// The suffix that this field's value should contain in order to be considered valid.
@@ -87,7 +88,13 @@ impl<'a> From<StringValidator<'a>> for ProtoOption {
       insert_option!(validator, values, len_bytes, uint);
     }
 
-    insert_option!(validator, values, pattern, string);
+    if let Some(pattern) = validator.pattern {
+      values.push((
+        "pattern".into(),
+        OptionValue::String(pattern.as_str().into()),
+      ))
+    }
+
     insert_option!(validator, values, prefix, string);
     insert_option!(validator, values, suffix, string);
     insert_option!(validator, values, contains, string);
