@@ -6,11 +6,10 @@ edition.workspace = true
 
 [dependencies]
 prost = "0.14.1"
-proto-types = { workspace = true }
-protocheck = { workspace = true }
+protocheck = { path = "../../protocheck/protocheck" }
 
 [build-dependencies]
 prost-build = "0.14.1"
 proto-types = { workspace = true }
-protocheck-build = { workspace = true }
+protocheck-build = { workspace = true, features = ["cel"] }
 protoschema = { path = "../protoschema/" }

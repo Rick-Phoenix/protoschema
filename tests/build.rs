@@ -36,6 +36,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   let second_package = Package::new("myapp.v2");
   let external_file = second_package.new_file("post");
   let post_msg = external_file.new_message("Post");
+
   // Defining variants using the builder syntax
   let post_status_enum = external_file
     .new_enum("post_status")
@@ -160,10 +161,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .file_descriptor_set_path(final_descriptor_path.clone())
     .bytes(["."])
     .enable_type_names()
-    .type_attribute(".", "#[derive(::serde::Serialize, ::serde::Deserialize)]")
     .out_dir(out_dir.clone());
 
-  compile_protos_with_validators(&mut config, proto_files, proto_include_paths, &["myapp.v1"])?;
+  compile_protos_with_validators(
+    &mut config,
+    proto_files,
+    proto_include_paths,
+    &["myapp.v1", "myapp.v2"],
+  )?;
 
   config.compile_protos(proto_files, proto_include_paths)?;
 

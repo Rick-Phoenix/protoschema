@@ -22,7 +22,7 @@ regex = "1.11.1"
 thiserror = "2.0.16"
 prost-reflect = "0.16.1"
 convert_case = "0.8.0"
-proto-types = "0.1.1"
-protocheck = "0.1.1"
-protocheck-build = "0.1.2"
+proto-types = "0.1.*"
+protocheck = { version = "0.1.*", features = ["cel"] }
+protocheck-build = { version = "0.1.*", features = ["cel"] }
 prost-build = "0.14.1"

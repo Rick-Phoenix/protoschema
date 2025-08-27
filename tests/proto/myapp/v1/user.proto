@@ -15,7 +15,6 @@ extend google.protobuf.FileOptions {
   string my_custom_file_option = 1565;
 }
 
-
 enum user_status {
   reserved 405;
   reserved 200 to 205;
@@ -23,15 +22,19 @@ enum user_status {
   option allow_alias = true;
 
   USER_STATUS_UNSPECIFIED = 0;
+
   USER_STATUS_ACTIVE = 1;
+
   USER_STATUS_INACTIVE = 2;
+
   USER_STATUS_PASSIVE = 2;
 }
 
 enum referrers {
-
   REFERRERS_UNSPECIFIED = 0;
+
   REFERRERS_GITHUB = 1;
+
   REFERRERS_REDDIT = 2;
 }
 
@@ -56,24 +59,25 @@ message User {
     reserved 200 to 205;
 
     TIER_UNSPECIFIED = 0;
+
     TIER_SILVER = 1;
+
     TIER_GOLD = 2;
   }
 
   enum favorite_category {
-
     FAVORITE_CATEGORY_UNSPECIFIED = 0;
+
     FAVORITE_CATEGORY_PETS = 1;
+
     FAVORITE_CATEGORY_COOKING = 2;
   }
-
 
   oneof activity {
     user_status user_current_status = 102;
 
     google.protobuf.Timestamp account_deletion_date = 103;
   }
-
 
   oneof contact {
     string email = 11 [
@@ -86,7 +90,6 @@ message User {
 
     referrers referrer = 12;
   }
-
 
   uint64 id = 1 [
     (buf.validate.field) = {
@@ -154,12 +157,8 @@ message User {
 }
 
 message Section {
-
   message Subsection {
-
     message SubSubsection {
-
-
       uint64 id = 1;
 
       string name = 2;
@@ -167,12 +166,10 @@ message Section {
       myapp.v2.Post.post_category category = 3;
     }
 
-
     string name = 1;
 
     myapp.v2.Post top_trending_post = 2;
   }
-
 }
 
 service MyService1 {
