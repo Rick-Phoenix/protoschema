@@ -29,7 +29,7 @@ But first, I want to focus on two aspects which are core elements about this cra
 Protoschema is designed to be as modular as possible. This means that you can define any sort of item which you might reuse in multiple places, such as one or many options, one or many fields (with options and even imports included in them), one or many enum variants and oneofs. This is how you would do it.
 
 ```rust
-use protoschema::{reusable_fields, enum_variants, proto_enum, oneof, proto_option, timestamp, uint64, Package, message};
+use protoschema::{reusable_fields, enum_variants, proto_enum, oneof, proto_option, timestamp, uint64, Package, message, msg_field, enum_field};
 
 let my_reusable_option = proto_option("something_i_use", "very_very_often");
 let my_list_of_options = [ my_reusable_option.clone(), my_reusable_option.clone() ];
@@ -61,6 +61,11 @@ let my_file = my_pkg.new_file("my_file");
 
 let my_msg = my_file.new_message("MyMessage");
 
+// This is a field that will have the type 'MyMessage'. 
+// When this is included in a message that is not located in the same file, 
+// the import path to this message will automatically be added to the receiving file.
+let my_msg_field = msg_field!(my_msg, "my_msg_field");
+
 message!(
   my_msg,
   // This is an expression like any other, so any IntoIter<Item = ProtoOption> can work
@@ -83,6 +88,10 @@ let my_other_enum = proto_enum!(
   // Included blocks are cloned automatically behind the scenes
   include(my_reusable_variants)
 );
+
+// Just like for messages, this will add the import path to this enum if the receiving
+// message is located in a different file.
+let my_enum_field = enum_field!(my_other_enum, "my_enum_field");
 ```
 
 ## ✅ Easy validation rules definition
