@@ -319,8 +319,8 @@ let my_list_of_options = [ my_opt.clone(), my_opt.clone() ];
 
 services!(
   my_file,
-  // It accepts any IntoIter<Item = ProtoOption>
   MyService {
+    // It accepts any IntoIter<Item = ProtoOption>,
     options = my_list_of_options.clone(),
     MyHandler(handler_request => handler_response) { [ my_opt.clone() ] },
     MyOtherHandler(handler_request => handler_response)

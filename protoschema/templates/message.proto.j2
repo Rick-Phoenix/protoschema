@@ -13,24 +13,24 @@ message {{+ name +}} {
 {% endif %}
 {% if !reserved_ranges.is_empty() ~%}
   {{+ "reserved" +}} {%+ for range in reserved_ranges %}{{ range.start +}} to {{+ range.end }}{% if !loop.last %}, {%+ endif %}{% endfor %};
-{% endif ~%}
+{%~ endif %}
 {%~ filter indent(2) %}
-{%+ call opts::get_options(options) %}
+{%~ call opts::get_options(options) %}
 {% endfilter %}
 
 {% for enum_ in enums %}
 {%+ filter indent(2) ~%}
 {{+ enum_.render()? +}}
-{%+ endfilter %}
-{% endfor %}
+{%~ endfilter %}
+{%~ endfor %}
 
 {% for nested_msg in messages %}
 {%+ filter indent(2) ~%}
 {{+ nested_msg.render()? +}}
 {%+ endfilter %}
-{%- endfor ~%}
+{% endfor %}
 
-{% for oneof in oneofs ~%}
+{% for oneof in oneofs %}
 {%+ filter indent(2) ~%}
 oneof {{+ oneof.name +}} {
   {% filter indent(2) %}
@@ -44,15 +44,15 @@ oneof {{+ oneof.name +}} {
   ] {%- endif -%};
   {%~ endfor %}
 }
-{%+ endfilter %}
-{%- endfor ~%}
+{%~ endfilter %}
+{%~ endfor %}
 
-{% for (tag, field) in fields ~%}
+{%+ for (tag, field) in fields %}
 {%+ filter indent(2) ~%}
 {%+ call render_field(tag, field, file.as_ref(), package.as_ref()) %}
 {% endfilter %}
   {%- if !field.options.is_empty() +%} [
   {% call opts::field_opts(&field.options) +%}
   ] {%- endif -%};
-{% endfor ~%}
+{%~ endfor %}
 }
