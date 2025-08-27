@@ -17,6 +17,8 @@ pub struct Oneof {
   #[builder(default)]
   #[builder(setters(vis = "", name = options_internal))]
   pub options: Box<[ProtoOption]>,
+  #[builder(default, setters(vis = "", name = imports_internal))]
+  pub imports: Box<[Arc<str>]>,
 }
 
 #[doc(hidden)]
@@ -28,6 +30,17 @@ pub struct OneofData {
 }
 
 impl<S: oneof_builder::State> OneofBuilder<S> {
+  /// Adds a list of imports to this oneof.
+  /// These will be added to the receiving file.
+  pub fn imports<I, Str>(self, imports: I) -> OneofBuilder<oneof_builder::SetImports<S>>
+  where
+    I: IntoIterator<Item = Str>,
+    Str: Into<Arc<str>>,
+    S::Imports: oneof_builder::IsUnset,
+  {
+    self.imports_internal(imports.into_iter().map(|i| i.into()).collect())
+  }
+
   /// Sets the fields for this oneof
   pub fn fields<I, F>(self, fields: I) -> OneofBuilder<oneof_builder::SetFields<S>>
   where

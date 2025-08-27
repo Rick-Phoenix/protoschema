@@ -58,6 +58,7 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
   });
 
   let reusable_variants = enum_variants!(
+    imports = ["my_pkg/reusable/import.proto"],
     0 => "UNSPECIFIED",
   );
 
@@ -74,13 +75,8 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
   let second_package = Package::new("myapp.v2");
   let external_file = second_package.new_file("post");
   let post_msg = external_file.new_message("Post");
-  // Defining variants using the builder syntax
-  let post_status_enum = external_file
-    .new_enum("post_status")
-    .variants(reusable_variants.clone());
-  let post_category_enum = post_msg
-    .new_enum("post_category")
-    .variants(reusable_variants.clone());
+  let post_status_enum = external_file.new_enum("post_status");
+  let post_category_enum = post_msg.new_enum("post_category");
   let post_metadata_msg = post_msg.new_message("Metadata");
 
   let user_status_enum = proto_enum!(

@@ -189,7 +189,6 @@ impl<S: MessageState> MessageBuilder<S> {
         package,
       }
       .into(),
-      file_id,
       ..Default::default()
     };
 
@@ -198,7 +197,21 @@ impl<S: MessageState> MessageBuilder<S> {
     EnumBuilder {
       id: new_enum_id,
       arena: self.arena.clone(),
+      file_id,
       _phantom: PhantomData,
+    }
+  }
+
+  /// Adds a list of imports to the file containing this message.  
+  pub fn add_imports<I, Str>(&self, imports: I)
+  where
+    I: IntoIterator<Item = Str>,
+    Str: Into<Arc<str>>,
+  {
+    let file = &mut self.arena.borrow_mut().files[self.file_id];
+
+    for import in imports {
+      file.conditionally_add_import(&import.into());
     }
   }
 
@@ -259,6 +272,10 @@ impl<S: MessageState> MessageBuilder<S> {
       let oneofs_data: Vec<OneofData> = oneofs
         .into_iter()
         .map(|of| {
+          for import in of.imports {
+            arena.files[self.file_id].conditionally_add_import(&import);
+          }
+
           let mut built_fields: Vec<(u32, FieldData)> = of
             .fields
             .into_iter()

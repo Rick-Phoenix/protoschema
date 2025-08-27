@@ -44,6 +44,8 @@ let my_reusable_fields = reusable_fields!(
 );
 
 let my_reusable_variants = enum_variants!(
+  // You can optionally add a list of imports which will be added to the receiving files
+  imports = ["my_pkg/reusable/import.proto"],
   0 => "UNSPECIFIED",
   1 => "SOME_COMMON_VARIANT"
 );
@@ -237,6 +239,7 @@ let my_file = my_pkg.new_file("my_file");
 let my_opt = proto_option("cats_are_cute", true);
 
 let my_enum = my_file.new_enum("my_enum");
+
 let reusable_variants = enum_variants!(
   0 => "UNSPECIFIED"
 );

@@ -60,7 +60,9 @@ macro_rules! proto_enum {
 }
 
 /// Defines some enum variants that can be included and reused among different enums.
-/// The prefix with the enum name will be added when these fields are included in an enum.
+/// You can optionally add a list of imports to the macro (which must be an `IntoIter<Item = Into<Arc<str>>>`) which will be added to the receiving file whenever this block of variants is reused.
+///
+/// **Note:** The prefix with the enum name will be added when these fields are included in an enum.
 /// So if an enum is named "my_enum", and the variant is "UNSPECIFIED", the output will show "MY_ENUM_UNSPECIFIED".
 ///
 /// # Examples
@@ -71,6 +73,7 @@ macro_rules! proto_enum {
 /// let my_list_of_opts = [ my_opt.clone(), my_opt.clone() ];
 ///
 /// let variants = enum_variants!(
+///   imports = ["my_pkg/reusable/import.proto"],
 ///   0 => "UNSPECIFIED" { my_list_of_opts.clone() },
 ///   1 => "ACTIVE" { [ my_opt.clone() ] },
 ///   2 => "DISCONNECTED"
@@ -79,12 +82,17 @@ macro_rules! proto_enum {
 /// ```
 #[macro_export]
 macro_rules! enum_variants {
-  ($($number:literal => $name:literal $({ $options:expr })?),+ $(,)?) => {
-    [ $(($number, $crate::enums::EnumVariant::builder()
-      .name($name)
-      $(.options($options))?
+  ($(imports = $imports:expr,)? $($number:literal => $name:literal $({ $options:expr })?),+ $(,)? ) => {
+    $crate::enums::ReusableVariants::builder()
+      .variants(
+        Box::new([ $(($number, $crate::enums::EnumVariant::builder()
+        .name($name)
+        $(.options($options))?
+        .build()
+        )),* ])
+      )
+      $(.imports($imports))?
       .build()
-      )),* ]
   };
 }
 
@@ -102,9 +110,18 @@ macro_rules! proto_enum_impl {
   ) => {
     {
       let mut variants = vec! [ $($variants)* ];
-      $(variants.extend($included_variants));*;
+      let included_variants: Vec<$crate::enums::ReusableVariants> = vec! [ $($included_variants),* ];
 
-      let mut temp_enum = $enum
+      let mut temp_enum1 = $enum;
+
+      if !included_variants.is_empty() {
+        for group in included_variants.into_iter() {
+          variants.extend(group.variants);
+          temp_enum1.add_imports(group.imports);
+        }
+      }
+
+      let temp_enum2 = temp_enum1
 
       $(
         .options($options)
@@ -119,7 +136,7 @@ macro_rules! proto_enum_impl {
       );
 
       $crate::parse_reserved!{
-        @builder(temp_enum)
+        @builder(temp_enum2)
         @ranges()
         @numbers()
         @rest($($reserved)*)

@@ -26,6 +26,7 @@
 /// ```
 #[macro_export]
 macro_rules! oneof {
+
   (
     $name:expr,
     options = $options_expr:expr,

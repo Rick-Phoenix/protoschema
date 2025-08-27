@@ -105,13 +105,13 @@ impl FileBuilder {
         package: package_name,
       }
       .into(),
-      file_id: self.id,
       ..Default::default()
     });
 
     EnumBuilder {
       id: enum_id,
       arena: self.arena.clone(),
+      file_id: self.id,
       _phantom: PhantomData,
     }
   }

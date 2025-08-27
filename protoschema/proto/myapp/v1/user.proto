@@ -5,6 +5,7 @@ package myapp.v1;
 import "buf/validate/validate.proto";
 import "google/protobuf/descriptor.proto";
 import "google/protobuf/timestamp.proto";
+import "my_pkg/reusable/import.proto";
 import "myapp/v2/post.proto";
 
 option string_opt = "abcde";

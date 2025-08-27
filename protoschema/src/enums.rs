@@ -13,6 +13,32 @@ pub struct EnumBuilder<S: EnumState = Empty> {
   pub(crate) id: usize,
   pub(crate) arena: Arena,
   pub(crate) _phantom: PhantomData<fn() -> S>,
+  pub(crate) file_id: usize,
+}
+
+/// A struct that holds reusable enum variants.
+/// Used by the [`enum_variants`](crate::enum_variants) macro.
+#[derive(Clone, Debug, Builder)]
+pub struct ReusableVariants {
+  pub variants: Box<[(i32, EnumVariant)]>,
+  #[builder(default, setters(vis = "", name = imports_internal))]
+  pub imports: Box<[Arc<str>]>,
+}
+
+impl<S: reusable_variants_builder::State> ReusableVariantsBuilder<S> {
+  /// Adds a list of imports to this reusable variants block.
+  /// These will be added to the receiving file.
+  pub fn imports<I, Str>(
+    self,
+    imports: I,
+  ) -> ReusableVariantsBuilder<reusable_variants_builder::SetImports<S>>
+  where
+    I: IntoIterator<Item = Str>,
+    Str: Into<Arc<str>>,
+    S::Imports: reusable_variants_builder::IsUnset,
+  {
+    self.imports_internal(imports.into_iter().map(|i| i.into()).collect())
+  }
 }
 
 /// A struct representing an enum value
@@ -30,7 +56,6 @@ pub struct EnumData {
   pub name: Arc<str>,
   pub variants: Box<[(i32, EnumVariant)]>,
   pub import_path: Arc<ImportedItemPath>,
-  pub file_id: usize,
   pub reserved_numbers: Box<[i32]>,
   pub reserved_ranges: Box<[Range<i32>]>,
   pub reserved_names: Box<[Box<str>]>,
@@ -63,8 +88,7 @@ impl<S: EnumState> EnumBuilder<S> {
   /// Returns the name of the file containing this enum
   pub fn get_file(&self) -> Arc<str> {
     let arena = self.arena.borrow();
-    let file_id = arena.enums[self.id].file_id;
-    arena.files[file_id].name.clone()
+    arena.files[self.file_id].name.clone()
   }
 
   /// Returns the full name of this enum
@@ -87,6 +111,19 @@ impl<S: EnumState> EnumBuilder<S> {
       .clone()
   }
 
+  pub fn add_imports<T, Str>(&self, imports: T)
+  where
+    T: IntoIterator<Item = Str>,
+    Str: Into<Arc<str>>,
+  {
+    let mut arena = self.arena.borrow_mut();
+    let file = &mut arena.files[self.file_id];
+
+    imports
+      .into_iter()
+      .for_each(|i| file.conditionally_add_import(&i.into()));
+  }
+
   /// Sets the variants for this enum. Consumes the original builder and returns a new one.
   pub fn variants<I>(self, variants: I) -> EnumBuilder<SetVariants<S>>
   where
@@ -103,6 +140,7 @@ impl<S: EnumState> EnumBuilder<S> {
     EnumBuilder {
       id: self.id,
       arena: self.arena,
+      file_id: self.file_id,
       _phantom: PhantomData,
     }
   }
@@ -123,6 +161,7 @@ impl<S: EnumState> EnumBuilder<S> {
     EnumBuilder {
       id: self.id,
       arena: self.arena,
+      file_id: self.file_id,
       _phantom: PhantomData,
     }
   }
@@ -145,6 +184,7 @@ impl<S: EnumState> EnumBuilder<S> {
     EnumBuilder {
       id: self.id,
       arena: self.arena,
+      file_id: self.file_id,
       _phantom: PhantomData,
     }
   }
@@ -165,6 +205,7 @@ impl<S: EnumState> EnumBuilder<S> {
     EnumBuilder {
       id: self.id,
       arena: self.arena,
+      file_id: self.file_id,
       _phantom: PhantomData,
     }
   }
@@ -187,6 +228,7 @@ impl<S: EnumState> EnumBuilder<S> {
     EnumBuilder {
       id: self.id,
       arena: self.arena,
+      file_id: self.file_id,
       _phantom: PhantomData,
     }
   }
