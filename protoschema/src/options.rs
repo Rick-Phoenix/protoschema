@@ -4,7 +4,9 @@ use askama::Template;
 
 pub use crate::field_type::{Duration, Timestamp};
 
-/// A struct representing a protobuf option
+/// A struct representing a protobuf option.
+/// The [`proto_option`] helper makes building these much easier.
+/// For building [`OptionValue`]s for options with a message type, try using the [`message_option`](crate::message_option) macro or the [`message_value`] helper. For lists, use the [`list_value`] helper. For options that have enum values, you can use the [`enum_option`](crate::enum_option) macro or the [`enum_values_list`] helper.
 #[derive(Clone, Debug)]
 pub struct ProtoOption {
   pub name: &'static str,
@@ -12,6 +14,7 @@ pub struct ProtoOption {
 }
 
 /// A helper to build a [`ProtoOption`]
+/// For building [`OptionValue`]s for options with a message type, try using the [`message_option`](crate::message_option) macro or the [`message_value`] helper. For lists, use the [`list_value`] helper. For options that have enum values, you can use the [`enum_option`](crate::enum_option) macro or the [`enum_values_list`] helper.
 pub fn proto_option<T: Into<OptionValue>>(name: &'static str, value: T) -> ProtoOption {
   ProtoOption {
     name,
@@ -19,7 +22,8 @@ pub fn proto_option<T: Into<OptionValue>>(name: &'static str, value: T) -> Proto
   }
 }
 
-/// An enum representing values for protobuf options
+/// An enum representing values for protobuf options.
+/// For building [`OptionValue`]s for options with a message type, try using the [`message_option`](crate::message_option) macro or the [`message_value`] helper. For lists, use the [`list_value`] helper. For options that have enum values, you can use the [`enum_option`](crate::enum_option) macro or the [`enum_values_list`] helper.
 #[derive(Clone, Debug, Template)]
 #[template(path = "option_value.proto.j2")]
 pub enum OptionValue {
@@ -35,7 +39,8 @@ pub enum OptionValue {
   Timestamp(Timestamp),
 }
 
-/// A helper to build a list of protobuf option values
+/// A helper to build a list of protobuf option values.
+/// Use [`enum_values_list`] for making a list of enum values.
 pub fn list_value<L, I>(l: L) -> OptionValue
 where
   L: IntoIterator<Item = I>,
@@ -44,7 +49,7 @@ where
   OptionValue::List(l.into_iter().map(|i| i.into()).collect())
 }
 
-/// A helper to build a list of enum values
+/// A helper to build a list of enum values.
 pub fn enum_values_list<L, I>(l: L) -> OptionValue
 where
   L: IntoIterator<Item = I>,
