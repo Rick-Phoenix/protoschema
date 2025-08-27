@@ -21,7 +21,7 @@ pub struct MessageBuilder<S: MessageState = Empty> {
   pub(crate) _phantom: PhantomData<fn() -> S>,
 }
 
-/// The data storage for a Message
+#[doc(hidden)]
 #[derive(Clone, Debug, Default)]
 pub struct MessageData {
   pub name: Arc<str>,

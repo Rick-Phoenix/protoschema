@@ -19,7 +19,7 @@ pub struct Oneof {
   pub options: Box<[ProtoOption]>,
 }
 
-/// The struct where the Oneof data is stored
+#[doc(hidden)]
 #[derive(Clone, Debug)]
 pub struct OneofData {
   pub name: Arc<str>,

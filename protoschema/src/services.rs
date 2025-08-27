@@ -10,6 +10,7 @@ use crate::{
 };
 
 /// The builder for a protobuf service.
+/// Usually generated via the [`services`](crate::services) macro.
 #[derive(Clone, Debug)]
 pub struct ServiceBuilder<S: ServiceState = Empty> {
   pub(crate) id: usize,
@@ -18,7 +19,8 @@ pub struct ServiceBuilder<S: ServiceState = Empty> {
   pub(crate) _phantom: PhantomData<fn() -> S>,
 }
 
-/// A struct representing a protobuf service handler
+/// A struct representing a protobuf service handler.
+/// Usually generated as part of the [`services`](crate::services) macro.
 #[derive(Clone, Debug, Builder)]
 #[builder(start_fn = new)]
 pub struct ServiceHandler {
@@ -75,7 +77,7 @@ impl<S: HandlerState> ServiceHandlerBuilder<S> {
   }
 }
 
-/// The aggregated data for a protobuf service
+#[doc(hidden)]
 #[derive(Clone, Debug, Default)]
 pub struct ServiceData {
   pub name: Box<str>,
@@ -107,7 +109,7 @@ impl<S: ServiceState> ServiceBuilder<S> {
     self.arena.borrow().name.clone()
   }
 
-  /// Sets the handlers for this service
+  /// Sets the handlers for this service. Consumes the original builder and returns a new one.
   pub fn handlers<I>(self, handlers: I) -> ServiceBuilder<SetHandlers<S>>
   where
     S::Handlers: IsUnset,
@@ -134,7 +136,7 @@ impl<S: ServiceState> ServiceBuilder<S> {
     }
   }
 
-  /// Sets the options for this service
+  /// Sets the options for this service. Consumes the original builder and returns a new one.
   pub fn options<I>(self, options: I) -> ServiceBuilder<SetOptions<S>>
   where
     S::Options: IsUnset,

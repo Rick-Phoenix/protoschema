@@ -56,7 +56,7 @@ impl<S: extension_builder::State> ExtensionBuilder<S> {
   }
 }
 
-/// The processed data for a protobuf extension
+#[doc(hidden)]
 #[derive(Clone, Debug)]
 pub struct ExtensionData {
   pub kind: ExtensionKind,

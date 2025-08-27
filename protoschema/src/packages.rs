@@ -17,8 +17,10 @@ use crate::{
   services::ServiceData,
 };
 
+#[doc(hidden)]
 pub(crate) type Arena = Rc<RefCell<PackageData>>;
 
+#[doc(hidden)]
 #[derive(Default, Debug)]
 pub(crate) struct PackageData {
   pub(crate) name: Arc<str>,

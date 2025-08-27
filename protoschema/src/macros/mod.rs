@@ -54,6 +54,7 @@ macro_rules! cel_rules {
 /// The macro that is used to define most if not all of the data for a given protobuf message.
 ///
 /// It receives a [`MessageBuilder`](crate::messages::MessageBuilder) instance's ident as the first argument, the (optional) options for the message right after, and the rest of the data after that.
+/// It consumes the original builder and returns a new one.
 /// # Examples
 /// ```
 /// use protoschema::{Package, message, proto_option, string, reusable_fields, uint64, timestamp};

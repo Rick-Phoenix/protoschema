@@ -13,7 +13,7 @@ use crate::{
   ProtoOption,
 };
 
-/// The collected data for a protobuf file
+#[doc(hidden)]
 #[derive(Clone, Debug, Default)]
 pub struct FileData {
   pub name: Arc<str>,
@@ -137,7 +137,7 @@ impl FileBuilder {
     }
   }
 
-  /// Adds the given options to this file's options.
+  /// Adds the given options to this file's options. It does not consume the original builder and does not return a new one.
   pub fn add_options<I>(&self, options: I)
   where
     I: IntoIterator<Item = ProtoOption>,
@@ -147,6 +147,8 @@ impl FileBuilder {
   }
 
   /// Adds the given extension to this file.
+  /// Used by the [`extension`](crate::extension) macro.
+  /// It does not consume the original builder and does not return a new one.
   pub fn add_extension(&self, extension: Extension) {
     let file = &mut self.arena.borrow_mut().files[self.id];
 
@@ -184,6 +186,7 @@ impl FileBuilder {
 
   /// Adds the given imports to this file.
   /// For the most common cases, this crate will automatically add the necessary imports, so make sure to use this only if you notice that an import is missing.
+  /// It does not consume the original builder and does not return a new one.
   pub fn add_imports<I, S>(&self, imports: I)
   where
     I: IntoIterator<Item = S>,

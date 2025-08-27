@@ -5,6 +5,7 @@ pub(crate) use field_builder::*;
 
 use crate::{FieldType, ProtoOption};
 
+/// The cardinality for a protobuf field.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
 pub enum FieldKind {
   #[default]
@@ -44,7 +45,7 @@ pub struct Field {
   pub name: Arc<str>,
 }
 
-/// A struct representing the processed data for a protobuf field, after it's been added to a message or extension
+#[doc(hidden)]
 #[derive(Clone, Debug)]
 pub struct FieldData {
   pub options: Box<[ProtoOption]>,

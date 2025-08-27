@@ -1,6 +1,7 @@
 /// Creates a new protobuf enum.
 ///
 /// It receives an expression evaluating to a [`EnumBuilder`](crate::enums::EnumBuilder) instance as the first argument, and attaches to it the variants and options defined in this macro.
+/// It consumes the original builder and returns a new one.
 /// The syntax for this macro is as follows:
 /// The first argument, as described above, must be followed by a comma.
 /// After the comma, you can use:

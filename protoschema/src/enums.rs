@@ -24,7 +24,7 @@ pub struct EnumVariant {
   pub options: Arc<[ProtoOption]>,
 }
 
-/// The stored information for a given enum.
+#[doc(hidden)]
 #[derive(Clone, Debug, Default)]
 pub struct EnumData {
   pub name: Arc<str>,
@@ -87,7 +87,7 @@ impl<S: EnumState> EnumBuilder<S> {
       .clone()
   }
 
-  /// Sets the variants for this enum.
+  /// Sets the variants for this enum. Consumes the original builder and returns a new one.
   pub fn variants<I>(self, variants: I) -> EnumBuilder<SetVariants<S>>
   where
     S::Variants: IsUnset,
@@ -107,7 +107,7 @@ impl<S: EnumState> EnumBuilder<S> {
     }
   }
 
-  /// Sets the options for this enum.
+  /// Sets the options for this enum. Consumes the original builder and returns a new one.
   pub fn options<I>(self, options: I) -> EnumBuilder<SetOptions<S>>
   where
     S::Options: IsUnset,
@@ -127,7 +127,7 @@ impl<S: EnumState> EnumBuilder<S> {
     }
   }
 
-  /// Sets the reserved names for this enum.
+  /// Sets the reserved names for this enum. Consumes the original builder and returns a new one.
   pub fn reserved_names<I, Str>(self, names: I) -> EnumBuilder<SetReservedNames<S>>
   where
     S::ReservedNames: IsUnset,
@@ -149,7 +149,7 @@ impl<S: EnumState> EnumBuilder<S> {
     }
   }
 
-  /// Sets the reserved numbers for this enum
+  /// Sets the reserved numbers for this enum. Consumes the original builder and returns a new one.
   pub fn reserved_numbers<I>(self, numbers: I) -> EnumBuilder<SetReservedNumbers<S>>
   where
     S::ReservedNumbers: IsUnset,
@@ -171,6 +171,7 @@ impl<S: EnumState> EnumBuilder<S> {
 
   /// Sets the reserved ranges for this enum
   /// Just like in protobuf, ranges are considered to be inclusive.
+  /// Consumes the original builder and returns a new one.
   pub fn reserved_ranges<I>(self, ranges: I) -> EnumBuilder<SetReservedRanges<S>>
   where
     S::ReservedRanges: IsUnset,

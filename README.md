@@ -169,11 +169,17 @@ let my_map = map!("my_map", <uint64, string>, |map, keys, values|
 > **Tip**: In order to avoid rebuilding the results needlessly, this should ideally be done in a separate crate, from which you will directly use [prost-build](https://crates.io/crates/prost-build) to compile the newly-generated proto files, which you can then import from the consuming applications.
 
 ```rust
-use protoschema::{Package};
+use protoschema::{Package, proto_option};
 
 let my_pkg = Package::new("my_pkg.v1");
 // .proto is added automatically as a suffix
 let my_file = my_pkg.new_file("my_file");
+
+// Since the FileBuilder gets reused in many places, its methods 
+// do not consume the original builder, so they cannot be chained.
+my_file.add_options([ proto_option("my_option", true) ]);
+// Most imports are added automatically, but custom imports can be added too
+my_file.add_imports(["my_import"]);
 ```
 
 ## 📩 Define a new message (simple version)
@@ -298,16 +304,22 @@ let my_file = my_pkg.new_file("my_file");
 
 let my_msg = my_file.new_message("MyMessage");
 
-// Or directly as part of a message, using the same syntax
+// And then including into a message later on
 message!(
-  my_msg,
+  my_msg, 
   4 => string!("my_field"),
+  
+  include_oneof(my_oneof),
 
-  oneof "my_oneof" {
+  // Or defining it directly as part of the message! macro call
+  oneof "my_oneof_2" {
     include(my_reusable_fields),
     3 => string!("id")
   }
 );
+
+// Or with the builder syntax, if you're into that kind of thing
+let my_msg2 = my_file.new_message("MyBuilderMessage").add_oneofs([ my_oneof.clone() ]).add_options(my_list_of_options.clone());
 ```
 
 ## ⚙️ Define services
@@ -365,7 +377,7 @@ extension!(
 
 ## 📝 How to render the files
 
-After all of your items are defined, you just need to call [`render_templates`](crate::packages::Package::render_templates) with the path to the root of your proto project, and all the files will be written inside of it.
+After all of your items are defined, you just need to call [`Package::render_templates`](crate::packages::Package::render_templates) with the path to the root of your proto project, and all the files will be written inside of it.
 
 ```rust
 use protoschema::{Package};
