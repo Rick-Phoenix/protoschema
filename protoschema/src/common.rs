@@ -2,9 +2,11 @@ use std::sync::{Arc, LazyLock};
 
 use crate::{OptionValue, ProtoOption};
 
+/// The path to the descriptor file in the google.protobuf package.
 pub static DESCRIPTOR_PROTO_FILE: LazyLock<Arc<str>> =
   LazyLock::new(|| "google/protobuf/descriptor.proto".into());
 
+/// The protovalidate option to make a oneof required (meaning at least one field in it must be set).
 pub fn oneof_required() -> ProtoOption {
   ProtoOption {
     name: "(buf.validate.oneof).required",
@@ -12,6 +14,7 @@ pub fn oneof_required() -> ProtoOption {
   }
 }
 
+/// The allow_alias option for enums.
 pub fn allow_alias() -> ProtoOption {
   ProtoOption {
     name: "allow_alias",
@@ -19,6 +22,7 @@ pub fn allow_alias() -> ProtoOption {
   }
 }
 
+/// A helper to create the [`ProtoOption`] that corresponds to 'deprecated = true'.
 pub fn deprecated() -> ProtoOption {
   ProtoOption {
     name: "deprecated",

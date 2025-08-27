@@ -73,12 +73,14 @@ message!(
   include_oneof(my_oneof),
 
   enum "my_nested_enum" {
+    // Including a group of reusable variants
     include(my_reusable_variants),
   }
 );
 
 let my_other_enum = proto_enum!(
   my_file.new_enum("my_other_enum"),
+  // Included blocks are cloned automatically behind the scenes
   include(my_reusable_variants)
 );
 ```
@@ -155,7 +157,7 @@ let my_map = map!("my_map", <uint64, string>, |map, keys, values|
 > **Note**: The package path and the .proto suffix are automatically added to file names.
 > So in the example below, the full path to the file from the root of the proto project will be `my_pkg/v1/my_file.proto`
 
-> **Tip**: In order to avoid rebuilding the results needlessly, this should ideally be done in a separate crate, from which you will directly use [prost-build](https://crates.io/crates/prost-build) to build the newly-generated proto files, which you can then import from the consuming applications.
+> **Tip**: In order to avoid rebuilding the results needlessly, this should ideally be done in a separate crate, from which you will directly use [prost-build](https://crates.io/crates/prost-build) to compile the newly-generated proto files, which you can then import from the consuming applications.
 
 ```rust
 use protoschema::{Package};
@@ -167,7 +169,9 @@ let my_file = my_pkg.new_file("my_file");
 
 ## 📩 Define a new message (simple version)
 
-Head over to the complete example section at the bottom for a complete example.
+This is how you create the [`MessageBuilder`](crate::messages::MessageBuilder), which is the first argument that you give to the [`message`] macro and also allows you can define nested messages.
+
+For a full, comprehensive example on how to populate a message using the [`message`] macro, check out the [tests](https://github.com/Rick-Phoenix/protoschema/tree/main/test) crate or the [`render_templates`](crate::packages::Package::render_templates) description.
 
 ```rust
 use protoschema::{Package};
@@ -188,7 +192,7 @@ There are two ways to define an enum.
 
 One is to create it as its separate builder, and the other is to define it as part of the [`message`] macro, if the enum is supposed to be defined inside a message.
 
-To define an enum at the top level, or just on its own, you first have to create an [`EnumBuilder`](crate::enums::EnumBuilder) like this:
+To define an enum at the top level, you first have to create an [`EnumBuilder`](crate::enums::EnumBuilder) like this:
 
 ```rust
 use protoschema::{Package};
@@ -199,7 +203,7 @@ let my_file = my_pkg.new_file("my_file");
 let my_enum = my_file.new_enum("my_enum");
 
 let my_msg = my_file.new_message("MyMessage");
-// This will be defined inside MyMessage. This can also be done inside the message! macro
+// This will be defined inside MyMessage. This can also be done directly inside the message! macro
 let my_nested_enum = my_msg.new_enum("my_nested_enum");
 ```
 

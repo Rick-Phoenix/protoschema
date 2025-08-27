@@ -13,6 +13,7 @@ pub use crate::{
   packages::Package,
 };
 
+/// A collection of common protobuf items, such as the [`ProtoOption`]s for 'deprecated' or 'allow_alias'
 pub mod common;
 pub mod enums;
 pub mod errors;
