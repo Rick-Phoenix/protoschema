@@ -11,7 +11,7 @@ macro_rules! map_impl {
       ))
       $(
         .add_option($crate::validators::map:: [< build_map_ $key_type _keys_ $values_type_name _values_ validator >]($validator))
-        .add_import("buf/validate/validate.proto")
+        .add_import($crate::common::VALIDATE_PROTO_FILE.clone())
       )?
     }
   };

@@ -117,7 +117,7 @@ macro_rules! proto_enum_impl {
       if !included_variants.is_empty() {
         for group in included_variants.into_iter() {
           variants.extend(group.variants);
-          temp_enum1.add_imports(group.imports);
+          temp_enum1 = temp_enum1.add_imports(group.imports);
         }
       }
 

@@ -111,17 +111,27 @@ impl<S: EnumState> EnumBuilder<S> {
       .clone()
   }
 
-  pub fn add_imports<T, Str>(&self, imports: T)
+  /// Adds the given list of imports to the containing file.
+  pub fn add_imports<T, Str>(self, imports: T) -> EnumBuilder<S>
   where
     T: IntoIterator<Item = Str>,
     Str: Into<Arc<str>>,
   {
-    let mut arena = self.arena.borrow_mut();
-    let file = &mut arena.files[self.file_id];
+    {
+      let mut arena = self.arena.borrow_mut();
+      let file = &mut arena.files[self.file_id];
 
-    imports
-      .into_iter()
-      .for_each(|i| file.conditionally_add_import(&i.into()));
+      imports
+        .into_iter()
+        .for_each(|i| file.conditionally_add_import(&i.into()));
+    }
+
+    EnumBuilder {
+      id: self.id,
+      arena: self.arena,
+      file_id: self.file_id,
+      _phantom: PhantomData,
+    }
   }
 
   /// Sets the variants for this enum. Consumes the original builder and returns a new one.
@@ -153,9 +163,9 @@ impl<S: EnumState> EnumBuilder<S> {
   {
     {
       let mut arena = self.arena.borrow_mut();
-      let msg = &mut arena.enums[self.id];
+      let enum_ = &mut arena.enums[self.id];
 
-      msg.options = options.into_iter().collect()
+      enum_.options = options.into_iter().collect()
     }
 
     EnumBuilder {
@@ -175,10 +185,10 @@ impl<S: EnumState> EnumBuilder<S> {
   {
     {
       let mut arena = self.arena.borrow_mut();
-      let msg = &mut arena.enums[self.id];
+      let enum_ = &mut arena.enums[self.id];
       let reserved_names: Vec<Box<str>> = names.into_iter().map(|n| n.as_ref().into()).collect();
 
-      msg.reserved_names = reserved_names.into_boxed_slice()
+      enum_.reserved_names = reserved_names.into_boxed_slice()
     }
 
     EnumBuilder {
@@ -197,9 +207,9 @@ impl<S: EnumState> EnumBuilder<S> {
   {
     {
       let mut arena = self.arena.borrow_mut();
-      let msg = &mut arena.enums[self.id];
+      let enum_ = &mut arena.enums[self.id];
 
-      msg.reserved_numbers = numbers.into_iter().collect()
+      enum_.reserved_numbers = numbers.into_iter().collect()
     }
 
     EnumBuilder {
@@ -220,9 +230,9 @@ impl<S: EnumState> EnumBuilder<S> {
   {
     {
       let mut arena = self.arena.borrow_mut();
-      let msg = &mut arena.enums[self.id];
+      let enum_ = &mut arena.enums[self.id];
 
-      msg.reserved_ranges = ranges.into_iter().collect()
+      enum_.reserved_ranges = ranges.into_iter().collect()
     }
 
     EnumBuilder {

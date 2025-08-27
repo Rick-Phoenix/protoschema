@@ -2,17 +2,13 @@ use std::sync::{Arc, LazyLock};
 
 use crate::{OptionValue, ProtoOption};
 
+/// The path to the validate.proto file.
+pub static VALIDATE_PROTO_FILE: LazyLock<Arc<str>> =
+  LazyLock::new(|| "buf/validate/validate.proto".into());
+
 /// The path to the descriptor file in the google.protobuf package.
 pub static DESCRIPTOR_PROTO_FILE: LazyLock<Arc<str>> =
   LazyLock::new(|| "google/protobuf/descriptor.proto".into());
-
-/// The protovalidate option to make a oneof required (meaning at least one field in it must be set).
-pub fn oneof_required() -> ProtoOption {
-  ProtoOption {
-    name: "(buf.validate.oneof).required",
-    value: Arc::new(OptionValue::Bool(true)),
-  }
-}
 
 /// The allow_alias option for enums.
 pub fn allow_alias() -> ProtoOption {

@@ -280,6 +280,7 @@ message!(
 ## 1️⃣ Define a oneof
 
 Just like enums, oneofs can be defined within the [`message`] macro, or on their own, using the [`oneof`] macro.
+We can mark a oneof as required (meaning that at least one of its fields will need to be set to pass validation checks) by placing the 'required' keyword right after the oneof's name.
 
 ```rust
 use protoschema::{reusable_fields, oneof, proto_option, string, Package, message};
@@ -295,6 +296,7 @@ let my_reusable_fields = reusable_fields!(
 // Defining the oneof individually
 let my_oneof = oneof!(
   "my_oneof",
+  required,
   options = [ my_reusable_option.clone() ],
   // Fields can be included as a block
   include(my_reusable_fields),
@@ -316,6 +318,7 @@ message!(
 
   // Or defining it directly as part of the message! macro call
   oneof "my_oneof_2" {
+    required,
     include(my_reusable_fields),
     3 => string!("id")
   }

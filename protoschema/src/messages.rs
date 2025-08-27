@@ -1,6 +1,7 @@
 use std::{marker::PhantomData, ops::Range, sync::Arc};
 
 use crate::{
+  common::VALIDATE_PROTO_FILE,
   enums::{EnumBuilder, EnumData},
   field_type::ImportedItemPath,
   fields::{self, FieldBuilder, FieldData},
@@ -47,7 +48,7 @@ impl<S: MessageState> MessageBuilder<S> {
     {
       let mut arena = self.arena.borrow_mut();
       let msg = &mut arena.messages[self.id];
-      msg.imports.push("buf/validate/validate.proto".into());
+      msg.imports.push(VALIDATE_PROTO_FILE.clone());
 
       let rules: Vec<OptionValue> = rules.into_iter().map(|r| r.into()).collect();
       let option = ProtoOption {
@@ -203,15 +204,24 @@ impl<S: MessageState> MessageBuilder<S> {
   }
 
   /// Adds a list of imports to the file containing this message.  
-  pub fn add_imports<I, Str>(&self, imports: I)
+  pub fn add_imports<I, Str>(self, imports: I) -> MessageBuilder<S>
   where
     I: IntoIterator<Item = Str>,
     Str: Into<Arc<str>>,
   {
-    let file = &mut self.arena.borrow_mut().files[self.file_id];
+    {
+      let file = &mut self.arena.borrow_mut().files[self.file_id];
 
-    for import in imports {
-      file.conditionally_add_import(&import.into());
+      for import in imports {
+        file.conditionally_add_import(&import.into());
+      }
+    }
+
+    MessageBuilder {
+      id: self.id,
+      arena: self.arena,
+      file_id: self.file_id,
+      _phantom: PhantomData,
     }
   }
 
@@ -300,7 +310,7 @@ impl<S: MessageState> MessageBuilder<S> {
 
           OneofData {
             name: of.name,
-            options: of.options,
+            options: of.options.into_boxed_slice(),
             fields: built_fields.into_boxed_slice(),
           }
         })

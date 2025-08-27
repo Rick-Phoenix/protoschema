@@ -104,7 +104,7 @@ macro_rules! repeated_field {
       .field_type($field_type)
       $(
         .add_option($crate::validators::repeated::[< build_repeated_ $proto_type _validator_option >]($validator))
-        .add_import("buf/validate/validate.proto")
+        .add_import($crate::common::VALIDATE_PROTO_FILE.clone())
       )?
     }
   };
@@ -121,7 +121,7 @@ macro_rules! optional_field {
       .optional()
       $(
         .add_option($crate::validators::$module_name::[< build_ $proto_type _validator_option >]($validator))
-        .add_import("buf/validate/validate.proto")
+        .add_import($crate::common::VALIDATE_PROTO_FILE.clone())
       )?
     }
   };
@@ -137,7 +137,7 @@ macro_rules! field {
       .field_type($field_type)
       $(
         .add_option($crate::validators::$module_name::[< build_ $proto_type _validator_option >]($validator))
-        .add_import("buf/validate/validate.proto")
+        .add_import($crate::common::VALIDATE_PROTO_FILE.clone())
       )?
     }
   };
@@ -357,7 +357,7 @@ macro_rules! impl_well_known_type {
             .field_type($crate::FieldType::[< $name:camel >])
             .add_import($import_path)
             .add_option($crate::validators::message::build_message_validator_option)
-            .add_import("buf/validate/validate.proto")
+            .add_import($crate::common::VALIDATE_PROTO_FILE.clone())
         };
 
         ($field_name:expr) => {

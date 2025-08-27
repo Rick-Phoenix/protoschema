@@ -58,7 +58,7 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
   });
 
   let reusable_variants = enum_variants!(
-    imports = ["my_pkg/reusable/import.proto"],
+    imports = [ "my_pkg/reusable/import.proto" ],
     0 => "UNSPECIFIED",
   );
 
@@ -90,6 +90,7 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
   );
 
   let reusable_oneof = oneof!("activity",
+    required,
     102 => enum_field!(user_status_enum, "user_current_status"),
     103 => timestamp!("account_deletion_date")
   );
@@ -158,6 +159,7 @@ fn main_test() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     oneof "contact" {
+      required,
       options = [ example_option.clone() ],
 
       11 => string!("email", |v| v.email()),

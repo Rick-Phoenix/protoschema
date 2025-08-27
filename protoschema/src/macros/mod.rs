@@ -108,6 +108,9 @@ macro_rules! cel_rules {
 ///   }
 ///
 ///   oneof "MyOneOf" {
+///     // Optionally, we can mark this oneof as required by adding the 'required' keyword
+///     // as the first element inside the brackets.
+///     required,
 ///     options = my_list_of_options,
 ///     2 => string!("abc"),
 ///     3 => string!("deg"),
