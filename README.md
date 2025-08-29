@@ -7,7 +7,9 @@ However, defining said files is often a boring and repetitive job, especially if
 
 Wouldn't it be great if we could define protobuf contracts in a flexible, programmatic way, using modular, reusable building blocks?
 <br/>
+<br/>
 Wouldn't it be nice if we could define some common options, fields and other reusable parts like enum variants, and put them all together to create the complete proto contract structure?
+<br/>
 <br/>
 And wouldn't it be extra-great if we could also define validation for said contracts using the same syntax, in a very concise way, coupled with the benefits of type safety and autocomplete suggestions?
 
@@ -21,7 +23,7 @@ From this package, we can create new [`FileBuilder`](crate::files::FileBuilder)s
 There are macros and function to generate every item that you would see in a protobuf file.
 Every macro comes with its own examples, so you can head over to the [`macros`] module to inspect the various detailed examples for each use case.
 
-We are also going to cover the single items one by one in here with some elementary examples, with a complete example at the end.
+We are also going to cover the single items one by one in here with some elementary examples, and then a complete example at the end.
 But first, I want to focus on two aspects which are core elements about this crate, and its two main drivers, namely reusable elements and validators.
 
 ## 🧩 Reusable elements
@@ -40,17 +42,21 @@ let my_reusable_fields = reusable_fields!(
   2 => timestamp!("created_at"),
   3 => timestamp!("updated_at"),
   // This will add the import to the receiving file
-  4 => uint64!("with_custom_option").add_option(my_reusable_option.clone()).add_import("my_other_package/v1/file.proto")
+  4 => uint64!("with_custom_option")
+    .add_option(my_reusable_option.clone())
+    .add_import("my_other_package/v1/file.proto")
 );
 
 let my_reusable_variants = enum_variants!(
-  // You can optionally add a list of imports which will be added to the receiving files
+  // You can optionally add a list of imports,
+  // which will be added to the receiving files
   imports = ["my_pkg/reusable/import.proto"],
   0 => "UNSPECIFIED",
   1 => "SOME_COMMON_VARIANT"
 );
 
-// And now we can simply reuse these wherever we want. Let's start with a oneof.
+// And now we can simply reuse these 
+// wherever we want. Let's start with a oneof.
 
 let my_oneof = oneof!(
   "my_oneof",
@@ -66,13 +72,15 @@ let my_file = my_pkg.new_file("my_file");
 let my_msg = my_file.new_message("MyMessage");
 
 // This is a field that will have the type 'MyMessage'. 
-// When this is included in a message that is not located in the same file, 
-// the import path to this message will automatically be added to the receiving file.
+// When this is included in a message that is not located 
+// in the same file, the import path to this message 
+// will automatically be added to the receiving file.
 let my_msg_field = msg_field!(my_msg, "my_msg_field");
 
 message!(
   my_msg,
-  // This is an expression like any other, so any IntoIter<Item = ProtoOption> can work
+  // This is an expression like any other, 
+  // so any IntoIter<Item = ProtoOption> can work
   options = my_list_of_options.clone(),
   // Including all fields at once
   include(my_reusable_fields),
@@ -89,11 +97,13 @@ message!(
 
 let my_other_enum = proto_enum!(
   my_file.new_enum("my_other_enum"),
-  // Included blocks are cloned automatically behind the scenes
+  // Included blocks are cloned 
+  // automatically behind the scenes
   include(my_reusable_variants)
 );
 
-// Just like for messages, this will add the import path to this enum if the receiving
+// Just like for messages, this will add the import 
+// path to this enum if the receiving
 // message is located in a different file.
 let my_enum_field = enum_field!(my_other_enum, "my_enum_field");
 ```
@@ -143,7 +153,9 @@ use protoschema::{map, string};
 let my_string = string!(repeated "my_field", |list, string| 
   // First we define rules for the list as a whole, such as the minimum items required    
   list.min_items(5)
-  // Then we define rules for the individual items. Once again, here the validator builder will match the type of the field
+  // Then we define rules for the individual items. 
+  // Once again, here the validator builder will match 
+  // the type of the field
   .items(
     string.min_len(10)
   )
@@ -159,7 +171,8 @@ let my_map = map!("my_map", <uint64, string>, |map, keys, values|
   // Rules for values
   .values(
     values.min_len(10)
-      // Strings have all the supported well known string rules such as email, ip address and so on
+      // Strings have all the supported well known string 
+      // rules such as email, ip address and so on
       .email()
   )
 );
@@ -170,7 +183,7 @@ let my_map = map!("my_map", <uint64, string>, |map, keys, values|
 > **Note**: The package path and the .proto suffix are automatically added to file names.
 > So in the example below, the full path to the file from the root of the proto project will be `my_pkg/v1/my_file.proto`
 
-> **Tip**: In order to avoid rebuilding the results needlessly, this should ideally be done in a separate crate, from which you will directly use [prost-build](https://crates.io/crates/prost-build) to compile the newly-generated proto files, which you can then import from the consuming applications.
+> **Tip**: In order to avoid rebuilding the results needlessly, this should ideally be done in a separate crate, from which you will directly use [prost-build](https://crates.io/crates/prost-build) (and [protocheck-build](https://crates.io/crates/protocheck-build), if you are using the validators too) to compile the newly-generated proto files, which you can then import from the consuming applications.
 
 ```rust
 use protoschema::{Package, proto_option};
@@ -182,7 +195,8 @@ let my_file = my_pkg.new_file("my_file");
 // Since the FileBuilder gets reused in many places, its methods 
 // do not consume the original builder, so they cannot be chained.
 my_file.add_options([ proto_option("my_option", true) ]);
-// Most imports are added automatically, but custom imports can be added too
+// Most imports are added automatically, 
+// but custom imports can be added too
 my_file.add_imports(["my_import"]);
 ```
 
@@ -222,7 +236,8 @@ let my_file = my_pkg.new_file("my_file");
 let my_enum = my_file.new_enum("my_enum");
 
 let my_msg = my_file.new_message("MyMessage");
-// This will be defined inside MyMessage. This can also be done directly inside the message! macro
+// This will be defined inside MyMessage. This can also
+// be done directly inside the message! macro
 let my_nested_enum = my_msg.new_enum("my_nested_enum");
 ```
 
@@ -388,7 +403,7 @@ extension!(
 
 ## 📝 How to render the files
 
-After all of your items are defined, you just need to call [`Package::render_templates`](crate::packages::Package::render_templates) with the path to the root of your proto project, and all the files will be written inside of it.
+After all of your items are defined, you just need to call [`Package::render_templates`](crate::packages::Package::render_templates) with the path to the root of your proto project, and all the files will be written inside of it, following the convention where the package name will convert to a path inside the project root where each segment is a directory. So in the example below, the output will be a single file, named "my_file.proto", located inside `proto/mypkg/v1`.
 
 ```rust
 use protoschema::{Package};
@@ -397,6 +412,8 @@ use std::path::Path;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
   let package = Package::new("mypkg.v1"); 
   let proto_root = Path::new("proto");
+  let my_file = package.new_file("my_file");
+  // Create all of the messages and enums before this...
   package.render_templates(proto_root)?;
   Ok(())
 }
@@ -406,3 +423,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 Check out the [tests](https://github.com/Rick-Phoenix/protoschema/tree/main/test) crate or the [`render_templates`](crate::packages::Package::render_templates) description for full usage example, with the proto output included.
 
+## ✅ Integration with protocheck
+
+Integrating with protocheck is pretty straightforward, but you can also find an example in a dedicated [testing crate](https://github.com/Rick-Phoenix/protoschema/tree/main/tests) in the protoschema repo.
