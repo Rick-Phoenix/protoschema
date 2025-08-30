@@ -49,15 +49,18 @@ pub struct BytesValidator<'a> {
   /// A subset of bytes that this field must contain in order to be valid.
   pub contains: Option<&'a [u8]>,
   /// Only the values in this list will be considered valid for this field.
-  pub in_: Option<&'a [&'a [u8]]>,
+  #[builder(into)]
+  pub in_: Option<Box<[&'a [u8]]>>,
   /// The values in this list will be considered invalid for this field.
-  pub not_in: Option<&'a [&'a [u8]]>,
+  #[builder(into)]
+  pub not_in: Option<Box<[&'a [u8]]>>,
   #[builder(setters(vis = "", name = well_known))]
   pub well_known: Option<WellKnown>,
   /// Only this specific value will be considered valid for this field.
   pub const_: Option<&'a [u8]>,
   /// Adds custom validation using one or more [`CelRule`]s to this field.
-  pub cel: Option<&'a [CelRule]>,
+  #[builder(into)]
+  pub cel: Option<Box<[CelRule]>>,
   #[builder(with = || true)]
   /// Marks the field as invalid if unset.
   pub required: Option<bool>,
@@ -88,12 +91,14 @@ impl<'a> From<BytesValidator<'a>> for ProtoOption {
       ));
     }
 
-    validate_lists(validator.in_, validator.not_in).unwrap_or_else(|invalid| {
-      panic!(
-        "The following values are present inside of 'in' and 'not_in': {:?}",
-        invalid
-      )
-    });
+    validate_lists(validator.in_.as_deref(), validator.not_in.as_deref()).unwrap_or_else(
+      |invalid| {
+        panic!(
+          "The following values are present inside of 'in' and 'not_in': {:?}",
+          invalid
+        )
+      },
+    );
 
     if validator.len.is_none() {
       insert_option!(validator, values, min_len, uint);

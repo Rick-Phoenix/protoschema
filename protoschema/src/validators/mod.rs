@@ -7,6 +7,26 @@ use crate::OptionValue;
 type OptionValueList = Vec<(Box<str>, OptionValue)>;
 
 macro_rules! impl_ignore {
+  (no_lifetime, $builder:ident) => {
+    $crate::paste! {
+      impl < S: [< $builder:snake >]::State> $builder< S>
+      where
+        S::Ignore: [< $builder:snake >]::IsUnset,
+      {
+        /// Rules defined for this field will be ignored if the field is set to its protobuf zero value.
+        /// No-op for fields that track presence such as optional fields, or messages in proto3.
+        pub fn ignore_if_zero_value(self) -> $builder< [< $builder:snake >]::SetIgnore<S>> {
+          self.ignore(Ignore::IfZeroValue)
+        }
+
+        /// Rules set for this field will always be ignored.
+        pub fn ignore_always(self) -> $builder< [< $builder:snake >]::SetIgnore<S>> {
+          self.ignore(Ignore::Always)
+        }
+      }
+    }
+  };
+
   ($builder:ident) => {
     $crate::paste! {
       impl <'a, S: [< $builder:snake >]::State> $builder<'a, S>

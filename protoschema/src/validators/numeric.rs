@@ -58,7 +58,7 @@ macro_rules! get_fields {
   (f64, $_:ident) => {
     /// A struct that can be used to generate a [`ProtoOption`] containing protovalidate rules for a protobuf 'double' field.
     #[derive(Clone, Debug, Builder)]
-    pub struct DoubleValidator<'a> {
+    pub struct DoubleValidator {
       /// Only this specific value will be considered valid for this field.
       pub const_: Option<f64>,
       /// This field's value will be valid only if it is smaller than the specified amount
@@ -70,14 +70,17 @@ macro_rules! get_fields {
       /// This field's value will be valid only if it is smaller than, or equal to, the specified amount
       pub gte: Option<f64>,
       /// Only the values in this list will be considered valid for this field.
-      pub in_: Option<&'a [f64]>,
+      #[builder(into)]
+      pub in_: Option<Box<[f64]>>,
       /// The values in this list will be considered invalid for this field.
-      pub not_in: Option<&'a [f64]>,
+      #[builder(into)]
+      pub not_in: Option<Box<[f64]>>,
       /// Specifies that this field must be finite (so it can't represent Infinity or NaN)
       #[builder(with = || true)]
       pub finite: Option<bool>,
       /// Adds custom validation using one or more [`CelRule`]s to this field.
-      pub cel: Option<&'a [CelRule]>,
+      #[builder(into)]
+      pub cel: Option<Box<[CelRule]>>,
       /// Marks the field as invalid if unset.
       #[builder(with = || true)]
       pub required: Option<bool>,
@@ -89,7 +92,7 @@ macro_rules! get_fields {
   (f32, $_:ident) => {
     /// A struct that can be used to generate a [`ProtoOption`] containing protovalidate rules for a protobuf 'float' field.
     #[derive(Clone, Debug, Builder)]
-    pub struct FloatValidator<'a> {
+    pub struct FloatValidator {
       /// Only this specific value will be considered valid for this field.
       pub const_: Option<f32>,
       /// This field's value will be valid only if it is smaller than the specified amount
@@ -101,14 +104,17 @@ macro_rules! get_fields {
       /// This field's value will be valid only if it is smaller than, or equal to, the specified amount
       pub gte: Option<f32>,
       /// Only the values in this list will be considered valid for this field.
-      pub in_: Option<&'a [f32]>,
+      #[builder(into)]
+      pub in_: Option<Box<[f32]>>,
       /// The values in this list will be considered invalid for this field.
-      pub not_in: Option<&'a [f32]>,
+      #[builder(into)]
+      pub not_in: Option<Box<[f32]>>,
       #[builder(with = || true)]
       /// Specifies that this field must be finite (so it can't represent Infinity or NaN)
       pub finite: Option<bool>,
       /// Adds custom validation using one or more [`CelRule`]s to this field.
-      pub cel: Option<&'a [CelRule]>,
+      #[builder(into)]
+      pub cel: Option<Box<[CelRule]>>,
       /// Marks the field as invalid if unset.
       #[builder(with = || true)]
       pub required: Option<bool>,
@@ -123,7 +129,7 @@ macro_rules! get_fields {
       #[doc = concat!(stringify!($proto_type))]
       #[doc = "` field."]
       #[derive(Clone, Debug, Builder)]
-        pub struct [< $proto_type:camel Validator >]<'a> {
+        pub struct [< $proto_type:camel Validator >] {
         /// Only this specific value will be considered valid for this field.
         pub const_: Option<$rust_type>,
         /// This field's value will be valid only if it is smaller than the specified amount
@@ -135,11 +141,14 @@ macro_rules! get_fields {
         /// This field's value will be valid only if it is smaller than, or equal to, the specified amount
         pub gte: Option<$rust_type>,
         /// Only the values in this list will be considered valid for this field.
-        pub in_: Option<&'a [$rust_type]>,
+        #[builder(into)]
+        pub in_: Option<Box<[$rust_type]>>,
         /// The values in this list will be considered invalid for this field.
-        pub not_in: Option<&'a [$rust_type]>,
+        #[builder(into)]
+        pub not_in: Option<Box<[$rust_type]>>,
         /// Adds custom validation using one or more [`CelRule`]s to this field.
-        pub cel: Option<&'a [CelRule]>,
+        #[builder(into)]
+        pub cel: Option<Box<[CelRule]>>,
         /// Marks the field as invalid if unset.
         pub required: Option<bool>,
         #[builder(setters(vis = "", name = ignore))]
@@ -175,9 +184,9 @@ macro_rules! numeric_validator {
     paste::paste! {
       get_fields!($rust_type, $proto_type);
 
-      impl_ignore!([< $proto_type:camel ValidatorBuilder >]);
+      impl_ignore!(no_lifetime, [< $proto_type:camel ValidatorBuilder >]);
 
-      impl<'a, S: [< $proto_type _validator_builder >]::State> From<[< $proto_type:camel ValidatorBuilder >]<'a, S>> for ProtoOption {
+      impl<S: [< $proto_type _validator_builder >]::State> From<[< $proto_type:camel ValidatorBuilder >]<S>> for ProtoOption {
         #[doc(hidden)]
         #[track_caller]
         fn from(builder: [< $proto_type:camel ValidatorBuilder >]<S>) -> ProtoOption {
@@ -185,7 +194,7 @@ macro_rules! numeric_validator {
         }
       }
 
-      impl<'a> From<[< $proto_type:camel Validator >]<'a>> for ProtoOption {
+      impl From<[< $proto_type:camel Validator >]> for ProtoOption {
         #[doc(hidden)]
         #[track_caller]
         fn from(validator: [< $proto_type:camel Validator >]) -> ProtoOption {
@@ -198,7 +207,7 @@ macro_rules! numeric_validator {
           }
 
           super::validate_comparables(validator.lt, validator.lte, validator.gt, validator.gte);
-          get_list_check!($rust_type, validator.in_, validator.not_in);
+          get_list_check!($rust_type, validator.in_.as_deref(), validator.not_in.as_deref());
           get_options!($option_value_variant, validator, values);
 
           let mut option_value: OptionValueList = vec! [

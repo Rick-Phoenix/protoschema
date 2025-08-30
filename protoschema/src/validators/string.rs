@@ -33,15 +33,18 @@ pub struct StringValidator<'a> {
   /// The substring that this field's value must not contain in order to be considered valid.
   pub not_contains: Option<&'a str>,
   /// Only the values in this list will be considered valid for this field.
-  pub in_: Option<&'a [&'a str]>,
+  #[builder(into)]
+  pub in_: Option<Box<[&'a str]>>,
   /// All the values in this list will be considered invalid for this field.
-  pub not_in: Option<&'a [&'a str]>,
+  #[builder(into)]
+  pub not_in: Option<Box<[&'a str]>>,
   #[builder(setters(vis = "", name = well_known))]
   pub well_known: Option<WellKnown>,
   /// Only this specific value will be considered valid for this field.
   pub const_: Option<&'a str>,
   /// Adds custom validation using one or more [`CelRule`]s to this field.
-  pub cel: Option<&'a [CelRule]>,
+  #[builder(into)]
+  pub cel: Option<Box<[CelRule]>>,
   #[builder(with = || true)]
   /// Marks the field as invalid if unset.
   pub required: Option<bool>,
@@ -67,12 +70,14 @@ impl<'a> From<StringValidator<'a>> for ProtoOption {
       values.push(("const".into(), OptionValue::String(const_val.into())));
     }
 
-    validate_lists(validator.in_, validator.not_in).unwrap_or_else(|invalid| {
-      panic!(
-        "The following values are present inside of 'in' and 'not_in': {:?}",
-        invalid
-      )
-    });
+    validate_lists(validator.in_.as_deref(), validator.not_in.as_deref()).unwrap_or_else(
+      |invalid| {
+        panic!(
+          "The following values are present inside of 'in' and 'not_in': {:?}",
+          invalid
+        )
+      },
+    );
 
     if validator.len.is_none() {
       insert_option!(validator, values, min_len, uint);

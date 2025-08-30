@@ -11,13 +11,22 @@ mod services_macros;
 ///
 /// # Examples
 /// ```
-/// use protoschema::cel_rule;
+/// use protoschema::{cel_rule, string};
 ///
+/// // As an invidivual rule
 /// let rule = cel_rule!(
 ///   id = "password_not_matching",
 ///   msg = "the two passwords do not match",
 ///   expr = "this.password == this.repeated_password"
 /// );
+///
+/// // As part of a validator definition
+/// let my_field_with_cel_rule = string!("name", |v| v.cel([
+///   cel_rule!(
+///     id = "is_geronimo",
+///     msg = "is not geronimo",
+///     expr = "this == 'geronimo'"
+/// ) ]));
 /// ```
 #[macro_export]
 macro_rules! cel_rule {

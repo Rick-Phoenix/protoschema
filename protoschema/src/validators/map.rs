@@ -19,7 +19,7 @@ use crate::{
 
 /// Used to define validation rules for map fields by the [`map`](crate::map), [`enum_map`](crate::enum_map) and [`msg_map`](crate::msg_map) macros.
 #[derive(Clone, Debug, Builder)]
-pub struct MapValidator<'a> {
+pub struct MapValidator {
   #[builder(into)]
   /// The options that will apply to this map's keys.
   /// This is mostly useful when calling the map definition macros, which will automatically convert validators into the option to use here.
@@ -35,7 +35,7 @@ pub struct MapValidator<'a> {
   /// Adds custom validation using one or more [`CelRule`]s to this field.
   /// These will apply to the map field as a whole.
   /// To apply cel rules to the individual keys or values, use the validators for those instead.
-  pub cel: Option<&'a [CelRule]>,
+  pub cel: Option<Box<[CelRule]>>,
   #[builder(with = || true)]
   /// Marks the field as required. This is essentially the same as setting min_pairs to 1.
   pub required: Option<bool>,
@@ -43,16 +43,16 @@ pub struct MapValidator<'a> {
   pub ignore: Option<Ignore>,
 }
 
-impl_ignore!(MapValidatorBuilder);
+impl_ignore!(no_lifetime, MapValidatorBuilder);
 
-impl<'a, S: map_validator_builder::State> From<MapValidatorBuilder<'a, S>> for ProtoOption {
+impl<S: map_validator_builder::State> From<MapValidatorBuilder<S>> for ProtoOption {
   #[track_caller]
-  fn from(value: MapValidatorBuilder<'a, S>) -> Self {
+  fn from(value: MapValidatorBuilder<S>) -> Self {
     value.build().into()
   }
 }
 
-impl<'a> From<MapValidator<'a>> for ProtoOption {
+impl From<MapValidator> for ProtoOption {
   #[track_caller]
   fn from(validator: MapValidator) -> Self {
     let name = "(buf.validate.field)";
@@ -90,9 +90,9 @@ macro_rules! map_validator {
     $crate::paste! {
       #[doc(hidden)]
       #[track_caller]
-      pub fn [< build_map_ $keys_type _keys_ $values_type _values  _validator >]<'a, F, S>(config_fn: F) -> ProtoOption
+      pub fn [< build_map_ $keys_type _keys_ $values_type _values  _validator >]<F, S>(config_fn: F) -> ProtoOption
       where
-        F: FnOnce(MapValidatorBuilder<'a>, [< $keys_type:camel ValidatorBuilder >], [< $values_type:camel ValidatorBuilder >]) -> MapValidatorBuilder<'a, S>,
+        F: FnOnce(MapValidatorBuilder, [< $keys_type:camel ValidatorBuilder >], [< $values_type:camel ValidatorBuilder >]) -> MapValidatorBuilder<S>,
         S: map_validator_builder::State,
       {
         let map_validator_builder = MapValidator::builder();

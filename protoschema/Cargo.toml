@@ -1,6 +1,6 @@
 [package]
 name = "protoschema"
-version = "0.1.4"
+version = "0.1.5"
 description = "📐 Programmatically define protobuf contracts using flexible, modular and reusable elements"
 license.workspace = true
 authors.workspace = true

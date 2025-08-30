@@ -20,7 +20,7 @@ use crate::{
 /// A struct that can be used to generate a [`ProtoOption`] containing protovalidate rules for a repeated field.
 /// Used by the various kinds of field macros such as [`string`](crate::string) or [`int64`](crate::int64) to define validation rules when the field is marked as repeated.
 #[derive(Clone, Debug, Builder)]
-pub struct RepeatedValidator<'a> {
+pub struct RepeatedValidator {
   #[builder(into)]
   /// The rules to apply to the individual items in this field's list. Usually defined via the various field macros, which automatically convert field validator instances into the correct [`ProtoOption`] to place here.
   pub items: Option<ProtoOption>,
@@ -33,7 +33,8 @@ pub struct RepeatedValidator<'a> {
   pub unique: Option<bool>,
   /// Adds custom validation using one or more [`CelRule`]s to this field.
   /// These will apply to the list as a whole. To apply rules to the individual items, use the items validator instead.
-  pub cel: Option<&'a [CelRule]>,
+  #[builder(into)]
+  pub cel: Option<Box<[CelRule]>>,
   /// Marks the field as required. Since repeated fields are always present in protobuf, this is essentially the same as setting min_items to 1
   #[builder(with = || true)]
   pub required: Option<bool>,
@@ -41,18 +42,16 @@ pub struct RepeatedValidator<'a> {
   pub ignore: Option<Ignore>,
 }
 
-impl_ignore!(RepeatedValidatorBuilder);
+impl_ignore!(no_lifetime, RepeatedValidatorBuilder);
 
-impl<'a, S: repeated_validator_builder::State> From<RepeatedValidatorBuilder<'a, S>>
-  for ProtoOption
-{
+impl<S: repeated_validator_builder::State> From<RepeatedValidatorBuilder<S>> for ProtoOption {
   #[track_caller]
-  fn from(value: RepeatedValidatorBuilder<'a, S>) -> Self {
+  fn from(value: RepeatedValidatorBuilder<S>) -> Self {
     value.build().into()
   }
 }
 
-impl<'a> From<RepeatedValidator<'a>> for ProtoOption {
+impl From<RepeatedValidator> for ProtoOption {
   #[track_caller]
   fn from(validator: RepeatedValidator) -> ProtoOption {
     let name = "(buf.validate.field)";
@@ -87,11 +86,11 @@ macro_rules! repeated_validator {
     $crate::paste! {
       #[doc(hidden)]
       #[track_caller]
-      pub fn [< build_repeated_  $validator_type  _validator_option >]<'a, F, S: repeated_validator_builder::State>(config_fn: F) -> ProtoOption
+      pub fn [< build_repeated_  $validator_type  _validator_option >]<F, S: repeated_validator_builder::State>(config_fn: F) -> ProtoOption
       where
-        F: FnOnce(RepeatedValidatorBuilder<'a>, [< $validator_type:camel ValidatorBuilder >]) -> RepeatedValidatorBuilder<'a, S>,
+        F: FnOnce(RepeatedValidatorBuilder, [< $validator_type:camel ValidatorBuilder >]) -> RepeatedValidatorBuilder<S>,
       {
-        let repeated_validator_builder: RepeatedValidatorBuilder<'a> = RepeatedValidator::builder();
+        let repeated_validator_builder: RepeatedValidatorBuilder = RepeatedValidator::builder();
         let items_builder = [< $validator_type:camel Validator >]::builder();
         let validator = config_fn(repeated_validator_builder, items_builder).build();
 

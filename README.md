@@ -148,7 +148,7 @@ And to complement all that, since this is a single, reusable field, it can be re
 As a nice bonus, if a field is a repeated or map field, the validator closure will provide the validators for the field itself and for its items/pairs.
 
 ```rust
-use protoschema::{map, string};
+use protoschema::{map, string, cel_rule};
 
 let my_string = string!(repeated "my_field", |list, string| 
   // First we define rules for the list as a whole, such as the minimum items required    
@@ -158,6 +158,8 @@ let my_string = string!(repeated "my_field", |list, string|
   // the type of the field
   .items(
     string.min_len(10)
+    // We can also define custom cel rules for fields
+    .cel([ cel_rule!( id = "is_abc", msg = "is not 'abc'", expr = "this == 'abc'" ) ])
   )
 );
 

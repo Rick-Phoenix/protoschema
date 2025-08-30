@@ -8,7 +8,7 @@ use crate::{
 
 /// Used by the [`timestamp`](crate::timestamp) macro to define validation rules.
 #[derive(Clone, Debug, Builder)]
-pub struct TimestampValidator<'a> {
+pub struct TimestampValidator {
   /// Only this specific value will be considered valid for this field.
   pub const_: Option<Timestamp>,
   /// This field's value will be valid only if it is smaller than the specified amount.
@@ -28,7 +28,8 @@ pub struct TimestampValidator<'a> {
   /// This field's value will be valid only if it is within the specified Duration (either in the past or future) from the moment when it's being validated.
   pub within: Option<Duration>,
   /// Adds custom validation using one or more [`CelRule`]s to this field.
-  pub cel: Option<&'a [CelRule]>,
+  #[builder(into)]
+  pub cel: Option<Box<[CelRule]>>,
   #[builder(with = || true)]
   /// Marks the field as invalid if unset.
   pub required: Option<bool>,
@@ -36,20 +37,18 @@ pub struct TimestampValidator<'a> {
   pub ignore: Option<Ignore>,
 }
 
-impl_ignore!(TimestampValidatorBuilder);
+impl_ignore!(no_lifetime, TimestampValidatorBuilder);
 
-impl<'a, S: timestamp_validator_builder::State> From<TimestampValidatorBuilder<'a, S>>
-  for ProtoOption
-{
+impl<S: timestamp_validator_builder::State> From<TimestampValidatorBuilder<S>> for ProtoOption {
   #[track_caller]
-  fn from(value: TimestampValidatorBuilder<'a, S>) -> Self {
+  fn from(value: TimestampValidatorBuilder<S>) -> Self {
     value.build().into()
   }
 }
 
-impl<'a> From<TimestampValidator<'a>> for ProtoOption {
+impl From<TimestampValidator> for ProtoOption {
   #[track_caller]
-  fn from(validator: TimestampValidator<'a>) -> Self {
+  fn from(validator: TimestampValidator) -> Self {
     let name = "(buf.validate.field)";
 
     let mut values: OptionValueList = Vec::new();

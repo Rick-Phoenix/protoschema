@@ -8,11 +8,13 @@ use crate::{
 
 /// Used by the [`duration`](crate::duration) macro to define validation rules.
 #[derive(Clone, Debug, Builder)]
-pub struct DurationValidator<'a> {
+pub struct DurationValidator {
   /// Only the values in this list will be considered valid for this field.
-  pub in_: Option<&'a [Duration]>,
+  #[builder(into)]
+  pub in_: Option<Box<[Duration]>>,
   /// The values in this list will be considered invalid for this field.
-  pub not_in: Option<&'a [Duration]>,
+  #[builder(into)]
+  pub not_in: Option<Box<[Duration]>>,
   /// Only this specific value will be considered valid for this field.
   pub const_: Option<Duration>,
   /// This field's value will be valid only if it is smaller than the specified amount
@@ -24,7 +26,8 @@ pub struct DurationValidator<'a> {
   /// This field's value will be valid only if it is greater than, or equal to, the specified amount
   pub gte: Option<Duration>,
   /// Adds custom validation using one or more [`CelRule`]s to this field.
-  pub cel: Option<&'a [CelRule]>,
+  #[builder(into)]
+  pub cel: Option<Box<[CelRule]>>,
   #[builder(with = || true)]
   /// Marks the field as invalid if unset.
   pub required: Option<bool>,
@@ -32,20 +35,18 @@ pub struct DurationValidator<'a> {
   pub ignore: Option<Ignore>,
 }
 
-impl_ignore!(DurationValidatorBuilder);
+impl_ignore!(no_lifetime, DurationValidatorBuilder);
 
-impl<'a, S: duration_validator_builder::State> From<DurationValidatorBuilder<'a, S>>
-  for ProtoOption
-{
+impl<S: duration_validator_builder::State> From<DurationValidatorBuilder<S>> for ProtoOption {
   #[track_caller]
-  fn from(value: DurationValidatorBuilder<'a, S>) -> Self {
+  fn from(value: DurationValidatorBuilder<S>) -> Self {
     value.build().into()
   }
 }
 
-impl<'a> From<DurationValidator<'a>> for ProtoOption {
+impl From<DurationValidator> for ProtoOption {
   #[track_caller]
-  fn from(validator: DurationValidator<'a>) -> Self {
+  fn from(validator: DurationValidator) -> Self {
     let name = "(buf.validate.field)";
 
     let mut values: OptionValueList = Vec::new();
@@ -55,12 +56,14 @@ impl<'a> From<DurationValidator<'a>> for ProtoOption {
     }
 
     validate_comparables(validator.lt, validator.lte, validator.gt, validator.gte);
-    validate_lists(validator.in_, validator.not_in).unwrap_or_else(|invalid| {
-      panic!(
-        "The following values are present inside of 'in' and 'not_in': {:?}",
-        invalid
-      )
-    });
+    validate_lists(validator.in_.as_deref(), validator.not_in.as_deref()).unwrap_or_else(
+      |invalid| {
+        panic!(
+          "The following values are present inside of 'in' and 'not_in': {:?}",
+          invalid
+        )
+      },
+    );
 
     insert_option!(validator, values, lt, duration);
     insert_option!(validator, values, lte, duration);

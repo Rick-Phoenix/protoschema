@@ -9,11 +9,14 @@ use crate::{
 #[derive(Clone, Debug, Builder)]
 pub struct AnyValidator<'a> {
   /// Only the type_urls defined in this list will be considered valid for this field.
+  #[builder(into)]
   pub in_: Option<&'a [&'a str]>,
   /// The type_urls defined in this list will be considered invalid for this field.
+  #[builder(into)]
   pub not_in: Option<&'a [&'a str]>,
   /// Adds custom validation using one or more [`CelRule`]s to this field.
-  pub cel: Option<&'a [CelRule]>,
+  #[builder(into)]
+  pub cel: Option<Box<[CelRule]>>,
   /// Marks the field as invalid if unset.
   #[builder(with = || true)]
   pub required: Option<bool>,

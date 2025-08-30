@@ -7,9 +7,10 @@ use crate::{
 
 /// Used by the [`msg_field`](crate::msg_field) macro to define validation rules.
 #[derive(Debug, Clone, Builder)]
-pub struct MessageValidator<'a> {
+pub struct MessageValidator {
   /// Adds custom validation using one or more [`CelRule`]s to this field.
-  pub cel: Option<&'a [CelRule]>,
+  #[builder(into)]
+  pub cel: Option<Box<[CelRule]>>,
   #[builder(with = || true)]
   /// Marks the field as invalid if unset.
   pub required: Option<bool>,
@@ -17,16 +18,16 @@ pub struct MessageValidator<'a> {
   pub ignore: Option<Ignore>,
 }
 
-impl_ignore!(MessageValidatorBuilder);
+impl_ignore!(no_lifetime, MessageValidatorBuilder);
 
-impl<'a, S: message_validator_builder::State> From<MessageValidatorBuilder<'a, S>> for ProtoOption {
+impl<S: message_validator_builder::State> From<MessageValidatorBuilder<S>> for ProtoOption {
   #[track_caller]
   fn from(value: MessageValidatorBuilder<S>) -> Self {
     value.build().into()
   }
 }
 
-impl<'a> From<MessageValidator<'a>> for ProtoOption {
+impl From<MessageValidator> for ProtoOption {
   #[track_caller]
   fn from(validator: MessageValidator) -> Self {
     let name = "(buf.validate.field)";

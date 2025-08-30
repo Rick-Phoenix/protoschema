@@ -93,7 +93,7 @@ macro_rules! enum_map {
 /// let my_field2 = msg_map!("my_map_with_validator",
 ///   <int64, my_msg>,
 ///   |map_validator, keys_validator, values_validator|
-///   map_validator.min_pairs(2).keys(keys_validator.gt(0)).values(values_validator.cel(&[
+///   map_validator.min_pairs(2).keys(keys_validator.gt(0)).values(values_validator.cel([
 ///     cel_rule!(
 ///       id = "passwords_not_matching",
 ///       msg = "the two passwords do not match",
