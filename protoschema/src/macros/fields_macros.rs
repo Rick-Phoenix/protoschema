@@ -351,12 +351,30 @@ macro_rules! impl_well_known_type {
       #[doc = "Expands to a [`FieldBuilder`](crate::fields::FieldBuilder) instance for a " $full_name " field."]
       #[macro_export]
       macro_rules! $name {
+        (repeated $field_name:expr, $validator:expr) => {
+          $crate::fields::Field::builder()
+          .name($field_name.into())
+          .repeated()
+          .field_type($crate::FieldType::[< $name:camel >])
+          .add_import($import_path)
+          .add_option($crate::validators::repeated::build_repeated_message_validator_option($validator))
+          .add_import($crate::common::VALIDATE_PROTO_FILE.clone())
+        };
+
+        (repeated $field_name:expr) => {
+          $crate::fields::Field::builder()
+          .name($field_name.into())
+          .repeated()
+          .field_type($crate::FieldType::[< $name:camel >])
+          .add_import($import_path)
+        };
+
         ($field_name:expr, $validator:expr) => {
           $crate::fields::Field::builder()
             .name($field_name.into())
             .field_type($crate::FieldType::[< $name:camel >])
             .add_import($import_path)
-            .add_option($crate::validators::message::build_message_validator_option)
+            .add_option($crate::validators::message::build_message_validator_option($validator))
             .add_import($crate::common::VALIDATE_PROTO_FILE.clone())
         };
 
