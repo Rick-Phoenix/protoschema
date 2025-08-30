@@ -425,6 +425,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+## 🔶 Support for all well known types
+
+Types from `google.protobuf` such as `Duration` or `Timestamp` all come with a preconfigured macro to define as fields. 
+Types from `google.type` and `google.rpc` can be enabled too with their respective features.
+
+```rust
+use protoschema::{duration, money, status};
+
+// Always available
+let duration_field = duration!("duration_field");
+
+// Available with the common_types feature
+let money_field = money!("money_field");
+
+// Available with the rpc_types feature
+let status_field = status!("status_field");
+```
+
 ## Complete example
 
 Check out the [tests](https://github.com/Rick-Phoenix/protoschema/tree/main/test) crate or the [`render_templates`](crate::packages::Package::render_templates) description for full usage example, with the proto output included.
