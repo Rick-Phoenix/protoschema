@@ -20,9 +20,7 @@ bon = "3.7.0"
 maplit = "1.0.2"
 regex = "1.11.1"
 thiserror = "2.0.16"
-prost-reflect = "0.16.1"
 convert_case = "0.8.0"
-proto-types = { version = "0.1.4", features = ["protovalidate"] }
-protocheck = { version = "0.1.*", features = ["cel"] }
-protocheck-build = { version = "0.1.*", features = ["cel"] }
-prost-build = "0.14.1"
+proto-types = { version = "0.1.4", path = "../protocheck/proto_types/", features = [
+  "protovalidate",
+] }

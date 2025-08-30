@@ -1,6 +1,5 @@
 [package]
 name = "tests"
-version = "0.1.0"
 publish = false
 edition.workspace = true
 
@@ -9,7 +8,10 @@ prost = "0.14.1"
 protocheck = { path = "../../protocheck/protocheck" }
 
 [build-dependencies]
-prost-build = "0.14.1"
 proto-types = { workspace = true }
-protocheck-build = { workspace = true, features = ["cel"] }
 protoschema = { path = "../protoschema/" }
+protocheck = { path = "../../protocheck/protocheck", features = ["cel"] }
+protocheck-build = { path = "../../protocheck/protocheck-build", features = [
+  "cel",
+] }
+prost-build = "0.14.1"
