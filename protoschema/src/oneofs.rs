@@ -72,7 +72,7 @@ impl<S: oneof_builder::State> OneofBuilder<S> {
   where
     I: IntoIterator<Item = ProtoOption>,
   {
-    self.options.extend(options.into_iter());
+    self.options.extend(options);
     self
   }
 }

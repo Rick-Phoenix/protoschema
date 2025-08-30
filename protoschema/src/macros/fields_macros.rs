@@ -386,133 +386,141 @@ impl_well_known_type!(
   "google.protobuf.Struct",
   "google/protobuf/descriptor.proto"
 );
-impl_well_known_type!(money, "google.type.Money", "google/type/money.proto");
-impl_well_known_type!(
-  interval,
-  "google.type.Interval",
-  "google/type/interval.proto"
-);
-impl_well_known_type!(color, "google.type.Color", "google/type/color.proto");
-impl_well_known_type!(date, "google.type.Date", "google/type/date.proto");
-impl_well_known_type!(
-  datetime,
-  "google.type.DateTime",
-  "google/type/datetime.proto"
-);
-impl_well_known_type!(
-  day_of_week,
-  "google.type.DayOfWeek",
-  "google/type/dayofweek.proto"
-);
-impl_well_known_type!(decimal, "google.type.Decimal", "google/type/decimal.proto");
-impl_well_known_type!(expr, "google.type.Expr", "google/type/expr.proto");
-impl_well_known_type!(
-  fraction,
-  "google.type.Fraction",
-  "google/type/fraction.proto"
-);
-impl_well_known_type!(lat_lng, "google.type.LatLng", "google/type/latlng.proto");
-impl_well_known_type!(
-  localized_text,
-  "google.type.LocalizedText",
-  "google/type/localized_text.proto"
-);
-impl_well_known_type!(month, "google.type.Month", "google/type/month.proto");
-impl_well_known_type!(
-  phone_number,
-  "google.type.PhoneNumber",
-  "google/type/phone_number.proto"
-);
-impl_well_known_type!(
-  postal_address,
-  "google.type.PostalAddress",
-  "google/type/postal_address.proto"
-);
-impl_well_known_type!(
-  quaternion,
-  "google.type.Quaternion",
-  "google/type/quaternion.proto"
-);
-impl_well_known_type!(
-  time_of_day,
-  "google.type.TimeOfDay",
-  "google/type/timeofday.proto"
-);
-impl_well_known_type!(
-  http_request,
-  "google.rpc.HttpRequest",
-  "google/rpc/http.proto"
-);
-impl_well_known_type!(
-  http_response,
-  "google.rpc.HttpResponse",
-  "google/rpc/http.proto"
-);
-impl_well_known_type!(
-  http_header,
-  "google.rpc.HttpHeader",
-  "google/rpc/http.proto"
-);
-impl_well_known_type!(status, "google.rpc.Status", "google/rpc/status.proto");
-impl_well_known_type!(code, "google.rpc.Code", "google/rpc/code.proto");
-impl_well_known_type!(
-  error_info,
-  "google.rpc.ErrorInfo",
-  "google/rpc/error_details.proto"
-);
-impl_well_known_type!(
-  retry_info,
-  "google.rpc.RetryInfo",
-  "google/rpc/error_details.proto"
-);
-impl_well_known_type!(
-  debug_info,
-  "google.rpc.DebugInfo",
-  "google/rpc/error_details.proto"
-);
-impl_well_known_type!(
-  quota_failure,
-  "google.rpc.QuotaFailure",
-  "google/rpc/error_details.proto"
-);
-impl_well_known_type!(
-  quota_failure_violation,
-  "google.rpc.QuotaFailure.Violation",
-  "google/rpc/error_details.proto"
-);
-impl_well_known_type!(
-  precondition_failure,
-  "google.rpc.PreconditionFailure",
-  "google/rpc/error_details.proto"
-);
-impl_well_known_type!(
-  precondition_failure_violation,
-  "google.rpc.PreconditionFailure.Violation",
-  "google/rpc/error_details.proto"
-);
-impl_well_known_type!(
-  bad_request,
-  "google.rpc.BadRequest",
-  "google/rpc/error_details.proto"
-);
-impl_well_known_type!(
-  bad_request_violation,
-  "google.rpc.BadRequest.Violation",
-  "google/rpc/error_details.proto"
-);
-impl_well_known_type!(
-  request_info,
-  "google.rpc.RequestInfo",
-  "google/rpc/error_details.proto"
-);
-impl_well_known_type!(
-  resource_info,
-  "google.rpc.ResourceInfo",
-  "google/rpc/error_details.proto"
-);
-impl_well_known_type!(help, "google.rpc.Help", "google/rpc/error_details.proto");
-impl_well_known_type!(
-  localized_message,
-  "google.rpc.LocalizedMessage",
-  "google/rpc/error_details.proto"
-);
+
+#[cfg(feature = "common_types")]
+mod common {
+  impl_well_known_type!(money, "google.type.Money", "google/type/money.proto");
+  impl_well_known_type!(
+    interval,
+    "google.type.Interval",
+    "google/type/interval.proto"
+  );
+  impl_well_known_type!(color, "google.type.Color", "google/type/color.proto");
+  impl_well_known_type!(date, "google.type.Date", "google/type/date.proto");
+  impl_well_known_type!(
+    datetime,
+    "google.type.DateTime",
+    "google/type/datetime.proto"
+  );
+  impl_well_known_type!(
+    day_of_week,
+    "google.type.DayOfWeek",
+    "google/type/dayofweek.proto"
+  );
+  impl_well_known_type!(decimal, "google.type.Decimal", "google/type/decimal.proto");
+  impl_well_known_type!(expr, "google.type.Expr", "google/type/expr.proto");
+  impl_well_known_type!(
+    fraction,
+    "google.type.Fraction",
+    "google/type/fraction.proto"
+  );
+  impl_well_known_type!(lat_lng, "google.type.LatLng", "google/type/latlng.proto");
+  impl_well_known_type!(
+    localized_text,
+    "google.type.LocalizedText",
+    "google/type/localized_text.proto"
+  );
+  impl_well_known_type!(month, "google.type.Month", "google/type/month.proto");
+  impl_well_known_type!(
+    phone_number,
+    "google.type.PhoneNumber",
+    "google/type/phone_number.proto"
+  );
+  impl_well_known_type!(
+    postal_address,
+    "google.type.PostalAddress",
+    "google/type/postal_address.proto"
+  );
+  impl_well_known_type!(
+    quaternion,
+    "google.type.Quaternion",
+    "google/type/quaternion.proto"
+  );
+  impl_well_known_type!(
+    time_of_day,
+    "google.type.TimeOfDay",
+    "google/type/timeofday.proto"
+  );
+}
+
+#[cfg(feature = "rpc_types")]
+mod rpc {
+  impl_well_known_type!(
+    http_request,
+    "google.rpc.HttpRequest",
+    "google/rpc/http.proto"
+  );
+  impl_well_known_type!(
+    http_response,
+    "google.rpc.HttpResponse",
+    "google/rpc/http.proto"
+  );
+  impl_well_known_type!(
+    http_header,
+    "google.rpc.HttpHeader",
+    "google/rpc/http.proto"
+  );
+  impl_well_known_type!(status, "google.rpc.Status", "google/rpc/status.proto");
+  impl_well_known_type!(code, "google.rpc.Code", "google/rpc/code.proto");
+  impl_well_known_type!(
+    error_info,
+    "google.rpc.ErrorInfo",
+    "google/rpc/error_details.proto"
+  );
+  impl_well_known_type!(
+    retry_info,
+    "google.rpc.RetryInfo",
+    "google/rpc/error_details.proto"
+  );
+  impl_well_known_type!(
+    debug_info,
+    "google.rpc.DebugInfo",
+    "google/rpc/error_details.proto"
+  );
+  impl_well_known_type!(
+    quota_failure,
+    "google.rpc.QuotaFailure",
+    "google/rpc/error_details.proto"
+  );
+  impl_well_known_type!(
+    quota_failure_violation,
+    "google.rpc.QuotaFailure.Violation",
+    "google/rpc/error_details.proto"
+  );
+  impl_well_known_type!(
+    precondition_failure,
+    "google.rpc.PreconditionFailure",
+    "google/rpc/error_details.proto"
+  );
+  impl_well_known_type!(
+    precondition_failure_violation,
+    "google.rpc.PreconditionFailure.Violation",
+    "google/rpc/error_details.proto"
+  );
+  impl_well_known_type!(
+    bad_request,
+    "google.rpc.BadRequest",
+    "google/rpc/error_details.proto"
+  );
+  impl_well_known_type!(
+    bad_request_violation,
+    "google.rpc.BadRequest.Violation",
+    "google/rpc/error_details.proto"
+  );
+  impl_well_known_type!(
+    request_info,
+    "google.rpc.RequestInfo",
+    "google/rpc/error_details.proto"
+  );
+  impl_well_known_type!(
+    resource_info,
+    "google.rpc.ResourceInfo",
+    "google/rpc/error_details.proto"
+  );
+  impl_well_known_type!(help, "google.rpc.Help", "google/rpc/error_details.proto");
+  impl_well_known_type!(
+    localized_message,
+    "google.rpc.LocalizedMessage",
+    "google/rpc/error_details.proto"
+  );
+}

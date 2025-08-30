@@ -655,37 +655,42 @@ dependencies = [
 
 [[package]]
 name = "proto-types"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "base64",
  "cel",
  "chrono",
+ "document-features",
  "paste",
  "proc-macro2",
  "prost",
  "quote",
  "serde",
+ "serde_json",
  "syn",
  "thiserror 2.0.16",
 ]
 
 [[package]]
 name = "proto-types"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "90245eced25dc076ddc026c823cedfbbe8f192a3c40fe2a2ae566b7016778ccf"
+checksum = "ad5c75d56a64661282f69340bc7093dd2a1f8eef24d48e71f9a2b361b540e91f"
 dependencies = [
  "cel",
  "chrono",
+ "document-features",
+ "paste",
  "prost",
+ "thiserror 2.0.16",
 ]
 
 [[package]]
 name = "protocheck"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "document-features",
- "proto-types 0.1.1",
+ "proto-types 0.1.2",
  "protocheck-core",
  "protocheck-proc-macro",
 ]
@@ -702,7 +707,7 @@ dependencies = [
 
 [[package]]
 name = "protocheck-core"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "bytes",
  "cel",
@@ -711,20 +716,20 @@ dependencies = [
  "iri-string",
  "paste",
  "proc-macro2",
- "proto-types 0.1.1",
+ "proto-types 0.1.2",
  "quote",
  "regex",
 ]
 
 [[package]]
 name = "protocheck-proc-macro"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "cel",
  "convert_case",
  "proc-macro2",
  "prost-reflect",
- "proto-types 0.1.1",
+ "proto-types 0.1.2",
  "protocheck-core",
  "quote",
  "regex",
@@ -738,8 +743,9 @@ dependencies = [
  "askama",
  "bon",
  "convert_case",
+ "document-features",
  "paste",
- "proto-types 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "proto-types 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "regex",
  "thiserror 2.0.16",
 ]
@@ -914,7 +920,7 @@ version = "0.1.0"
 dependencies = [
  "prost",
  "prost-build",
- "proto-types 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "proto-types 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "protocheck",
  "protocheck-build",
  "protoschema",

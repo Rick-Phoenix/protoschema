@@ -18,6 +18,13 @@ regex = { workspace = true }
 proto-types = { workspace = true }
 thiserror = { workspace = true }
 convert_case = { workspace = true }
+document-features = "=0.2.11"
+
+[features]
+## Enables macros for generating fields with types coming from the `google.type` package.
+common_types = []
+## Enables macros for generating fields with types coming from the `google.rpc` package.
+rpc_types = []
 
 # [dev-dependencies]
 # protocheck-build = { workspace = true }
