@@ -159,7 +159,11 @@ let my_string = string!(repeated "my_field", |list, string|
   .items(
     string.min_len(10)
     // We can also define custom cel rules for fields
-    .cel([ cel_rule!( id = "is_abc", msg = "is not 'abc'", expr = "this == 'abc'" ) ])
+    .cel([ cel_rule!( 
+      id = "is_abc", 
+      msg = "is not 'abc'",
+      expr = "this == 'abc'" 
+    ) ])
   )
 );
 
