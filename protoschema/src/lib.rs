@@ -1,5 +1,7 @@
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![doc = include_str!("../README.md")]
+//! # 🚩 Feature flags
+#![doc = document_features::document_features!()]
 
 use std::marker::PhantomData;
 

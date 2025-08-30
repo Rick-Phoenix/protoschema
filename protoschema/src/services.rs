@@ -10,7 +10,7 @@ use crate::{
 };
 
 /// The builder for a protobuf service.
-/// Usually generated via the [`services`](crate::services) macro.
+/// Usually generated via the [`services`](crate::services!) macro.
 #[derive(Clone, Debug)]
 pub struct ServiceBuilder<S: ServiceState = Empty> {
   pub(crate) id: usize,
@@ -20,7 +20,7 @@ pub struct ServiceBuilder<S: ServiceState = Empty> {
 }
 
 /// A struct representing a protobuf service handler.
-/// Usually generated as part of the [`services`](crate::services) macro.
+/// Usually generated as part of the [`services`](crate::services!) macro.
 #[derive(Clone, Debug, Builder)]
 #[builder(start_fn = new)]
 pub struct ServiceHandler {
