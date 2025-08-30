@@ -416,7 +416,12 @@ mod common {
   impl_well_known_type!(color, "google.type.Color", "google/type/color.proto");
   impl_well_known_type!(date, "google.type.Date", "google/type/date.proto");
   impl_well_known_type!(
-    datetime,
+    date_time,
+    "google.type.DateTime",
+    "google/type/datetime.proto"
+  );
+  impl_well_known_type!(
+    time_zone,
     "google.type.DateTime",
     "google/type/datetime.proto"
   );
@@ -521,8 +526,8 @@ mod rpc {
     "google/rpc/error_details.proto"
   );
   impl_well_known_type!(
-    bad_request_violation,
-    "google.rpc.BadRequest.Violation",
+    field_violation,
+    "google.rpc.BadRequest.FieldViolation",
     "google/rpc/error_details.proto"
   );
   impl_well_known_type!(
@@ -536,6 +541,11 @@ mod rpc {
     "google/rpc/error_details.proto"
   );
   impl_well_known_type!(help, "google.rpc.Help", "google/rpc/error_details.proto");
+  impl_well_known_type!(
+    link,
+    "google.rpc.Help.Link",
+    "google/rpc/error_details.proto"
+  );
   impl_well_known_type!(
     localized_message,
     "google.rpc.LocalizedMessage",

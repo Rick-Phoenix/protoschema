@@ -86,6 +86,7 @@ pub enum FieldType {
   Color,
   Date,
   DateTime,
+  TimeZone,
   DayOfWeek,
   Decimal,
   Expr,
@@ -110,11 +111,12 @@ pub enum FieldType {
   PreconditionFailure,
   PreconditionFailureViolation,
   BadRequest,
-  BadRequestViolation,
+  FieldViolation,
   RequestInfo,
   ResourceInfo,
   Help,
   LocalizedMessage,
+  Link,
 }
 
 impl Display for FieldType {
@@ -181,6 +183,7 @@ impl FieldType {
       FieldType::Color => "google.type.Color",
       FieldType::Date => "google.type.Date",
       FieldType::DateTime => "google.type.DateTime",
+      FieldType::TimeZone => "google.type.TimeZone",
       FieldType::DayOfWeek => "google.type.DayOfWeek",
       FieldType::Decimal => "google.type.Decimal",
       FieldType::Expr => "google.type.Expr",
@@ -205,10 +208,11 @@ impl FieldType {
       FieldType::PreconditionFailure => "google.rpc.PreconditionFailure",
       FieldType::PreconditionFailureViolation => "google.rpc.PreconditionFailure.Violation",
       FieldType::BadRequest => "google.rpc.BadRequest",
-      FieldType::BadRequestViolation => "google.rpc.BadRequest.Violation",
+      FieldType::FieldViolation => "google.rpc.BadRequest.FieldViolation",
       FieldType::RequestInfo => "google.rpc.RequestInfo",
       FieldType::ResourceInfo => "google.rpc.ResourceInfo",
       FieldType::Help => "google.rpc.Help",
+      FieldType::Link => "google.rpc.Help.Link",
       FieldType::LocalizedMessage => "google.rpc.LocalizedMessage",
     }
   }

@@ -33,6 +33,11 @@ macro_rules! map_impl {
 ///   |map_validator, keys_validator, values_validator|
 ///   map_validator.min_pairs(2).keys(keys_validator.gt(0)).values(values_validator.min_len(1))
 /// );
+///
+/// // For common or rpc types, use their name in snake case
+/// let my_field_3 = map!("well_known_types_map", <string, duration>);
+/// let my_field_4 = map!("well_known_types_map", <string, http_request>);
+/// let my_field_5 = map!("well_known_types_map", <string, money>);
 /// ```
 #[macro_export]
 macro_rules! map {
@@ -80,6 +85,7 @@ macro_rules! enum_map {
 /// The first argument is the name of the field, followed by `<$key_type, $msg_ident>`, where $key_type is a plain ident for the type of the keys, and the $msg_ident is an ident pointing to a [`MessageBuilder`](crate::messages::MessageBuilder) instance.
 /// The last, optional argument is a closure that will receive three arguments, the first being a [`MapValidator`](crate::validators::map::MapValidator) instance, and the other two being the field validator instances for the given key type and the [`MessageValidator`](crate::validators::message::MessageValidator) builder.
 ///
+/// You only need to use this for custom messages. For well known types such as those from google.type or google.rpc or google.protobuf which have their dedicated field macro (i.e. http_request!), you can use [`map`] directly.
 /// # Examples
 /// ```
 /// use protoschema::{Package, msg_map, cel_rule};
