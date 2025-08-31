@@ -8,6 +8,7 @@
 
 - Release
 - Switched back to conventional release tag names
+
 ## [0.1.7] - 2025-08-31
 
 ### 🐛 Bug Fixes
