@@ -1,3 +1,13 @@
+## [0.1.8] - 2025-08-31
+
+### 📚 Documentation
+
+- Fixed links for the complete examples
+
+### ⚙️ Miscellaneous Tasks
+
+- Release
+- Switched back to conventional release tag names
 ## [0.1.7] - 2025-08-31
 
 ### 🐛 Bug Fixes

@@ -445,8 +445,8 @@ let status_field = status!("status_field");
 
 ## Complete example
 
-Check out the [tests](https://github.com/Rick-Phoenix/protoschema/tree/main/test) crate or the [`render_templates`](crate::packages::Package::render_templates) description for full usage example, with the proto output included.
+Check out the [tests](https://github.com/Rick-Phoenix/protoschema/blob/main/protoschema/tests/test.rs) crate or the [`render_templates`](crate::packages::Package::render_templates) description for full usage example, with the proto output included.
 
 ## ✅ Integration with protocheck
 
-Integrating with protocheck is pretty straightforward, but you can also find an example in a dedicated [testing crate](https://github.com/Rick-Phoenix/protoschema/tree/main/tests) in the protoschema repo.
+Integrating with protocheck is pretty straightforward, but you can also find an example in a dedicated [testing crate](https://github.com/Rick-Phoenix/protoschema/blob/main/tests/build.rs) in the protoschema repo.
