@@ -20,11 +20,11 @@ Well, this crate tries to address precisely all of that.
 It all starts with the [`Package`] struct, which emulates a protobuf package. 
 From this package, we can create new [`FileBuilder`](crate::files::FileBuilder)s, which in turn can be used to generate new [`MessageBuilder`](crate::messages::MessageBuilder)s and [`EnumBuilder`](crate::enums::EnumBuilder)s. 
 
-There are macros and function to generate every item that you would see in a protobuf file.
+There are macros and functions to generate every item that you would see in a protobuf file.
 Every macro comes with its own examples, so you can head over to the [`macros`] module to inspect the various detailed examples for each use case.
 
 We are also going to cover the single items one by one in here with some elementary examples, and then a complete example at the end.
-But first, I want to focus on two aspects which are core elements about this crate, and its two main drivers, namely reusable elements and validators.
+But first, I want to focus on two aspects which are the two main drivers behind this crate's creation, namely reusable elements and validators.
 
 ## 🧩 Reusable elements
 
@@ -38,12 +38,13 @@ let my_list_of_options = [ my_reusable_option.clone(), my_reusable_option.clone(
 
 let my_reusable_fields = reusable_fields!(
   1 => uint64!("id"),
-  // This will automatically add google/protobuf/timestamp.proto to the receiving file
+  // This will automatically add google/protobuf/timestamp.proto 
+  // to the receiving file's imports
   2 => timestamp!("created_at"),
   3 => timestamp!("updated_at"),
-  // This will add the import to the receiving file
   4 => uint64!("with_custom_option")
     .add_option(my_reusable_option.clone())
+    // This will add the import to the receiving file
     .add_import("my_other_package/v1/file.proto")
 );
 
@@ -63,26 +64,19 @@ let my_oneof = oneof!(
   // You can also define portable imports for oneofs
   imports = ["my_pkg/reusable/import.proto"],
   options = [ my_reusable_option.clone() ],
+  // Including all fields at once
   include(my_reusable_fields),
 );
 
 let my_pkg = Package::new("my_pkg.v1");
 let my_file = my_pkg.new_file("my_file");
 
-let my_msg = my_file.new_message("MyMessage");
-
-// This is a field that will have the type 'MyMessage'. 
-// When this is included in a message that is not located 
-// in the same file, the import path to this message 
-// will automatically be added to the receiving file.
-let my_msg_field = msg_field!(my_msg, "my_msg_field");
-
-message!(
-  my_msg,
+let my_msg = message!(
+  my_file.new_message("MyMessage"),
   // This is an expression like any other, 
   // so any IntoIter<Item = ProtoOption> can work
   options = my_list_of_options.clone(),
-  // Including all fields at once
+  // Including fields here too
   include(my_reusable_fields),
   5 => uint64!("internal_ref"),
 
@@ -94,6 +88,12 @@ message!(
     include(my_reusable_variants),
   }
 );
+
+// This is a field that will have the type 'MyMessage'. 
+// When this is included in a message that is not located 
+// in the same file, the import path to this message 
+// will automatically be added to the receiving file.
+let my_msg_field = msg_field!(my_msg, "my_msg_field");
 
 let my_other_enum = proto_enum!(
   my_file.new_enum("my_other_enum"),
@@ -163,7 +163,7 @@ let my_string = string!(repeated "my_field", |list, string|
       id = "is_abc", 
       msg = "is not 'abc'",
       expr = "this == 'abc'" 
-    ) ])
+    )])
   )
 );
 
@@ -288,10 +288,8 @@ use protoschema::{Package, message, string};
 let my_pkg = Package::new("my_pkg.v1");
 let my_file = my_pkg.new_file("my_file");
 
-let my_msg = my_file.new_message("MyMessage");
-
-message!(
-  my_msg,
+let my_msg = message!(
+  my_file.new_message("MyMessage"),
   1 => string!("my_field"),
 
   enum "my_enum" {
@@ -332,11 +330,10 @@ let my_oneof = oneof!(
 let my_pkg = Package::new("my_pkg.v1");
 let my_file = my_pkg.new_file("my_file");
 
-let my_msg = my_file.new_message("MyMessage");
 
 // And then including into a message later on
-message!(
-  my_msg, 
+let my_msg = message!(
+  my_file.new_message("MyMessage"), 
   4 => string!("my_field"),
   
   include_oneof(my_oneof),
@@ -449,4 +446,5 @@ Check out the [tests](https://github.com/Rick-Phoenix/protoschema/blob/main/prot
 
 ## ✅ Integration with protocheck
 
-Integrating with protocheck is pretty straightforward, but you can also find an example in a dedicated [testing crate](https://github.com/Rick-Phoenix/protoschema/blob/main/tests/build.rs) in the protoschema repo.
+Integrating with protocheck is pretty straightforward, but you can also find an example in a dedicated [testing crate](https://github.com/Rick-Phoenix/protoschema/blob/main/tests/build.rs) in the protoschema repo. 
+There is also a somewhat comprehensive example in the testing crate for [protocheck](https://github.com/Rick-Phoenix/protocheck/blob/main/tests/build.rs)
