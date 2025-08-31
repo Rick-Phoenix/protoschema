@@ -15,7 +15,7 @@ tag-name = "v{{version}}"
 pre-release-hook = [
   "sh",
   "-c",
-  "cargo test --all-features; cd .. && git cliff -o CHANGELOG.md --tag \"{{version}}\";",
+  "cd .. ; cargo test --all-features; git cliff -o CHANGELOG.md --tag \"{{version}}\";",
 ]
 
 [dependencies]

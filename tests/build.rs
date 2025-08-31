@@ -1,7 +1,7 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use prost_build::Config;
-use protocheck_build::compile_protos_with_validators;
+use protocheck_build::{compile_protos_with_validators, get_proto_files_recursive};
 use protoschema::{
   common::allow_alias, enum_field, enum_map, enum_variants, extension, message, msg_field, msg_map,
   oneof, packages::Package, proto_enum, reusable_fields, services, string, timestamp, uint64,
@@ -24,23 +24,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   );
 
   let reusable_fields = reusable_fields!(
-    100 => timestamp!("created_at"),
-    101 => timestamp!("updated_at"),
+    1 => uint64!("id"),
+    2 => timestamp!("created_at"),
+    3 => timestamp!("updated_at"),
   );
-
-  let user_msg = file.new_message("User");
-  let section_msg = file.new_message("Section");
-  let subsection_msg = section_msg.new_message("Subsection");
-  let sub_subsection_msg = subsection_msg.new_message("SubSubsection");
-
-  let second_package = Package::new("myapp.v2");
-  let external_file = second_package.new_file("post");
-  let post_msg = external_file.new_message("Post");
-
-  // Defining variants using the builder syntax
-  let post_status_enum = external_file.new_enum("post_status");
-  let post_category_enum = post_msg.new_enum("post_category");
-  let post_metadata_msg = post_msg.new_message("Metadata");
 
   let user_status_enum = proto_enum!(
     file.new_enum("user_status"),
@@ -52,11 +39,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     2 => "PASSIVE"
   );
 
-  let reusable_oneof = oneof!("activity",
-    102 => enum_field!(user_status_enum, "user_current_status"),
-    103 => timestamp!("account_deletion_date")
-  );
-
   let referrers_enum = proto_enum!(
     file.new_enum("referrers"),
 
@@ -66,11 +48,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     2 => "REDDIT"
   );
 
+  let user_msg = file.new_message("User");
+
+  let user_request_msg = message!(file.new_message("GetUserRequest"), include(reusable_fields));
+
+  let second_package = Package::new("myapp.v2");
+  let external_file = second_package.new_file("post");
+  let post_msg = external_file.new_message("Post");
+  let post_request_msg = message!(
+    external_file.new_message("GetPostRequest"),
+    include(reusable_fields),
+
+    4 => uint64!("user_id"),
+  );
+
+  let reusable_oneof = oneof!("activity",
+    102 => enum_field!(user_status_enum, "user_current_status"),
+    103 => timestamp!("account_deletion_date")
+  );
+
   services!(
     file,
-    MyService1 {
-      Handler1(user_msg => section_msg),
-      Handler2(post_msg => post_metadata_msg),
+    UserService {
+      GetUser(user_request_msg => user_msg),
+      GetPostByUserId(post_request_msg => post_msg),
     };
   );
 
@@ -89,17 +90,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     include(reusable_fields),
     include_oneof(reusable_oneof),
-    1 => uint64!("id", |id| id.gt(0)),
-    2 => msg_field!(repeated user_msg, "best_friend"),
-    3 => string!("password", |pw| pw.min_len(8)),
-    4 => string!("repeated_password", |pw| pw.min_len(8)),
-    5 => enum_field!(user_status_enum, "last_status", |status| status.defined_only()),
-    6 => enum_map!("last_30_days_statuses", <int32, user_status_enum>, |m, k, v| m.min_pairs(30).keys(k.lt(31)).values(v.defined_only())),
-    7 => msg_map!("friends", <uint64, user_msg>),
-    8 => msg_field!(post_msg, "last_post"),
-    9 => enum_field!(post_status_enum, "last_post_status"),
-    10 => msg_field!(post_metadata_msg, "last_post_metadata"),
-
+    4 => msg_field!(repeated user_msg, "best_friend"),
+    5 => string!("password", |pw| pw.min_len(8)),
+    6 => string!("repeated_password", |pw| pw.min_len(8)),
+    7 => enum_field!(user_status_enum, "last_status", |status| status.defined_only()),
+    8 => enum_map!("last_30_days_statuses", <int32, user_status_enum>, |m, k, v| m.min_pairs(30).keys(k.lt(31)).values(v.defined_only())),
+    9 => msg_map!("friends", <uint64, user_msg>),
+    10 => msg_field!(post_msg, "last_post"),
 
     enum "favorite_category" {
       include(reusable_variants),
@@ -123,24 +120,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
   };
 
-  message! {
-    subsection_msg,
-
-    1 => string!("name"),
-    2 => msg_field!(post_msg, "top_trending_post"),
-  };
-
-  message! {
-    sub_subsection_msg,
-
-    1 => uint64!("id"),
-    2 => string!("name"),
-    3 => enum_field!(post_category_enum, "category"),
-  };
-
   let proto_root = Path::new("proto");
   package.render_templates(proto_root)?;
   second_package.render_templates(proto_root)?;
+
+  // End of the protoschema setup.
+  // Now we just use protocheck with the generated files.
 
   println!("cargo:rerun-if-changed=proto/");
   println!("cargo:rerun-if-changed=proto_deps/");
@@ -150,7 +135,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
   let proto_include_paths = &["proto", "proto_deps"];
 
-  let proto_files = &["proto/myapp/v1/user.proto", "proto/myapp/v2/post.proto"];
+  let proto_files = get_proto_files_recursive(&PathBuf::from("proto/myapp"))?;
 
   let mut config = Config::new();
   config
@@ -161,12 +146,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
   compile_protos_with_validators(
     &mut config,
-    proto_files,
+    &proto_files,
     proto_include_paths,
     &["myapp.v1", "myapp.v2"],
   )?;
 
-  config.compile_protos(proto_files, proto_include_paths)?;
+  config.compile_protos(&proto_files, proto_include_paths)?;
 
   println!(
     "cargo:rustc-env=PROTO_DESCRIPTOR_SET={}",

@@ -91,17 +91,15 @@ message User {
     referrers referrer = 12;
   }
 
-  uint64 id = 1 [
-    (buf.validate.field) = {
-      uint64: {
-        gt: 0 
-      } 
-    }
-  ];
+  uint64 id = 1;
 
-  repeated User best_friend = 2;
+  google.protobuf.Timestamp created_at = 2;
 
-  string password = 3 [
+  google.protobuf.Timestamp updated_at = 3;
+
+  repeated User best_friend = 4;
+
+  string password = 5 [
     (buf.validate.field) = {
       string: {
         min_len: 8 
@@ -109,7 +107,7 @@ message User {
     }
   ];
 
-  string repeated_password = 4 [
+  string repeated_password = 6 [
     (buf.validate.field) = {
       string: {
         min_len: 8 
@@ -117,7 +115,7 @@ message User {
     }
   ];
 
-  user_status last_status = 5 [
+  user_status last_status = 7 [
     (buf.validate.field) = {
       enum: {
         defined_only: true 
@@ -125,7 +123,7 @@ message User {
     }
   ];
 
-  map<int32, user_status> last_30_days_statuses = 6 [
+  map<int32, user_status> last_30_days_statuses = 8 [
     (buf.validate.field) = {
       map: {
         min_pairs: 30, 
@@ -143,37 +141,21 @@ message User {
     }
   ];
 
-  map<uint64, User> friends = 7;
+  map<uint64, User> friends = 9;
 
-  myapp.v2.Post last_post = 8;
-
-  myapp.v2.post_status last_post_status = 9;
-
-  myapp.v2.Post.Metadata last_post_metadata = 10;
-
-  google.protobuf.Timestamp created_at = 100;
-
-  google.protobuf.Timestamp updated_at = 101;
+  myapp.v2.Post last_post = 10;
 }
 
-message Section {
-  message Subsection {
-    message SubSubsection {
-      uint64 id = 1;
+message GetUserRequest {
+  uint64 id = 1;
 
-      string name = 2;
+  google.protobuf.Timestamp created_at = 2;
 
-      myapp.v2.Post.post_category category = 3;
-    }
-
-    string name = 1;
-
-    myapp.v2.Post top_trending_post = 2;
-  }
+  google.protobuf.Timestamp updated_at = 3;
 }
 
-service MyService1 {
-  rpc Handler1 (User) returns (Section);
+service UserService {
+  rpc GetUser (GetUserRequest) returns (User);
 
-  rpc Handler2 (myapp.v2.Post) returns (myapp.v2.Post.Metadata);
+  rpc GetPostByUserId (myapp.v2.GetPostRequest) returns (myapp.v2.Post);
 }
