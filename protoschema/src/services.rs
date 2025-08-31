@@ -4,7 +4,7 @@ use bon::Builder;
 
 use crate::{
   field_type::{get_shortest_item_name, ImportedItemPath},
-  messages::MessageBuilder,
+  messages::{MessageBuilder, MessageState},
   packages::Arena,
   sealed, Empty, IsUnset, ProtoOption, Set, Unset,
 };
@@ -61,7 +61,10 @@ impl<S: HandlerState> ServiceHandlerBuilder<S> {
   }
 
   /// Sets the request for this handler
-  pub fn request(self, message: &MessageBuilder) -> ServiceHandlerBuilder<SetRequest<S>>
+  pub fn request<MS: MessageState>(
+    self,
+    message: &MessageBuilder<MS>,
+  ) -> ServiceHandlerBuilder<SetRequest<S>>
   where
     S::Request: HandlerIsUnset,
   {
@@ -69,7 +72,10 @@ impl<S: HandlerState> ServiceHandlerBuilder<S> {
   }
 
   /// Sets the response for this handler
-  pub fn response(self, message: &MessageBuilder) -> ServiceHandlerBuilder<SetResponse<S>>
+  pub fn response<MS: MessageState>(
+    self,
+    message: &MessageBuilder<MS>,
+  ) -> ServiceHandlerBuilder<SetResponse<S>>
   where
     S::Response: HandlerIsUnset,
   {
