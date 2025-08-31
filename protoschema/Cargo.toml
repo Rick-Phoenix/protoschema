@@ -11,7 +11,6 @@ edition.workspace = true
 readme = "README.md"
 
 [package.metadata.release]
-tag-name = "v{{version}}"
 pre-release-hook = [
   "sh",
   "-c",
@@ -33,11 +32,6 @@ document-features = "=0.2.11"
 common_types = []
 ## Enables macros for generating fields with types coming from the `google.rpc` package.
 rpc_types = []
-
-# [dev-dependencies]
-# protocheck-build = { workspace = true }
-# proto-types = { workspace = true }
-# prost-build = { workspace = true }
 
 [package.metadata.docs.rs]
 all-features = true
