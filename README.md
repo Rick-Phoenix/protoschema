@@ -108,9 +108,9 @@ let my_other_enum = proto_enum!(
 let my_enum_field = enum_field!(my_other_enum, "my_enum_field");
 ```
 
-## ✅ Easy validation rules definition
+## ✅ Defining validation logic
 
-Protobuf as a whole has a great potential for becoming the standard in defining API contracts, especially between different languages, because by leveraging libraries such as [protocheck](https://github.com/Rick-Phoenix/protocheck) or [protovalidate-es](https://github.com/bufbuild/protovalidate-es), it can allow you to define the validation logic for your objects in the same schema where you are defining them. 
+Protobuf as a whole has a great potential for becoming the standard in defining API contracts, especially between different languages, because by leveraging libraries such as my crate [protocheck](https://github.com/Rick-Phoenix/protocheck) or [protovalidate-es](https://github.com/bufbuild/protovalidate-es) (for javascript-based projects), it can allow you to define the validation logic for your messages directly within their protobuf definition. 
 
 Compared to the traditional methods like JSON schema, this comes with the benefit of being able to apply custom [cel](https://cel.dev/) rules which can validate multiple fields in a struct at once, which is not possible with normal JSON schema validation.
 
@@ -210,7 +210,7 @@ my_file.add_imports(["my_import"]);
 
 This is how you create the [`MessageBuilder`](crate::messages::MessageBuilder), which is the first argument that you give to the [`message`] macro and also allows you can define nested messages.
 
-For a full, comprehensive example on how to populate a message using the [`message`] macro, check out the [tests](https://github.com/Rick-Phoenix/protoschema/tree/main/test) crate or the [`render_templates`](crate::packages::Package::render_templates) description.
+> For a full, comprehensive example on how to populate a message using the [`message`] macro, check out the [`render_templates`](crate::packages::Package::render_templates) description.
 
 ```rust
 use protoschema::{Package};
@@ -440,11 +440,8 @@ let money_field = money!("money_field");
 let status_field = status!("status_field");
 ```
 
-## Complete example
+## Other examples
 
-Check out the [tests](https://github.com/Rick-Phoenix/protoschema/blob/main/protoschema/tests/test.rs) crate or the [`render_templates`](crate::packages::Package::render_templates) description for full usage example, with the proto output included.
+You can check out the [tests](https://github.com/Rick-Phoenix/protoschema/blob/main/protoschema/tests/test.rs) or the [`render_templates`](crate::packages::Package::render_templates) description for a full usage example, with the proto output included.
 
-## ✅ Integration with protocheck
-
-Integrating with protocheck is pretty straightforward, but you can also find an example in a dedicated [testing crate](https://github.com/Rick-Phoenix/protoschema/blob/main/tests/build.rs) in the protoschema repo. 
-There is also a somewhat comprehensive example in the testing crate for [protocheck](https://github.com/Rick-Phoenix/protocheck/blob/main/tests/build.rs)
+There is also another comprehensive example in the [protocheck](https://github.com/Rick-Phoenix/protocheck/blob/main/tests/build.rs) repository, where I use `protoschema` to set up protobuf files for testing.

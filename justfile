@@ -11,3 +11,6 @@ release-test version: test
 
 release-exec version: test (update-changelog version)
     cargo release {{ version }} -p protoschema --execute
+
+build-docs:
+    RUSTDOCFLAGS="--cfg docsrs" cargo +nightly doc --all-features --open
