@@ -16,6 +16,10 @@ pre-release-hook = [
   "-c",
   "cd .. ; cargo test --all-features; git cliff --latest --prepend CHANGELOG.md --tag \"{{version}}\";",
 ]
+tag-name = "v{{version}}"
+allow-branch = ["main"]
+enable-all-features = true
+
 
 [dependencies]
 askama = { workspace = true }
@@ -25,7 +29,7 @@ regex = { workspace = true }
 proto-types = { workspace = true }
 thiserror = { workspace = true }
 convert_case = { workspace = true }
-document-features = "=0.2.11"
+document-features = "0.2"
 
 [features]
 ## Enables macros for generating fields with types coming from the `google.type` package.

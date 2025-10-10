@@ -16,11 +16,11 @@ askama = { version = "0.14.0", default-features = false, features = [
   "derive",
   "std",
 ] }
-bon = "3.7.0"
-maplit = "1.0.2"
-regex = "1.11.1"
-thiserror = "2.0.16"
-convert_case = "0.8.0"
-proto-types = { version = "0.1.4", path = "../protocheck/proto_types/", features = [
+bon = "3.7"
+maplit = "1"
+regex = "1"
+thiserror = "2"
+convert_case = "0.8"
+proto-types = { version = "0.1.11", path = "../protocheck/proto_types/", features = [
   "protovalidate",
 ] }
