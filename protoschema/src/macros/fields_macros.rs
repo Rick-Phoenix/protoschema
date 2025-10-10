@@ -405,6 +405,9 @@ impl_well_known_type!(
   "google/protobuf/descriptor.proto"
 );
 
+impl_well_known_type!(status, "google.rpc.Status", "google/rpc/status.proto");
+impl_well_known_type!(code, "google.rpc.Code", "google/rpc/code.proto");
+
 #[cfg(feature = "common_types")]
 mod common {
   impl_well_known_type!(money, "google.type.Money", "google/type/money.proto");
@@ -483,8 +486,7 @@ mod rpc {
     "google.rpc.HttpHeader",
     "google/rpc/http.proto"
   );
-  impl_well_known_type!(status, "google.rpc.Status", "google/rpc/status.proto");
-  impl_well_known_type!(code, "google.rpc.Code", "google/rpc/code.proto");
+
   impl_well_known_type!(
     error_info,
     "google.rpc.ErrorInfo",

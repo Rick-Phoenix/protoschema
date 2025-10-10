@@ -425,7 +425,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ## 🔶 Support for all well known types
 
 Types from `google.protobuf` such as `Duration` or `Timestamp` all come with a preconfigured macro to define as fields. 
-Types from `google.type` and `google.rpc` can be enabled too with their respective features.
+Types from `google.type` and `google.rpc` can be enabled too with their respective features (except for `google.rpc.Status` and `google.rpc.Code`, which are available by default).
 
 ```rust
 use protoschema::{duration, money, status};
