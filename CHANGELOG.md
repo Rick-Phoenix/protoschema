@@ -1,15 +1,4 @@
-## [0.1.8] - 2025-08-31
-
-### 📚 Documentation
-
-- Fixed links for the complete examples
-
-### ⚙️ Miscellaneous Tasks
-
-- Release
-- Switched back to conventional release tag names
-
-## [0.1.7] - 2025-08-31
+## [0.1.9] - 2025-10-10
 
 ### 🐛 Bug Fixes
 
@@ -20,11 +9,15 @@
 
 - Improved formatting for readme
 - Added documentation for well known types as fields
+- Fixed links for the complete examples
+- Show short syntax for the message macro
+- Changed doc_auto_cfg to doc_cfg
 
 ### 🧪 Testing
 
 - Corrected complete test with protocheck example
 
-### ⚙️ Miscellaneous Tasks
+### 📦 CI/CD
 
 - Set up release routine
+- Switched back to conventional release tag names
