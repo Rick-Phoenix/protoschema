@@ -14,7 +14,7 @@ readme = "README.md"
 pre-release-hook = [
   "sh",
   "-c",
-  "cd .. ; cargo test --all-features; git cliff --unreleased --prepend CHANGELOG.md --tag \"{{version}}\";",
+  "cd .. ; cargo test --all-features; git cliff --latest --prepend CHANGELOG.md --tag \"{{version}}\";",
 ]
 
 [dependencies]
