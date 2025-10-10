@@ -1,5 +1,5 @@
 [workspace]
-members = ["tests", "protoschema"]
+members = ["protoschema"]
 resolver = "3"
 
 [workspace.package]
