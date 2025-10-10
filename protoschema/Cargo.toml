@@ -11,11 +11,6 @@ edition.workspace = true
 readme = "README.md"
 
 [package.metadata.release]
-pre-release-hook = [
-  "sh",
-  "-c",
-  "cd .. ; cargo test --all-features; git cliff --latest --prepend CHANGELOG.md --tag \"{{version}}\";",
-]
 tag-name = "v{{version}}"
 allow-branch = ["main"]
 enable-all-features = true
