@@ -12,7 +12,7 @@ use crate::*;
 pub(crate) struct FieldAttrs {
   pub tag: u32,
   pub validator: Option<ValidatorExpr>,
-  pub options: Options,
+  pub options: ProtoOptions,
   pub name: String,
   pub type_: Option<Path>,
 }
@@ -94,7 +94,7 @@ pub(crate) fn process_field_attrs(
   FieldAttrs {
     validator,
     tag,
-    options: attributes::Options(options),
+    options: attributes::ProtoOptions(options),
     name: name.unwrap_or_else(|| ccase!(snake, original_name.to_string())),
     type_,
   }

@@ -3,7 +3,7 @@ use crate::*;
 pub(crate) struct EnumVariantAttrs {
   pub name: String,
   pub tag: u32,
-  pub options: Options,
+  pub options: ProtoOptions,
 }
 
 pub(crate) fn process_enum_variants_attrs(
@@ -67,7 +67,7 @@ pub(crate) fn process_enum_variants_attrs(
 
   EnumVariantAttrs {
     tag,
-    options: attributes::Options(options),
+    options: attributes::ProtoOptions(options),
     name: name.unwrap_or_else(|| ccase!(constant, original_name.to_string())),
   }
 }

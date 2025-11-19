@@ -1,7 +1,7 @@
 use crate::*;
 
 pub(crate) struct OneofAttrs {
-  pub options: Options,
+  pub options: ProtoOptions,
   pub name: String,
   pub reserved_numbers: ReservedNumbers,
 }
@@ -46,7 +46,7 @@ pub(crate) fn process_oneof_attrs(enum_name: &Ident, attrs: &Vec<Attribute>) -> 
   }
 
   OneofAttrs {
-    options: attributes::Options(options),
+    options: attributes::ProtoOptions(options),
     name: name.unwrap_or_else(|| ccase!(snake, enum_name.to_string())),
     reserved_numbers,
   }

@@ -20,9 +20,9 @@ pub fn extract_u32(expr: &Expr) -> Result<u32, Error> {
   }
 }
 
-pub(crate) struct Options(pub Option<TokenStream2>);
+pub(crate) struct ProtoOptions(pub Option<TokenStream2>);
 
-impl ToTokens for Options {
+impl ToTokens for ProtoOptions {
   fn to_tokens(&self, tokens: &mut TokenStream2) {
     tokens.extend(if let Some(opts) = &self.0 {
       quote! { #opts }

@@ -9,7 +9,7 @@ use crate::*;
 pub(crate) struct ContainerAttrs {
   pub reserved_names: ReservedNames,
   pub reserved_numbers: ReservedNumbers,
-  pub options: Options,
+  pub options: ProtoOptions,
   pub proto_name: String,
 }
 
@@ -62,7 +62,7 @@ pub(crate) fn process_container_attr(rust_name: &Ident, attrs: &Vec<Attribute>) 
   ContainerAttrs {
     reserved_names,
     reserved_numbers,
-    options: attributes::Options(options),
+    options: attributes::ProtoOptions(options),
     proto_name: proto_name.unwrap_or_else(|| ccase!(pascal, rust_name.to_string())),
   }
 }
