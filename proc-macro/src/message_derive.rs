@@ -80,24 +80,21 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
       (#tag, ProtoField {
         name: #name.to_string(),
         options: #options,
-        type_: <#proto_type as ProtoType>::type_name(),
+        type_: <#proto_type as AsProtoType>::proto_type(),
         validator: #validator_tokens,
       })
     });
   }
 
   output_tokens.extend(quote! {
-    impl ProtoMessage for #struct_name {}
-
-    impl ProtoType for #struct_name {
-      fn type_name() -> Arc<str> {
-        #proto_name.into()
-      }
-
-      fn import_path() -> Option<ProtoPath> {
-        Some(ProtoPath {
-          file: #file.into(),
-          package: #package.into()
+    impl AsProtoType for #struct_name {
+      fn proto_type() -> ProtoType {
+        ProtoType::Single(TypeInfo {
+          name: #proto_name,
+          path: Some(ProtoPath {
+            file: #file.into(),
+            package: #package.into()
+          })
         })
       }
     }

@@ -13,8 +13,6 @@ use prelude::{
 };
 use proc_macro_impls::{proto_module, Enum, Message, Oneof};
 
-pub trait ProtoMessage: ProtoType {}
-
 // #[derive(Oneof)]
 // enum PseudoOneof {
 //   A(String),
@@ -40,6 +38,8 @@ fn repeated_validator() -> impl ValidatorBuilderFor<Vec<i32>> {
 
 #[proc_macro_impls::proto_module(file = "abc.proto", package = "myapp.v1")]
 mod inner {
+  use prelude::*;
+
   use super::*;
 
   #[derive(Message)]

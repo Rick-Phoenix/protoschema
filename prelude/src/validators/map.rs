@@ -10,6 +10,29 @@ use crate::*;
 
 pub struct ProtoMap<K, V>(PhantomData<K>, PhantomData<V>);
 
+macro_rules! impl_map {
+  ($name:ident) => {
+    impl_map_validator!($name);
+
+    impl<K: AsProtoType, V: AsProtoType> AsProtoType for $name<K, V> {
+      #[track_caller]
+      fn proto_type() -> ProtoType {
+        let keys = match K::proto_type() {
+          ProtoType::Single(data) => data,
+          _ => panic!("Map keys must be scalar types"),
+        };
+
+        let values = match V::proto_type() {
+          ProtoType::Single(data) => data,
+          _ => panic!("Map values cannot be repeated or nested maps"),
+        };
+
+        ProtoType::Map { keys, values }
+      }
+    }
+  };
+}
+
 macro_rules! impl_map_validator {
   ($name:ident) => {
     impl<K, V> ProtoValidator<$name<K, V>> for ValidatorMap
@@ -28,9 +51,9 @@ macro_rules! impl_map_validator {
   };
 }
 
-impl_map_validator!(ProtoMap);
-impl_map_validator!(HashMap);
-impl_map_validator!(BTreeMap);
+impl_map!(ProtoMap);
+impl_map!(HashMap);
+impl_map!(BTreeMap);
 
 impl<K, V, S: State> MapValidatorBuilder<K, V, S>
 where

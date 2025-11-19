@@ -8,11 +8,34 @@ use crate::*;
 
 pub struct ProtoRepeated<T>(PhantomData<T>);
 
+macro_rules! impl_repeated {
+  ($name:ident) => {
+    impl_repeated_validator!($name);
+
+    impl<T: AsProtoType> AsProtoType for $name<T> {
+      #[track_caller]
+      fn proto_type() -> ProtoType {
+        let mut inner_type = T::proto_type();
+
+        match inner_type {
+          ProtoType::Single(data) => {
+            inner_type = ProtoType::Repeated(data);
+          }
+          _ => panic!("Repeated fields cannot be nested"),
+        }
+
+        inner_type
+      }
+    }
+  };
+}
+
 macro_rules! impl_repeated_validator {
   ($name:ident) => {
     impl<T> ProtoValidator<$name<T>> for ValidatorMap
     where
       ValidatorMap: ProtoValidator<T>,
+      T: AsProtoType,
     {
       type Builder = RepeatedValidatorBuilder<T>;
 
@@ -21,14 +44,17 @@ macro_rules! impl_repeated_validator {
       }
     }
 
-    impl<T, S: State> ValidatorBuilderFor<$name<T>> for RepeatedValidatorBuilder<T, S> {}
+    impl<T: AsProtoType, S: State> ValidatorBuilderFor<$name<T>>
+      for RepeatedValidatorBuilder<T, S>
+    {
+    }
   };
 }
 
-impl_repeated_validator!(ProtoRepeated);
-impl_repeated_validator!(Vec);
+impl_repeated!(ProtoRepeated);
+impl_repeated!(Vec);
 
-impl<T, S: State> RepeatedValidatorBuilder<T, S>
+impl<T: AsProtoType, S: State> RepeatedValidatorBuilder<T, S>
 where
   S::Items: repeated_validator_builder::IsUnset,
 {
@@ -48,7 +74,7 @@ where
   }
 }
 
-impl<S: State, T> RepeatedValidatorBuilder<T, S>
+impl<S: State, T: AsProtoType> RepeatedValidatorBuilder<T, S>
 where
   S::Ignore: IsUnset,
 {
@@ -60,7 +86,7 @@ where
 
 #[derive(Clone, Debug, Builder)]
 #[builder(state_mod(vis = "pub"))]
-pub struct RepeatedValidator<T> {
+pub struct RepeatedValidator<T: AsProtoType> {
   #[builder(default)]
   _inner_type: PhantomData<T>,
 
@@ -85,7 +111,7 @@ pub struct RepeatedValidator<T> {
   pub ignore: Option<Ignore>,
 }
 
-impl<T, S: State> From<RepeatedValidatorBuilder<T, S>> for ProtoOption
+impl<T: AsProtoType, S: State> From<RepeatedValidatorBuilder<T, S>> for ProtoOption
 where
   S: IsComplete,
 {
@@ -95,7 +121,7 @@ where
   }
 }
 
-impl<T> From<RepeatedValidator<T>> for ProtoOption {
+impl<T: AsProtoType> From<RepeatedValidator<T>> for ProtoOption {
   #[track_caller]
   fn from(validator: RepeatedValidator<T>) -> ProtoOption {
     let mut rules: OptionValueList = Vec::new();

@@ -52,21 +52,21 @@ where
   #[builder(default)]
   _wrapper: PhantomData<Num>,
   /// Only this specific value will be considered valid for this field.
-  pub const_: Option<Num::RustInt>,
+  pub const_: Option<Num::RustType>,
   /// This field's value will be valid only if it is smaller than the specified amount
-  pub lt: Option<Num::RustInt>,
+  pub lt: Option<Num::RustType>,
   /// This field's value will be valid only if it is smaller than, or equal to, the specified amount
-  pub lte: Option<Num::RustInt>,
+  pub lte: Option<Num::RustType>,
   /// This field's value will be valid only if it is greater than the specified amount
-  pub gt: Option<Num::RustInt>,
+  pub gt: Option<Num::RustType>,
   /// This field's value will be valid only if it is smaller than, or equal to, the specified amount
-  pub gte: Option<Num::RustInt>,
+  pub gte: Option<Num::RustType>,
   /// Only the values in this list will be considered valid for this field.
   #[builder(into)]
-  pub in_: Option<Arc<[Num::RustInt]>>,
+  pub in_: Option<Arc<[Num::RustType]>>,
   /// The values in this list will be considered invalid for this field.
   #[builder(into)]
-  pub not_in: Option<Arc<[Num::RustInt]>>,
+  pub not_in: Option<Arc<[Num::RustType]>>,
   /// Adds custom validation using one or more [`CelRule`]s to this field.
   #[builder(into)]
   pub cel: Option<Arc<[CelRule]>>,
@@ -76,69 +76,82 @@ where
   pub ignore: Option<Ignore>,
 }
 
-pub trait IntWrapper: ProtoType {
-  type RustInt: PartialOrd + PartialEq + Copy + Into<OptionValue> + Hash + Debug + Display + Eq;
+pub trait IntWrapper: AsProtoType {
+  type RustType: PartialOrd + PartialEq + Copy + Into<OptionValue> + Hash + Debug + Display + Eq;
+
+  fn type_name() -> Arc<str>;
 }
 
-macro_rules! impl_int_wrapper {
-  ($rust_type:ty, $proto_type:ident, primitive) => {
-    impl IntWrapper for $rust_type {
-      type RustInt = $rust_type;
+macro_rules! impl_numeric_wrapper {
+  ($validator:ident, $wrapper_trait:ident, $rust_type:ty, $proto_type:ident, primitive) => {
+    impl $wrapper_trait for $rust_type {
+      type RustType = $rust_type;
+
+      fn type_name() -> Arc<str> {
+        $proto_type.clone()
+      }
     }
 
-    impl ProtoType for $rust_type {
+    impl_proto_type!($rust_type, $proto_type);
+    impl_numeric_validator!($validator, $rust_type);
+  };
+
+  ($validator:ident, $wrapper_trait:ident, $rust_type:ty, $proto_type:ident) => {
+    pub struct $proto_type;
+
+    impl $wrapper_trait for $proto_type {
+      type RustType = $rust_type;
+
       fn type_name() -> Arc<str> {
         $crate::paste!([< $proto_type:upper >]).clone()
       }
-
-      fn import_path() -> Option<ProtoPath> {
-        None
-      }
     }
 
-    impl_numeric_validator!($rust_type);
+    impl_proto_type!($proto_type, $proto_type);
+    impl_numeric_validator!($validator, $proto_type);
   };
 
-  ($rust_type:ty, $wrapper_name:ident) => {
-    pub struct $wrapper_name;
+}
 
-    impl IntWrapper for $wrapper_name {
-      type RustInt = $rust_type;
-    }
+macro_rules! impl_int_validator {
+  ($($tokens:tt)*) => {
+    impl_numeric_wrapper!(IntValidator, IntWrapper, $($tokens)*);
+  };
+}
 
-    impl ProtoType for $wrapper_name {
-      fn type_name() -> Arc<str> {
-        $crate::paste!([< $wrapper_name:upper >]).clone()
-      }
-
-      fn import_path() -> Option<ProtoPath> {
-        None
-      }
-    }
-
-    impl_numeric_validator!($wrapper_name);
+macro_rules! impl_float_validator {
+  ($rust_type:ty, $proto_type:ident) => {
+    impl_numeric_wrapper!(
+      FloatValidator,
+      FloatWrapper,
+      $rust_type,
+      $proto_type,
+      primitive
+    );
   };
 }
 
 macro_rules! impl_numeric_validator {
-  ($rust_type:ty) => {
-    impl ProtoValidator<$rust_type> for ValidatorMap {
-      type Builder = IntValidatorBuilder<$rust_type>;
+  ($validator:ident, $rust_type:ty) => {
+    $crate::paste! {
+      impl ProtoValidator<$rust_type> for ValidatorMap {
+        type Builder = [< $validator Builder >]<$rust_type>;
 
-      fn builder() -> IntValidatorBuilder<$rust_type> {
-        IntValidator::builder()
+        fn builder() -> [< $validator Builder >]<$rust_type> {
+          $validator::builder()
+        }
       }
-    }
 
-    impl<S: int_validator_builder::State> ValidatorBuilderFor<$rust_type>
-      for IntValidatorBuilder<$rust_type, S>
-    {
+      impl<S: [< $validator:snake _builder >]::State> ValidatorBuilderFor<$rust_type>
+      for [< $validator Builder >]<$rust_type, S>
+      {
+      }
     }
   };
 }
 
-impl_int_wrapper!(i32, Sint32);
-impl_int_wrapper!(i32, INT32, primitive);
+impl_int_validator!(i32, Sint32);
+impl_int_validator!(i32, INT32, primitive);
 
 impl<S: int_validator_builder::State, N> From<IntValidatorBuilder<N, S>> for ProtoOption
 where
@@ -187,57 +200,14 @@ where
   }
 }
 
-pub trait FloatWrapper: ProtoType {
+pub trait FloatWrapper: AsProtoType {
   type RustType: PartialOrd + PartialEq + Copy + Into<OptionValue> + Debug + Display;
+
+  fn type_name() -> Arc<str>;
 }
 
-impl FloatWrapper for f32 {
-  type RustType = f32;
-}
-
-impl ProtoType for f32 {
-  fn type_name() -> Arc<str> {
-    FLOAT.clone()
-  }
-
-  fn import_path() -> Option<ProtoPath> {
-    None
-  }
-}
-
-impl FloatWrapper for f64 {
-  type RustType = f64;
-}
-
-impl ProtoType for f64 {
-  fn type_name() -> Arc<str> {
-    DOUBLE.clone()
-  }
-
-  fn import_path() -> Option<ProtoPath> {
-    None
-  }
-}
-
-impl ProtoValidator<f32> for ValidatorMap {
-  type Builder = FloatValidatorBuilder<f32>;
-
-  fn builder() -> Self::Builder {
-    FloatValidator::builder()
-  }
-}
-
-impl<S: float_validator_builder::State> ValidatorBuilderFor<f32> for FloatValidatorBuilder<f32, S> {}
-
-impl ProtoValidator<f64> for ValidatorMap {
-  type Builder = FloatValidatorBuilder<f64>;
-
-  fn builder() -> Self::Builder {
-    FloatValidator::builder()
-  }
-}
-
-impl<S: float_validator_builder::State> ValidatorBuilderFor<f64> for FloatValidatorBuilder<f64, S> {}
+impl_float_validator!(f32, FLOAT);
+impl_float_validator!(f64, DOUBLE);
 
 impl<Num: FloatWrapper> FloatValidator<Num> {
   pub(crate) fn validate_lists(&self) -> Result<(), Vec<Num::RustType>> {

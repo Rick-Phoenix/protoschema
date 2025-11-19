@@ -11,10 +11,8 @@ pub use items::*;
 
 pub trait ValidatorBuilderFor<T>: Into<ProtoOption> {}
 
-pub trait ProtoType {
-  fn type_name() -> Arc<str>;
-
-  fn import_path() -> Option<ProtoPath>;
+pub trait AsProtoType {
+  fn proto_type() -> ProtoType;
 }
 
 pub trait ProtoValidator<T> {
@@ -46,12 +44,25 @@ pub trait ProtoValidator<T> {
 
 pub struct ValidatorMap;
 
-#[derive(Default, Clone)]
+#[derive(Clone)]
 pub struct ProtoField {
   pub name: String,
-  pub type_: Arc<str>,
+  pub type_: ProtoType,
   pub options: Vec<ProtoOption>,
   pub validator: Option<ProtoOption>,
+}
+
+#[derive(Clone)]
+pub enum ProtoType {
+  Single(TypeInfo),
+  Repeated(TypeInfo),
+  Map { keys: TypeInfo, values: TypeInfo },
+}
+
+#[derive(Clone)]
+pub struct TypeInfo {
+  pub name: &'static str,
+  pub path: Option<ProtoPath>,
 }
 
 #[derive(Default, Clone)]
@@ -106,6 +117,7 @@ impl ProtoFile {
   }
 }
 
+#[derive(Debug, Clone)]
 pub struct ProtoPath {
   pub package: Arc<str>,
   pub file: Arc<str>,

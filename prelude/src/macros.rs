@@ -42,3 +42,16 @@ macro_rules! impl_validator {
     }
   };
 }
+
+macro_rules! impl_proto_type {
+  ($rust_type:ty, $proto_type:ident) => {
+    impl AsProtoType for $rust_type {
+      fn proto_type() -> ProtoType {
+        ProtoType::Single(TypeInfo {
+          name: $crate::paste!(stringify!([< $proto_type:lower >])),
+          path: None,
+        })
+      }
+    }
+  };
+}

@@ -52,18 +52,19 @@ pub fn proto_module(attrs: TokenStream, input: TokenStream) -> TokenStream {
 
   let injected_attr: Attribute = parse_quote! { #[proto(file = #file, package = #package)] };
 
-  let mut found_items: Vec<&Ident> = Vec::new();
+  let mut found_messages: Vec<&Ident> = Vec::new();
+  let mut found_enums: Vec<&Ident> = Vec::new();
 
   if let Some((_, content)) = &mut module.content {
     for item in content.iter_mut() {
       match item {
         // TODO: Not adding the attributes if file and package are already defined
         Item::Struct(s) if has_proto_derive(&s.attrs).unwrap() => {
-          found_items.push(&s.ident);
+          found_messages.push(&s.ident);
           s.attrs.push(injected_attr.clone());
         }
         Item::Enum(e) if has_proto_derive(&e.attrs).unwrap() => {
-          found_items.push(&e.ident);
+          found_enums.push(&e.ident);
           e.attrs.push(injected_attr.clone());
         }
         _ => {}
@@ -78,7 +79,7 @@ pub fn proto_module(attrs: TokenStream, input: TokenStream) -> TokenStream {
           ..Default::default()
         };
 
-        file.add_messages([ #(#found_items::to_message(),)* ]);
+        file.add_messages([ #(#found_messages::to_message(),)* ]);
 
         file
       }
