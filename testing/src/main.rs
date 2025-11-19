@@ -1,8 +1,15 @@
 #![allow(unused)]
 
+use std::collections::HashMap;
+
 use prelude::{
-  validators::{Sint32, StringValidator, StringValidatorBuilder},
-  EnumVariant, Message, Oneof, ProtoEnum, ProtoField, ProtoFile, ProtoOption,
+  validators::{
+    repeated_validator_builder::{SetItems, State},
+    MapValidatorBuilder, ProtoMap, ProtoRepeated, RepeatedValidator, RepeatedValidatorBuilder,
+    Sint32, StringValidator, StringValidatorBuilder,
+  },
+  EnumVariant, Message, Oneof, ProtoEnum, ProtoField, ProtoFile, ProtoOption, ProtoValidator,
+  ValidatorBuilderFor, ValidatorMap,
 };
 use proc_macro_impls::{Enum, Message, Oneof};
 
@@ -27,13 +34,27 @@ fn string_validator() -> StringValidatorBuilder {
   StringValidator::builder()
 }
 
+fn repeated_validator() -> impl ValidatorBuilderFor<Vec<i32>> {
+  let validator: RepeatedValidatorBuilder<i32> = RepeatedValidator::builder();
+
+  validator.items(|i| i.lt(20)).min_items(1)
+}
+
+struct CustomMapType;
+
+impl ValidatorBuilderFor<CustomMapType> for MapValidatorBuilder<String, Sint32> {}
+
 #[derive(Message)]
 struct Abc {
   #[proto(validate = string_validator())]
   name: String,
 
-  #[proto(validate = |v| v.lt(25))]
-  num: i32,
+  #[proto(validate = repeated_validator())]
+  num: Vec<i32>,
+
+  #[proto(type_(ProtoMap<String, Sint32>))]
+  #[proto(validate = |v| v.min_pairs(0).keys(|k| k.min_len(25)).values(|v| v.lt(25)))]
+  map: HashMap<String, i32>,
 }
 
 fn main() {

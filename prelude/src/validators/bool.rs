@@ -4,6 +4,8 @@ use bool_validator_builder::State;
 use super::*;
 use crate::*;
 
+impl_validator!(BoolValidator, bool);
+
 #[derive(Clone, Debug, Builder)]
 pub struct BoolValidator {
   /// Only this specific value will be considered valid for this field.
@@ -14,9 +16,6 @@ pub struct BoolValidator {
 }
 
 impl_into_option!(BoolValidator);
-impl_validator!(BoolValidator, bool);
-
-reusable_string!(BOOL);
 
 impl From<BoolValidator> for ProtoOption {
   fn from(validator: BoolValidator) -> Self {

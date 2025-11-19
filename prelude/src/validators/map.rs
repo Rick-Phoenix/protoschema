@@ -1,39 +1,43 @@
-use std::marker::PhantomData;
+use std::{
+  collections::{BTreeMap, HashMap},
+  marker::PhantomData,
+};
 
-use map_validator_builder::{IsComplete, IsUnset, SetIgnore, State};
+use map_validator_builder::{IsComplete, IsUnset, SetIgnore, SetKeys, SetValues, State};
 
 use super::*;
 use crate::*;
 
-impl<K, V, S: State> From<MapValidatorBuilder<K, V, S>> for ProtoOption
-where
-  S: IsComplete,
-{
-  #[track_caller]
-  fn from(value: MapValidatorBuilder<K, V, S>) -> Self {
-    value.build().into()
-  }
-}
-
 pub struct ProtoMap<K = (), V = ()>(PhantomData<K>, PhantomData<V>);
 
-impl<K, V> ProtoValidator<ProtoMap<K, V>> for ValidatorMap {
-  type Builder = MapValidatorBuilder<K, V>;
+macro_rules! impl_map_validator {
+  ($name:ident) => {
+    impl<K, V> ProtoValidator<$name<K, V>> for ValidatorMap
+    where
+      ValidatorMap: ProtoValidator<K>,
+      ValidatorMap: ProtoValidator<V>,
+    {
+      type Builder = MapValidatorBuilder<K, V>;
 
-  fn builder() -> Self::Builder {
-    MapValidator::builder()
-  }
+      fn builder() -> Self::Builder {
+        MapValidator::builder()
+      }
+    }
+
+    impl<K, V, S: State> ValidatorBuilderFor<$name<K, V>> for MapValidatorBuilder<K, V, S> {}
+  };
 }
 
-impl<K, V, S: map_validator_builder::State> MapValidatorBuilder<K, V, S>
+impl_map_validator!(ProtoMap);
+impl_map_validator!(HashMap);
+impl_map_validator!(BTreeMap);
+
+impl<K, V, S: State> MapValidatorBuilder<K, V, S>
 where
-  S::Keys: map_validator_builder::IsUnset,
+  S::Keys: IsUnset,
 {
   #[track_caller]
-  pub fn keys<F, FinalBuilder>(
-    self,
-    config_fn: F,
-  ) -> MapValidatorBuilder<K, V, map_validator_builder::SetKeys<S>>
+  pub fn keys<F, FinalBuilder>(self, config_fn: F) -> MapValidatorBuilder<K, V, SetKeys<S>>
   where
     ValidatorMap: ProtoValidator<K>,
     FinalBuilder: ValidatorBuilderFor<K>,
@@ -44,15 +48,12 @@ where
   }
 }
 
-impl<K, V, S: map_validator_builder::State> MapValidatorBuilder<K, V, S>
+impl<K, V, S: State> MapValidatorBuilder<K, V, S>
 where
-  S::Values: map_validator_builder::IsUnset,
+  S::Values: IsUnset,
 {
   #[track_caller]
-  pub fn values<F, FinalBuilder>(
-    self,
-    config_fn: F,
-  ) -> MapValidatorBuilder<K, V, map_validator_builder::SetValues<S>>
+  pub fn values<F, FinalBuilder>(self, config_fn: F) -> MapValidatorBuilder<K, V, SetValues<S>>
   where
     ValidatorMap: ProtoValidator<V>,
     FinalBuilder: ValidatorBuilderFor<V>,
@@ -60,6 +61,16 @@ where
   {
     let values_opts = ValidatorMap::build_rules(config_fn);
     self.values_internal(values_opts)
+  }
+}
+
+impl<S: State, K, V> MapValidatorBuilder<K, V, S>
+where
+  S::Ignore: IsUnset,
+{
+  /// Rules set for this field will always be ignored.
+  pub fn ignore_always(self) -> MapValidatorBuilder<K, V, SetIgnore<S>> {
+    self.ignore(Ignore::Always)
   }
 }
 
@@ -93,21 +104,15 @@ pub struct MapValidator<K = (), V = ()> {
   pub ignore: Option<Ignore>,
 }
 
-impl<S: State, K, V> MapValidatorBuilder<K, V, S>
+impl<K, V, S: State> From<MapValidatorBuilder<K, V, S>> for ProtoOption
 where
-  S::Ignore: IsUnset,
+  S: IsComplete,
 {
-  /// Rules set for this field will always be ignored.
-  pub fn ignore_always(self) -> MapValidatorBuilder<K, V, SetIgnore<S>> {
-    self.ignore(Ignore::Always)
+  #[track_caller]
+  fn from(value: MapValidatorBuilder<K, V, S>) -> Self {
+    value.build().into()
   }
 }
-
-reusable_string!(MIN_PAIRS);
-reusable_string!(MAX_PAIRS);
-reusable_string!(MAP);
-reusable_string!(KEYS);
-reusable_string!(VALUES);
 
 impl<KeyItems, ValueItems> From<MapValidator<KeyItems, ValueItems>> for ProtoOption {
   #[track_caller]

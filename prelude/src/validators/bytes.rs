@@ -6,6 +6,10 @@ use regex::Regex;
 use super::*;
 use crate::*;
 
+impl_validator!(BytesValidator, Vec<u8>);
+impl_validator!(BytesValidator, Bytes);
+impl_ignore!(BytesValidatorBuilder);
+
 macro_rules! insert_bytes_option {
   ($validator:ident, $values:ident, $field:ident) => {
     $validator.$field.map(|v| {
@@ -30,10 +34,6 @@ macro_rules! insert_bytes_option {
     })
   };
 }
-
-impl_into_option!(BytesValidator);
-impl_validator!(BytesValidator, Vec<u8>);
-impl_validator!(BytesValidator, Bytes);
 
 #[derive(Clone, Debug, Builder)]
 pub struct BytesValidator {
@@ -71,9 +71,7 @@ pub struct BytesValidator {
   pub ignore: Option<Ignore>,
 }
 
-impl_ignore!(BytesValidatorBuilder);
-
-reusable_string!(BYTES);
+impl_into_option!(BytesValidator);
 
 impl From<BytesValidator> for ProtoOption {
   #[track_caller]

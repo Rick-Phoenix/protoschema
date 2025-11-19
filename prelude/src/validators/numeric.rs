@@ -6,6 +6,29 @@ use int_validator_builder::{IsUnset, SetIgnore, State};
 use super::*;
 use crate::*;
 
+// Validator implementations
+impl<N> ProtoValidator<IntValidator<N>> for ValidatorMap
+where
+  N: IntWrapper,
+{
+  type Builder = IntValidatorBuilder<N>;
+
+  fn builder() -> IntValidatorBuilder<N> {
+    IntValidator::builder()
+  }
+}
+
+impl<N> ProtoValidator<FloatValidator<N>> for ValidatorMap
+where
+  N: FloatWrapper,
+{
+  type Builder = FloatValidatorBuilder<N>;
+
+  fn builder() -> FloatValidatorBuilder<N> {
+    FloatValidator::builder()
+  }
+}
+
 impl<S: State, N: IntWrapper> IntValidatorBuilder<N, S>
 where
   S::Ignore: IsUnset,
@@ -18,17 +41,6 @@ where
   /// Rules set for this field will always be ignored.
   pub fn ignore_always(self) -> IntValidatorBuilder<N, SetIgnore<S>> {
     self.ignore(Ignore::Always)
-  }
-}
-
-impl<S: int_validator_builder::State, N> From<IntValidatorBuilder<N, S>> for ProtoOption
-where
-  S: int_validator_builder::IsComplete,
-  N: IntWrapper,
-{
-  #[track_caller]
-  fn from(value: IntValidatorBuilder<N, S>) -> Self {
-    value.build().into()
   }
 }
 
@@ -64,10 +76,11 @@ where
   pub ignore: Option<Ignore>,
 }
 
-reusable_string!(INT32);
-reusable_string!(SINT32);
-reusable_string!(FLOAT);
-reusable_string!(DOUBLE);
+pub trait IntWrapper {
+  type RustInt: PartialOrd + PartialEq + Copy + Into<OptionValue> + Hash + Debug + Display + Eq;
+
+  fn proto_type() -> Arc<str>;
+}
 
 macro_rules! impl_int_wrapper {
   ($rust_type:ty, $proto_type:ident, primitive) => {
@@ -112,35 +125,17 @@ macro_rules! impl_numeric_validator {
   };
 }
 
-pub trait IntWrapper {
-  type RustInt: PartialOrd + PartialEq + Copy + Into<OptionValue> + Hash + Debug + Display + Eq;
-
-  fn proto_type() -> Arc<str>;
-}
-
 impl_int_wrapper!(i32, Sint32);
 impl_int_wrapper!(i32, INT32, primitive);
 
-// Validator implementations
-impl<N> ProtoValidator<IntValidator<N>> for ValidatorMap
+impl<S: int_validator_builder::State, N> From<IntValidatorBuilder<N, S>> for ProtoOption
 where
+  S: int_validator_builder::IsComplete,
   N: IntWrapper,
 {
-  type Builder = IntValidatorBuilder<N>;
-
-  fn builder() -> IntValidatorBuilder<N> {
-    IntValidator::builder()
-  }
-}
-
-impl<N> ProtoValidator<FloatValidator<N>> for ValidatorMap
-where
-  N: FloatWrapper,
-{
-  type Builder = FloatValidatorBuilder<N>;
-
-  fn builder() -> FloatValidatorBuilder<N> {
-    FloatValidator::builder()
+  #[track_caller]
+  fn from(value: IntValidatorBuilder<N, S>) -> Self {
+    value.build().into()
   }
 }
 
@@ -186,21 +181,7 @@ pub trait FloatWrapper {
   fn proto_type() -> Arc<str>;
 }
 
-impl<S: float_validator_builder::State, N> From<FloatValidatorBuilder<N, S>> for ProtoOption
-where
-  S: float_validator_builder::IsComplete,
-  N: FloatWrapper,
-{
-  #[track_caller]
-  fn from(value: FloatValidatorBuilder<N, S>) -> Self {
-    value.build().into()
-  }
-}
-
-pub struct Float;
-pub struct Double;
-
-impl FloatWrapper for Float {
+impl FloatWrapper for f32 {
   type RustType = f32;
 
   fn proto_type() -> Arc<str> {
@@ -208,13 +189,33 @@ impl FloatWrapper for Float {
   }
 }
 
-impl FloatWrapper for Double {
+impl FloatWrapper for f64 {
   type RustType = f64;
 
   fn proto_type() -> Arc<str> {
     DOUBLE.clone()
   }
 }
+
+impl ProtoValidator<f32> for ValidatorMap {
+  type Builder = FloatValidatorBuilder<f32>;
+
+  fn builder() -> Self::Builder {
+    FloatValidator::builder()
+  }
+}
+
+impl<S: float_validator_builder::State> ValidatorBuilderFor<f32> for FloatValidatorBuilder<f32, S> {}
+
+impl ProtoValidator<f64> for ValidatorMap {
+  type Builder = FloatValidatorBuilder<f64>;
+
+  fn builder() -> Self::Builder {
+    FloatValidator::builder()
+  }
+}
+
+impl<S: float_validator_builder::State> ValidatorBuilderFor<f64> for FloatValidatorBuilder<f64, S> {}
 
 impl<Num: FloatWrapper> FloatValidator<Num> {
   pub(crate) fn validate_lists(&self) -> Result<(), Vec<Num::RustType>> {
@@ -295,6 +296,17 @@ where
   /// Specifies that this field must be finite (so it can't represent Infinity or NaN)
   #[builder(with = || true)]
   pub finite: Option<bool>,
+}
+
+impl<S: float_validator_builder::State, N> From<FloatValidatorBuilder<N, S>> for ProtoOption
+where
+  S: float_validator_builder::IsComplete,
+  N: FloatWrapper,
+{
+  #[track_caller]
+  fn from(value: FloatValidatorBuilder<N, S>) -> Self {
+    value.build().into()
+  }
 }
 
 impl<N> From<FloatValidator<N>> for ProtoOption

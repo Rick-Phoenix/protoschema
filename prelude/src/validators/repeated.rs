@@ -6,7 +6,29 @@ use repeated_validator_builder::{IsComplete, IsUnset, SetIgnore, State};
 use super::*;
 use crate::*;
 
-impl<T, S: repeated_validator_builder::State> RepeatedValidatorBuilder<T, S>
+pub struct ProtoRepeated<T = ()>(PhantomData<T>);
+
+macro_rules! impl_repeated_validator {
+  ($name:ident) => {
+    impl<T> ProtoValidator<$name<T>> for ValidatorMap
+    where
+      ValidatorMap: ProtoValidator<T>,
+    {
+      type Builder = RepeatedValidatorBuilder<T>;
+
+      fn builder() -> Self::Builder {
+        RepeatedValidator::builder()
+      }
+    }
+
+    impl<T, S: State> ValidatorBuilderFor<$name<T>> for RepeatedValidatorBuilder<T, S> {}
+  };
+}
+
+impl_repeated_validator!(ProtoRepeated);
+impl_repeated_validator!(Vec);
+
+impl<T, S: State> RepeatedValidatorBuilder<T, S>
 where
   S::Items: repeated_validator_builder::IsUnset,
 {
@@ -36,27 +58,8 @@ where
   }
 }
 
-pub struct ProtoRepeated<T = ()>(PhantomData<T>);
-
-impl<T> ProtoValidator<ProtoRepeated<T>> for ValidatorMap {
-  type Builder = RepeatedValidatorBuilder<T>;
-
-  fn builder() -> Self::Builder {
-    RepeatedValidator::builder()
-  }
-}
-
-impl<T, S: State> From<RepeatedValidatorBuilder<T, S>> for ProtoOption
-where
-  S: IsComplete,
-{
-  #[track_caller]
-  fn from(value: RepeatedValidatorBuilder<T, S>) -> Self {
-    value.build().into()
-  }
-}
-
 #[derive(Clone, Debug, Builder)]
+#[builder(state_mod(vis = "pub"))]
 pub struct RepeatedValidator<T = ()> {
   #[builder(default)]
   _inner_type: PhantomData<T>,
@@ -82,11 +85,15 @@ pub struct RepeatedValidator<T = ()> {
   pub ignore: Option<Ignore>,
 }
 
-reusable_string!(UNIQUE);
-reusable_string!(MIN_ITEMS);
-reusable_string!(MAX_ITEMS);
-reusable_string!(REPEATED);
-reusable_string!(ITEMS);
+impl<T, S: State> From<RepeatedValidatorBuilder<T, S>> for ProtoOption
+where
+  S: IsComplete,
+{
+  #[track_caller]
+  fn from(value: RepeatedValidatorBuilder<T, S>) -> Self {
+    value.build().into()
+  }
+}
 
 impl<T> From<RepeatedValidator<T>> for ProtoOption {
   #[track_caller]

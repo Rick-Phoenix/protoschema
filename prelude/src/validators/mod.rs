@@ -152,6 +152,7 @@ mod cel;
 mod duration;
 mod enums;
 mod map;
+mod message;
 mod numeric;
 mod repeated;
 mod string;
@@ -164,8 +165,9 @@ pub use cel::*;
 pub use duration::*;
 pub use enums::*;
 pub use map::*;
+pub use message::*;
 pub use numeric::*;
-pub use repeated::*;
+pub use repeated::{repeated_validator_builder, *};
 pub use string::*;
 pub use timestamp::*;
 

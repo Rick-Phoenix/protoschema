@@ -8,6 +8,10 @@ use crate::{
   *,
 };
 
+impl_into_option!(StringValidator);
+impl_validator!(StringValidator, String);
+impl_ignore!(StringValidatorBuilder);
+
 impl<S: State> StringValidatorBuilder<S>
 where
   S::In: IsUnset,
@@ -80,9 +84,6 @@ pub struct StringValidator {
   pub ignore: Option<Ignore>,
 }
 
-impl_into_option!(StringValidator);
-impl_validator!(StringValidator, String);
-
 impl From<StringValidator> for ProtoOption {
   #[track_caller]
   fn from(validator: StringValidator) -> ProtoOption {
@@ -144,11 +145,6 @@ impl From<StringValidator> for ProtoOption {
   }
 }
 
-reusable_string!(STRING);
-reusable_string!(LEN_BYTES);
-reusable_string!(MIN_BYTES);
-reusable_string!(MAX_BYTES);
-
 /// All of the variants for protovalidate's well known string rules
 #[derive(Clone, Debug, Copy)]
 pub enum WellKnownStrings {
@@ -189,8 +185,6 @@ macro_rules! well_known_impl {
   };
 }
 
-impl_ignore!(StringValidatorBuilder);
-
 impl<S: State> StringValidatorBuilder<S> {
   well_known_impl!(Email);
   well_known_impl!(Hostname);
@@ -214,28 +208,6 @@ impl<S: State> StringValidatorBuilder<S> {
   well_known_impl!(HeaderValueLoose);
   well_known_impl!(HeaderValueStrict);
 }
-
-reusable_string!(EMAIL);
-reusable_string!(HOSTNAME);
-reusable_string!(URI);
-reusable_string!(URI_REF);
-reusable_string!(ADDRESS);
-reusable_string!(UUID);
-reusable_string!(TUUID);
-reusable_string!(IP_WITH_PREFIXLEN);
-reusable_string!(IPV4_WITH_PREFIXLEN);
-reusable_string!(IPV6_WITH_PREFIXLEN);
-reusable_string!(IP_PREFIX);
-reusable_string!(IPV4_PREFIX);
-reusable_string!(IPV6_PREFIX);
-reusable_string!(HOST_AND_PORT);
-reusable_string!(WELL_KNOWN_REGEX);
-reusable_string!(KNOWN_REGEX_HTTP_HEADER_NAME, "KNOWN_REGEX_HTTP_HEADER_NAME");
-reusable_string!(
-  KNOWN_REGEX_HTTP_HEADER_VALUE,
-  "KNOWN_REGEX_HTTP_HEADER_VALUE"
-);
-reusable_string!(STRICT);
 
 impl WellKnownStrings {
   pub(crate) fn to_option(self, option_values: &mut OptionValueList) {

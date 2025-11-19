@@ -5,6 +5,8 @@ use proto_types::Any;
 use super::*;
 use crate::*;
 
+impl_validator!(AnyValidator, Any);
+
 impl<S: State> AnyValidatorBuilder<S>
 where
   S::In: IsUnset,
@@ -31,6 +33,16 @@ where
   }
 }
 
+impl<S: State> AnyValidatorBuilder<S>
+where
+  S::Ignore: IsUnset,
+{
+  /// Rules set for this field will always be ignored.
+  pub fn ignore_always(self) -> AnyValidatorBuilder<SetIgnore<S>> {
+    self.ignore(Ignore::Always)
+  }
+}
+
 #[derive(Clone, Debug, Builder)]
 pub struct AnyValidator {
   /// Only the type_urls defined in this list will be considered valid for this field.
@@ -49,20 +61,7 @@ pub struct AnyValidator {
   pub ignore: Option<Ignore>,
 }
 
-reusable_string!(ANY);
-
 impl_into_option!(AnyValidator);
-impl_validator!(AnyValidator, Any);
-
-impl<S: State> AnyValidatorBuilder<S>
-where
-  S::Ignore: IsUnset,
-{
-  /// Rules set for this field will always be ignored.
-  pub fn ignore_always(self) -> AnyValidatorBuilder<SetIgnore<S>> {
-    self.ignore(Ignore::Always)
-  }
-}
 
 impl From<AnyValidator> for ProtoOption {
   #[track_caller]

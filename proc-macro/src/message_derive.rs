@@ -36,12 +36,6 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
   for field in fields {
     let field_name = field.ident.as_ref().expect("Expected named field");
 
-    let type_ = if let Type::Path(path) = &field.ty && let Some(name) = path.path.segments.last() {
-      name.ident.to_string()
-    } else {
-      panic!("Could not find the type")
-    };
-
     let FieldAttrs {
       tag,
       validator,

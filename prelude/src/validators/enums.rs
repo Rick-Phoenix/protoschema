@@ -4,6 +4,11 @@ use enum_validator_builder::State;
 use super::*;
 use crate::*;
 
+pub struct ProtoEnum;
+
+impl_validator!(EnumValidator, ProtoEnum);
+impl_ignore!(EnumValidatorBuilder);
+
 /// Used by the [`enum_field`](crate::enum_field) macro to define validation rules.
 #[derive(Clone, Debug, Builder)]
 pub struct EnumValidator {
@@ -27,12 +32,7 @@ pub struct EnumValidator {
   pub ignore: Option<Ignore>,
 }
 
-impl_ignore!(EnumValidatorBuilder);
-
-pub struct ProtoEnum;
-
 impl_into_option!(EnumValidator);
-impl_validator!(EnumValidator, ProtoEnum);
 
 impl From<EnumValidator> for ProtoOption {
   #[track_caller]
@@ -63,6 +63,3 @@ impl From<EnumValidator> for ProtoOption {
     }
   }
 }
-
-reusable_string!(ENUM);
-reusable_string!(DEFINED_ONLY);
