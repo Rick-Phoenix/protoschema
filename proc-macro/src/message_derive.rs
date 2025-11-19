@@ -15,7 +15,9 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
     reserved_numbers,
     options,
     proto_name,
-  } = process_container_attr(&struct_name, &attrs);
+    file,
+    package,
+  } = process_container_attr(&struct_name, &attrs).unwrap();
 
   let data = if let Data::Struct(struct_data) = data {
     struct_data
@@ -78,13 +80,28 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
       (#tag, ProtoField {
         name: #name.to_string(),
         options: #options,
-        type_: "to implement...".to_string(),
+        type_: <#proto_type as ProtoType>::type_name(),
         validator: #validator_tokens,
       })
     });
   }
 
   output_tokens.extend(quote! {
+    impl ProtoMessage for #struct_name {}
+
+    impl ProtoType for #struct_name {
+      fn type_name() -> Arc<str> {
+        #proto_name.into()
+      }
+
+      fn import_path() -> Option<ProtoPath> {
+        Some(ProtoPath {
+          file: #file.into(),
+          package: #package.into()
+        })
+      }
+    }
+
     impl #struct_name {
       pub fn to_message(file: &mut ProtoFile) -> &mut Message {
         let path = file.path();

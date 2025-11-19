@@ -6,7 +6,7 @@ use repeated_validator_builder::{IsComplete, IsUnset, SetIgnore, State};
 use super::*;
 use crate::*;
 
-pub struct ProtoRepeated<T = ()>(PhantomData<T>);
+pub struct ProtoRepeated<T>(PhantomData<T>);
 
 macro_rules! impl_repeated_validator {
   ($name:ident) => {
@@ -60,7 +60,7 @@ where
 
 #[derive(Clone, Debug, Builder)]
 #[builder(state_mod(vis = "pub"))]
-pub struct RepeatedValidator<T = ()> {
+pub struct RepeatedValidator<T> {
   #[builder(default)]
   _inner_type: PhantomData<T>,
 

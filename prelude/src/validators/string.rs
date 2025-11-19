@@ -8,6 +8,16 @@ use crate::{
   *,
 };
 
+impl ProtoType for String {
+  fn type_name() -> Arc<str> {
+    STRING.clone()
+  }
+
+  fn import_path() -> Option<ProtoPath> {
+    None
+  }
+}
+
 impl_into_option!(StringValidator);
 impl_validator!(StringValidator, String);
 impl_ignore!(StringValidatorBuilder);

@@ -4,12 +4,18 @@ mod macros;
 pub use paste::paste;
 mod items;
 pub mod validators;
-use std::{collections::BTreeSet, ops::Range, sync::Arc};
+use std::{collections::BTreeSet, marker::PhantomData, ops::Range, sync::Arc};
 
 use bon::Builder;
 pub use items::*;
 
 pub trait ValidatorBuilderFor<T>: Into<ProtoOption> {}
+
+pub trait ProtoType {
+  fn type_name() -> Arc<str>;
+
+  fn import_path() -> Option<ProtoPath>;
+}
 
 pub trait ProtoValidator<T> {
   type Builder;
@@ -43,7 +49,7 @@ pub struct ValidatorMap;
 #[derive(Default, Clone)]
 pub struct ProtoField {
   pub name: String,
-  pub type_: String,
+  pub type_: Arc<str>,
   pub options: Vec<ProtoOption>,
   pub validator: Option<ProtoOption>,
 }
@@ -111,6 +117,7 @@ pub struct Message {
   pub options: Vec<ProtoOption>,
   pub reserved_names: Vec<&'static str>,
   pub reserved_numbers: Vec<Range<u32>>,
+  pub imports: BTreeSet<Arc<str>>,
 }
 
 #[derive(Default, Clone)]

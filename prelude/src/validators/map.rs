@@ -8,7 +8,7 @@ use map_validator_builder::{IsComplete, IsUnset, SetIgnore, SetKeys, SetValues, 
 use super::*;
 use crate::*;
 
-pub struct ProtoMap<K = (), V = ()>(PhantomData<K>, PhantomData<V>);
+pub struct ProtoMap<K, V>(PhantomData<K>, PhantomData<V>);
 
 macro_rules! impl_map_validator {
   ($name:ident) => {

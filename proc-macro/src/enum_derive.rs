@@ -15,7 +15,9 @@ pub(crate) fn process_enum_derive(input: TokenStream) -> TokenStream {
     reserved_numbers,
     options,
     proto_name,
-  } = process_container_attr(&enum_name, &attrs);
+    file,
+    package,
+  } = process_container_attr(&enum_name, &attrs).unwrap();
 
   let data = if let Data::Enum(enum_data) = data {
     enum_data

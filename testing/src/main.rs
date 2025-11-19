@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
 use prelude::{
   validators::{
@@ -8,27 +8,25 @@ use prelude::{
     MapValidatorBuilder, ProtoMap, ProtoRepeated, RepeatedValidator, RepeatedValidatorBuilder,
     Sint32, StringValidator, StringValidatorBuilder,
   },
-  EnumVariant, Message, Oneof, ProtoEnum, ProtoField, ProtoFile, ProtoOption, ProtoValidator,
-  ValidatorBuilderFor, ValidatorMap,
+  EnumVariant, Message, Oneof, ProtoEnum, ProtoField, ProtoFile, ProtoOption, ProtoPath, ProtoType,
+  ProtoValidator, ValidatorBuilderFor, ValidatorMap,
 };
-use proc_macro_impls::{Enum, Message, Oneof};
+use proc_macro_impls::{proto_module, Enum, Message, Oneof};
 
-pub trait ProtoType {
-  fn proto_type() -> &'static str;
-}
+pub trait ProtoMessage: ProtoType {}
 
-#[derive(Oneof)]
-enum PseudoOneof {
-  A(String),
-  B(u32),
-}
+// #[derive(Oneof)]
+// enum PseudoOneof {
+//   A(String),
+//   B(u32),
+// }
 
-#[derive(Enum)]
-enum Bcd {
-  AbcDeg,
-  B,
-  C,
-}
+// #[derive(Enum)]
+// enum Bcd {
+//   AbcDeg,
+//   B,
+//   C,
+// }
 
 fn string_validator() -> StringValidatorBuilder {
   StringValidator::builder()
@@ -40,22 +38,23 @@ fn repeated_validator() -> impl ValidatorBuilderFor<Vec<i32>> {
   validator.items(|i| i.lt(20)).min_items(1)
 }
 
-struct CustomMapType;
+#[proc_macro_impls::proto_module(file = "abc.proto", package = "myapp.v1")]
+mod inner {
+  use super::*;
 
-impl ValidatorBuilderFor<CustomMapType> for MapValidatorBuilder<String, Sint32> {}
-
-#[derive(Message)]
-struct Abc {
-  #[proto(validate = string_validator())]
-  name: String,
-
-  #[proto(validate = repeated_validator())]
-  num: Vec<i32>,
-
-  #[proto(type_(ProtoMap<String, Sint32>))]
-  #[proto(validate = |v| v.min_pairs(0).keys(|k| k.min_len(25)).values(|v| v.lt(25)))]
-  map: HashMap<String, i32>,
+  #[derive(Message)]
+  pub struct Abc {
+    #[proto(validate = string_validator())]
+    name: String,
+    // #[proto(validate = repeated_validator())]
+    // num: Vec<i32>,
+    // #[proto(type_(ProtoMap<String, Sint32>))]
+    // #[proto(validate = |v| v.min_pairs(0).keys(|k| k.min_len(25)).values(|v| v.lt(25)))]
+    // map: HashMap<String, i32>,
+  }
 }
+
+use inner::*;
 
 fn main() {
   let mut file = ProtoFile::new("abc.proto", "myapp.v1");
@@ -65,7 +64,5 @@ fn main() {
   let msg2 = msg.clone();
   let nested = msg.nested_message(msg2);
 
-  let nested_enum = Bcd::to_nested_enum(nested);
-
-  let oneof = PseudoOneof::to_oneof(nested);
+  // let nested_enum = Bcd::to_nested_enum(nested);
 }

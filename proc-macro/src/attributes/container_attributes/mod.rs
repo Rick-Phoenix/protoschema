@@ -11,13 +11,20 @@ pub(crate) struct ContainerAttrs {
   pub reserved_numbers: ReservedNumbers,
   pub options: ProtoOptions,
   pub proto_name: String,
+  pub file: String,
+  pub package: String,
 }
 
-pub(crate) fn process_container_attr(rust_name: &Ident, attrs: &Vec<Attribute>) -> ContainerAttrs {
+pub(crate) fn process_container_attr(
+  rust_name: &Ident,
+  attrs: &Vec<Attribute>,
+) -> Result<ContainerAttrs, Error> {
   let mut reserved_names = ReservedNames::default();
   let mut reserved_numbers = ReservedNumbers::default();
   let mut options: Option<TokenStream2> = None;
   let mut proto_name: Option<String> = None;
+  let mut file: Option<String> = None;
+  let mut package: Option<String> = None;
 
   for attr in attrs {
     if !attr.path().is_ident("proto") {
@@ -53,16 +60,25 @@ pub(crate) fn process_container_attr(rust_name: &Ident, attrs: &Vec<Attribute>) 
             proto_name = Some(extract_string_lit(&nameval.value).unwrap());
           } else if nameval.path.is_ident("reserved_names") {
             reserved_names = ReservedNames::Expr(nameval.value);
+          } else if nameval.path.is_ident("file") {
+            file = Some(extract_string_lit(&nameval.value)?);
+          } else if nameval.path.is_ident("package") {
+            package = Some(extract_string_lit(&nameval.value)?);
           }
         }
       }
     }
   }
 
-  ContainerAttrs {
+  let file = file.ok_or(error!(Span::call_site(), "File attribute is missing"))?;
+  let package = package.ok_or(error!(Span::call_site(), "Package attribute is missing"))?;
+
+  Ok(ContainerAttrs {
     reserved_names,
     reserved_numbers,
     options: attributes::ProtoOptions(options),
     proto_name: proto_name.unwrap_or_else(|| ccase!(pascal, rust_name.to_string())),
-  }
+    file,
+    package,
+  })
 }

@@ -11,4 +11,8 @@ use convert_case::ccase;
 pub use field_attributes::*;
 pub use parsers::*;
 
+mod module_attributes;
+
+pub use module_attributes::*;
+
 use crate::*;

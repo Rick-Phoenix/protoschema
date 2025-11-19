@@ -76,18 +76,23 @@ where
   pub ignore: Option<Ignore>,
 }
 
-pub trait IntWrapper {
+pub trait IntWrapper: ProtoType {
   type RustInt: PartialOrd + PartialEq + Copy + Into<OptionValue> + Hash + Debug + Display + Eq;
-
-  fn proto_type() -> Arc<str>;
 }
 
 macro_rules! impl_int_wrapper {
   ($rust_type:ty, $proto_type:ident, primitive) => {
     impl IntWrapper for $rust_type {
       type RustInt = $rust_type;
-      fn proto_type() -> Arc<str> {
-        $proto_type.clone()
+    }
+
+    impl ProtoType for $rust_type {
+      fn type_name() -> Arc<str> {
+        $crate::paste!([< $proto_type:upper >]).clone()
+      }
+
+      fn import_path() -> Option<ProtoPath> {
+        None
       }
     }
 
@@ -99,8 +104,15 @@ macro_rules! impl_int_wrapper {
 
     impl IntWrapper for $wrapper_name {
       type RustInt = $rust_type;
-      fn proto_type() -> Arc<str> {
+    }
+
+    impl ProtoType for $wrapper_name {
+      fn type_name() -> Arc<str> {
         $crate::paste!([< $wrapper_name:upper >]).clone()
+      }
+
+      fn import_path() -> Option<ProtoPath> {
+        None
       }
     }
 
@@ -162,7 +174,7 @@ where
     insert_option!(validator, values, not_in);
 
     let mut outer_rules: OptionValueList =
-      vec![(N::proto_type(), OptionValue::Message(values.into()))];
+      vec![(N::type_name(), OptionValue::Message(values.into()))];
 
     insert_cel_rules!(validator, outer_rules);
     insert_option!(validator, outer_rules, required);
@@ -175,25 +187,35 @@ where
   }
 }
 
-pub trait FloatWrapper {
+pub trait FloatWrapper: ProtoType {
   type RustType: PartialOrd + PartialEq + Copy + Into<OptionValue> + Debug + Display;
-
-  fn proto_type() -> Arc<str>;
 }
 
 impl FloatWrapper for f32 {
   type RustType = f32;
+}
 
-  fn proto_type() -> Arc<str> {
+impl ProtoType for f32 {
+  fn type_name() -> Arc<str> {
     FLOAT.clone()
+  }
+
+  fn import_path() -> Option<ProtoPath> {
+    None
   }
 }
 
 impl FloatWrapper for f64 {
   type RustType = f64;
+}
 
-  fn proto_type() -> Arc<str> {
+impl ProtoType for f64 {
+  fn type_name() -> Arc<str> {
     DOUBLE.clone()
+  }
+
+  fn import_path() -> Option<ProtoPath> {
+    None
   }
 }
 
@@ -333,7 +355,7 @@ where
 
     let mut outer_rules: OptionValueList = vec![];
 
-    outer_rules.push((N::proto_type(), OptionValue::Message(values.into())));
+    outer_rules.push((N::type_name(), OptionValue::Message(values.into())));
 
     insert_cel_rules!(validator, outer_rules);
     insert_option!(validator, outer_rules, required);
