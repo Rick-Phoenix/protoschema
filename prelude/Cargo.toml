@@ -12,3 +12,4 @@ bon = "3.8"
 regex = "1"
 proto-types = { workspace = true }
 paste = "1"
+bytes = "1"

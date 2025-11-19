@@ -9,16 +9,26 @@ use std::{collections::BTreeSet, ops::Range, sync::Arc};
 use bon::Builder;
 pub use items::*;
 
-pub trait ProtoValidator<T> {
-  type Builder<'a>;
+pub trait ValidatorBuilderFor<T>: Into<ProtoOption> {}
 
-  fn builder() -> Self::Builder<'static>;
+pub trait ProtoValidator<T> {
+  type Builder;
+
+  fn builder() -> Self::Builder;
+
+  #[track_caller]
+  fn from_builder<B>(builder: B) -> ProtoOption
+  where
+    B: ValidatorBuilderFor<T>,
+  {
+    builder.into()
+  }
 
   #[track_caller]
   fn build_rules<F, FinalBuilder>(config_fn: F) -> ProtoOption
   where
-    for<'a> F: FnOnce(Self::Builder<'a>) -> FinalBuilder,
-    FinalBuilder: Into<ProtoOption>,
+    F: FnOnce(Self::Builder) -> FinalBuilder,
+    FinalBuilder: ValidatorBuilderFor<T>,
   {
     let initial_builder = Self::builder();
 

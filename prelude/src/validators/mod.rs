@@ -6,15 +6,32 @@ use proto_types::protovalidate::Ignore;
 
 type OptionValueList = Vec<(Arc<str>, OptionValue)>;
 
+impl From<Ignore> for OptionValue {
+  fn from(value: Ignore) -> Self {
+    let name = match value {
+      Ignore::Unspecified => "IGNORE_UNSPECIFIED",
+      Ignore::IfZeroValue => "IGNORE_IF_ZERO_VALUE",
+      Ignore::Always => "IGNORE_ALWAYS",
+    };
+
+    OptionValue::Enum(name.into())
+  }
+}
+
+fn create_string_list<T: Into<Arc<str>>, I: IntoIterator<Item = T>>(list: I) -> Arc<[Arc<str>]> {
+  let new_list: Vec<Arc<str>> = list.into_iter().map(|i| i.into()).collect();
+
+  new_list.into()
+}
+
 macro_rules! impl_ignore {
-  (no_lifetime, $builder:ident) => {
+  ($builder:ident) => {
     $crate::paste! {
       impl < S: [< $builder:snake >]::State> $builder< S>
       where
         S::Ignore: [< $builder:snake >]::IsUnset,
       {
         /// Rules defined for this field will be ignored if the field is set to its protobuf zero value.
-        /// No-op for fields that track presence such as optional fields, or messages in proto3.
         pub fn ignore_if_zero_value(self) -> $builder< [< $builder:snake >]::SetIgnore<S>> {
           self.ignore(Ignore::IfZeroValue)
         }
@@ -26,67 +43,52 @@ macro_rules! impl_ignore {
       }
     }
   };
-
-  ($builder:ident) => {
-    $crate::paste! {
-      impl <'a, S: [< $builder:snake >]::State> $builder<'a, S>
-      where
-        S::Ignore: [< $builder:snake >]::IsUnset,
-      {
-        /// Rules defined for this field will be ignored if the field is set to its protobuf zero value.
-        /// No-op for fields that track presence such as optional fields, or messages in proto3.
-        pub fn ignore_if_zero_value(self) -> $builder<'a, [< $builder:snake >]::SetIgnore<S>> {
-          self.ignore(Ignore::IfZeroValue)
-        }
-
-        /// Rules set for this field will always be ignored.
-        pub fn ignore_always(self) -> $builder<'a, [< $builder:snake >]::SetIgnore<S>> {
-          self.ignore(Ignore::Always)
-        }
-      }
-    }
-  };
 }
 
-#[track_caller]
-fn validate_comparables<T>(lt: Option<T>, lte: Option<T>, gt: Option<T>, gte: Option<T>)
+fn validate_comparables<T>(
+  lt: Option<T>,
+  lte: Option<T>,
+  gt: Option<T>,
+  gte: Option<T>,
+) -> Result<(), &'static str>
 where
   T: Copy + PartialEq + PartialOrd,
 {
   if lt.is_some() && lte.is_some() {
-    panic!("Cannot use lt and lte together")
+    return Err("Cannot use lt and lte together");
   }
 
   if gt.is_some() && gte.is_some() {
-    panic!("Cannot use gt and gte together")
+    return Err("Cannot use gt and gte together");
   }
 
   if let Some(lt_val) = lt {
     if let Some(gt_val) = gt && lt_val <= gt_val {
-      panic!("Lt cannot be smaller than or equal to gt")
+      return Err("Lt cannot be smaller than or equal to gt");
     }
 
     if let Some(gte_val) = gte && lt_val < gte_val {
-      panic!("Lt cannot be smaller than gte")
+      return Err("Lt cannot be smaller than gte");
     }
   }
 
   if let Some(lte_val) = lte {
     if let Some(gt_val) = gt && lte_val < gt_val {
-      panic!("Lte cannot be smaller than to gt")
+      return Err("Lte cannot be smaller than to gt");
     }
 
     if let Some(gte_val) = gte && lte_val < gte_val {
-      panic!("Lte cannot be smaller than gte")
+      return Err("Lte cannot be smaller than gte");
     }
   }
+
+  Ok(())
 }
 
-#[track_caller]
 fn validate_lists<'a, T>(
   in_list: Option<&'a [T]>,
   not_in_list: Option<&'a [T]>,
-) -> Result<(), Vec<T>>
+) -> Result<(), String>
 where
   T: Eq + Hash + Debug + Clone,
 {
@@ -107,7 +109,10 @@ where
     .for_each(|&v| invalid_vals.push(v.to_owned()));
 
   if !invalid_vals.is_empty() {
-    Err(invalid_vals)
+    Err(format!(
+      "The following values are present inside of 'in' and 'not_in': {:?}",
+      invalid_vals
+    ))
   } else {
     Ok(())
   }
@@ -115,7 +120,7 @@ where
 
 #[macro_use]
 mod macros {
-  macro_rules! insert_cel_rule {
+  macro_rules! insert_cel_rules {
     ($validator:ident, $values:ident) => {
       if let Some(cel_rules) = $validator.cel {
         let rule_values: Vec<OptionValue> =
@@ -125,7 +130,7 @@ mod macros {
     };
   }
 
-  macro_rules! insert_option2 {
+  macro_rules! insert_option {
     (
     $validator:ident,
     $values:ident,
@@ -138,64 +143,30 @@ mod macros {
       }
     };
   }
-
-  macro_rules! insert_option {
-    (
-      $validator:ident,
-      $values:ident,
-      $field:ident,
-      $($val_type:tt)*
-    ) => {
-      $crate::paste! {
-        if let Some(value) = $validator.$field {
-          $values.push(([< $field:snake:upper >].clone(), option_value!(value, $($val_type)*)))
-        }
-      }
-    };
-  }
-
-  macro_rules! option_value {
-    ($val:ident, [string]) => {
-      OptionValue::List(
-        $val
-          .iter()
-          .map(|&i| OptionValue::String(i.into()))
-          .collect::<Vec<OptionValue>>()
-          .into(),
-      )
-    };
-    ($val:ident, [$val_type:ident]) => {
-      OptionValue::List(
-        $val
-          .iter()
-          .map(|i| OptionValue::from(*i))
-          .collect::<Vec<OptionValue>>()
-          .into(),
-      )
-    };
-    ($val:ident, string) => {
-      OptionValue::String($val.into())
-    };
-    ($val:ident, $val_type:ident) => {
-      OptionValue::from($val)
-    };
-  }
 }
 
 mod any;
 mod bool;
 mod bytes;
 mod cel;
+mod duration;
+mod enums;
 mod map;
 mod numeric;
+mod repeated;
 mod string;
+mod timestamp;
 
 pub use any::*;
 pub use bool::*;
 pub use bytes::*;
 pub use cel::*;
+pub use duration::*;
+pub use enums::*;
 pub use map::*;
 pub use numeric::*;
+pub use repeated::*;
 pub use string::*;
+pub use timestamp::*;
 
 use crate::OptionValue;

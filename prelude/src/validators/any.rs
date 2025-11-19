@@ -1,17 +1,44 @@
+use any_validator_builder::{IsUnset, SetIgnore, SetIn, SetNotIn, State};
 use bon::Builder;
 use proto_types::Any;
 
 use super::*;
 use crate::*;
 
+impl<S: State> AnyValidatorBuilder<S>
+where
+  S::In: IsUnset,
+{
+  pub fn in_<T: Into<Arc<str>>, I: IntoIterator<Item = T>>(
+    self,
+    list: I,
+  ) -> AnyValidatorBuilder<SetIn<S>> {
+    let list = create_string_list(list);
+    self.in_internal(list)
+  }
+}
+
+impl<S: State> AnyValidatorBuilder<S>
+where
+  S::NotIn: IsUnset,
+{
+  pub fn not_in<T: Into<Arc<str>>, I: IntoIterator<Item = T>>(
+    self,
+    list: I,
+  ) -> AnyValidatorBuilder<SetNotIn<S>> {
+    let list = create_string_list(list);
+    self.not_in_internal(list)
+  }
+}
+
 #[derive(Clone, Debug, Builder)]
-pub struct AnyValidator<'a> {
+pub struct AnyValidator {
   /// Only the type_urls defined in this list will be considered valid for this field.
-  #[builder(into)]
-  pub in_: Option<&'a [&'a str]>,
+  #[builder(setters(vis = "", name = in_internal))]
+  pub in_: Option<Arc<[Arc<str>]>>,
   /// The type_urls defined in this list will be considered invalid for this field.
-  #[builder(into)]
-  pub not_in: Option<&'a [&'a str]>,
+  #[builder(setters(vis = "", name = not_in_internal))]
+  pub not_in: Option<Arc<[Arc<str>]>>,
   /// Adds custom validation using one or more [`CelRule`]s to this field.
   #[builder(into)]
   pub cel: Option<Arc<[CelRule]>>,
@@ -24,29 +51,36 @@ pub struct AnyValidator<'a> {
 
 reusable_string!(ANY);
 
-impl_validator!(AnyValidator, Any, with_lifetime);
+impl_into_option!(AnyValidator);
+impl_validator!(AnyValidator, Any);
 
-impl_ignore!(AnyValidatorBuilder);
+impl<S: State> AnyValidatorBuilder<S>
+where
+  S::Ignore: IsUnset,
+{
+  /// Rules set for this field will always be ignored.
+  pub fn ignore_always(self) -> AnyValidatorBuilder<SetIgnore<S>> {
+    self.ignore(Ignore::Always)
+  }
+}
 
-impl<'a> From<AnyValidator<'a>> for ProtoOption {
+impl From<AnyValidator> for ProtoOption {
   #[track_caller]
-  fn from(validator: AnyValidator<'a>) -> Self {
+  fn from(validator: AnyValidator) -> Self {
     let mut rules: OptionValueList = Vec::new();
 
-    validate_lists(validator.in_, validator.not_in).unwrap_or_else(|invalid| {
-      panic!(
-        "The following values are present inside of 'in' and 'not_in': {:?}",
-        invalid
-      )
-    });
+    validate_lists(validator.in_.as_deref(), validator.not_in.as_deref()).unwrap();
 
-    insert_option!(validator, rules, in_, [string]);
-    insert_option!(validator, rules, not_in, [string]);
+    insert_option!(validator, rules, in_);
+    insert_option!(validator, rules, not_in);
 
-    let mut outer_rules: OptionValueList = vec![(ANY.clone(), OptionValue::Message(rules.into()))];
+    let mut outer_rules: OptionValueList = vec![];
 
-    insert_cel_rule!(validator, outer_rules);
-    insert_option!(validator, outer_rules, required, bool);
+    outer_rules.push((ANY.clone(), OptionValue::Message(rules.into())));
+
+    insert_cel_rules!(validator, outer_rules);
+    insert_option!(validator, outer_rules, required);
+    insert_option!(validator, outer_rules, ignore);
 
     ProtoOption {
       name: BUF_VALIDATE_FIELD.clone(),

@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
-use crate::OptionValue;
+use super::*;
+use crate::*;
 
 /// The structure of a custom Cel rule used to define validation logic with protovalidate.
 /// The id should be a unique identifier for the given rule, which will appear in error messages.
@@ -19,9 +20,9 @@ impl From<CelRule> for OptionValue {
   fn from(value: CelRule) -> Self {
     OptionValue::Message(
       vec![
-        ("id".into(), OptionValue::String(value.id)),
-        ("message".into(), OptionValue::String(value.message)),
-        ("expression".into(), OptionValue::String(value.expression)),
+        (ID.clone(), OptionValue::String(value.id)),
+        (MESSAGE.clone(), OptionValue::String(value.message)),
+        (EXPRESSION.clone(), OptionValue::String(value.expression)),
       ]
       .into(),
     )

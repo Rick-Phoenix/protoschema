@@ -1,4 +1,5 @@
 use bon::Builder;
+use bool_validator_builder::State;
 
 use super::*;
 use crate::*;
@@ -12,20 +13,22 @@ pub struct BoolValidator {
   pub required: Option<bool>,
 }
 
+impl_into_option!(BoolValidator);
 impl_validator!(BoolValidator, bool);
 
 reusable_string!(BOOL);
 
 impl From<BoolValidator> for ProtoOption {
-  #[track_caller]
   fn from(validator: BoolValidator) -> Self {
     let mut rules: OptionValueList = Vec::new();
 
-    insert_option!(validator, rules, const_, bool);
+    insert_option!(validator, rules, const_);
 
-    let mut outer_rules: OptionValueList = vec![(BOOL.clone(), OptionValue::Message(rules.into()))];
+    let mut outer_rules: OptionValueList = vec![];
 
-    insert_option!(validator, outer_rules, required, bool);
+    outer_rules.push((BOOL.clone(), OptionValue::Message(rules.into())));
+
+    insert_option!(validator, outer_rules, required);
 
     ProtoOption {
       name: BUF_VALIDATE_FIELD.clone(),

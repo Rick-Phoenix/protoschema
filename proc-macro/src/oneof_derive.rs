@@ -44,19 +44,19 @@ pub(crate) fn process_oneof_derive(input: TokenStream) -> TokenStream {
       type_,
     } = process_field_attrs(&variant_name, &reserved_numbers, &variant.attrs);
 
-    let proto_type = if let Some(path) = type_ {
-      path
-    } else if let Some(literal) = extract_known_type(&variant_type) {
-      ProtoType::Literal(literal.to_string())
-    } else {
-      panic!("No type defined")
-    };
+    // let proto_type = if let Some(path) = type_ {
+    //   path
+    // } else if let Some(literal) = extract_known_type(&variant_type) {
+    //   ProtoType::Literal(literal.to_string())
+    // } else {
+    //   panic!("No type defined")
+    // };
 
     variants_tokens.push(quote! {
         (#tag, ProtoField {
           name: stringify!(#variant_name).to_string(),
           options: #options,
-          type_: #proto_type,
+          type_: "to implement...".to_string(),
           validator: None,
         })
     });

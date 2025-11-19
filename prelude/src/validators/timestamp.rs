@@ -1,0 +1,122 @@
+use bon::Builder;
+use proto_types::{Duration, Timestamp};
+use timestamp_validator_builder::{IsUnset, SetIgnore, State};
+
+use super::*;
+use crate::*;
+
+/// Used by the [`timestamp`](crate::timestamp) macro to define validation rules.
+#[derive(Clone, Debug, Builder)]
+pub struct TimestampValidator {
+  /// Only this specific value will be considered valid for this field.
+  pub const_: Option<Timestamp>,
+  /// This field's value will be valid only if it is smaller than the specified amount.
+  pub lt: Option<Timestamp>,
+  /// This field's value will be valid only if it is smaller than, or equal to, the specified amount.
+  pub lte: Option<Timestamp>,
+  #[builder(with = || true)]
+  /// This field's value will be valid only if it in the past.
+  pub lt_now: Option<bool>,
+  /// This field's value will be valid only if it is greater than the specified amount.
+  pub gt: Option<Timestamp>,
+  /// This field's value will be valid only if it is greater than, or equal to, the specified amount.
+  pub gte: Option<Timestamp>,
+  #[builder(with = || true)]
+  /// This field's value will be valid only if it in the future.
+  pub gt_now: Option<bool>,
+  /// This field's value will be valid only if it is within the specified Duration (either in the past or future) from the moment when it's being validated.
+  pub within: Option<Duration>,
+  /// Adds custom validation using one or more [`CelRule`]s to this field.
+  #[builder(into)]
+  pub cel: Option<Box<[CelRule]>>,
+  #[builder(with = || true)]
+  /// Marks the field as invalid if unset.
+  pub required: Option<bool>,
+  #[builder(setters(vis = "", name = ignore))]
+  pub ignore: Option<Ignore>,
+}
+
+impl<S: State> TimestampValidatorBuilder<S>
+where
+  S::Ignore: IsUnset,
+{
+  /// Rules set for this field will always be ignored.
+  pub fn ignore_always(self) -> TimestampValidatorBuilder<SetIgnore<S>> {
+    self.ignore(Ignore::Always)
+  }
+}
+
+impl<S: timestamp_validator_builder::State> From<TimestampValidatorBuilder<S>> for ProtoOption {
+  #[track_caller]
+  fn from(value: TimestampValidatorBuilder<S>) -> Self {
+    value.build().into()
+  }
+}
+
+reusable_string!(LT_NOW);
+reusable_string!(GT_NOW);
+reusable_string!(WITHIN);
+
+impl From<TimestampValidator> for ProtoOption {
+  #[track_caller]
+  fn from(validator: TimestampValidator) -> Self {
+    let mut rules: OptionValueList = Vec::new();
+
+    if let Some(const_val) = validator.const_ {
+      rules.push((CONST_.clone(), OptionValue::Timestamp(const_val)));
+    }
+
+    validate_comparables(validator.lt, validator.lte, validator.gt, validator.gte).unwrap();
+
+    if let Some(true) = validator.lt_now {
+      if validator.lt.is_some() || validator.lte.is_some() {
+        panic!("Cannot use lt_now with lt or lte")
+      }
+
+      if let Some(gt) = validator.gt && gt.is_future() {
+        panic!("Gt cannot be in the future if lt_now is true")
+      }
+
+      if let Some(gte) = validator.gte && gte.is_future() {
+        panic!("Gte cannot be in the future if lt_now is true")
+      }
+    }
+
+    if let Some(true) = validator.gt_now {
+      if validator.gt.is_some() || validator.gte.is_some() {
+        panic!("Cannot use gt_now with gt or gte")
+      }
+
+      if let Some(lt) = validator.lt && lt.is_past() {
+        panic!("Lt cannot be in the past if gt_now is true")
+      }
+
+      if let Some(lte) = validator.lte && lte.is_past() {
+        panic!("Lte cannot be in the past if gt_now is true")
+      }
+    }
+
+    insert_option!(validator, rules, lt);
+    insert_option!(validator, rules, lte);
+    insert_option!(validator, rules, gt);
+    insert_option!(validator, rules, gte);
+    insert_option!(validator, rules, lt_now);
+    insert_option!(validator, rules, gt_now);
+    insert_option!(validator, rules, within);
+
+    let mut outer_rules: OptionValueList = vec![];
+
+    outer_rules.push((TIMESTAMP.clone(), OptionValue::Message(rules.into())));
+
+    insert_cel_rules!(validator, outer_rules);
+    insert_option!(validator, outer_rules, required);
+    insert_option!(validator, outer_rules, ignore);
+
+    ProtoOption {
+      name: BUF_VALIDATE_FIELD.clone(),
+      value: OptionValue::Message(outer_rules.into()),
+    }
+  }
+}
+
+reusable_string!(TIMESTAMP);

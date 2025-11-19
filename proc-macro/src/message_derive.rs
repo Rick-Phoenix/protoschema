@@ -59,30 +59,32 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
       _ => panic!("Must be a path type"),
     };
 
+    let proto_type = if let Some(type_data) = type_ {
+      type_data
+    } else {
+      field_type
+    };
+
     let validator_tokens = if let Some(validator) = validator {
       match validator {
-        ValidatorExpr::Call(call) => quote! { Some(#call) },
+        ValidatorExpr::Call(call) => {
+          quote! { Some(<prelude::ValidatorMap as prelude::ProtoValidator<#proto_type>>::from_builder(#call)) }
+        }
         ValidatorExpr::Closure(closure) => {
-          quote! { Some(<prelude::ValidatorMap as prelude::ProtoValidator<String>>::build_rules(#closure)) }
+          let validator_type = get_validator_call(&proto_type);
+
+          quote! { Some(<prelude::ValidatorMap as prelude::ProtoValidator<#proto_type>>::build_rules(#closure)) }
         }
       }
     } else {
       quote! { None }
     };
 
-    let proto_type = if let Some(path) = type_ {
-      path
-    } else if let Some(literal) = extract_known_type(&field_type) {
-      ProtoType::Literal(literal.to_string())
-    } else {
-      panic!("No type defined")
-    };
-
     fields_data.push(quote! {
       (#tag, ProtoField {
         name: #name.to_string(),
         options: #options,
-        type_: #proto_type,
+        type_: "to implement...".to_string(),
         validator: #validator_tokens,
       })
     });
@@ -97,7 +99,7 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
           name: #proto_name.into(),
           package: path.package,
           file: path.file,
-          fields: vec![ #(#fields_data)*, ],
+          fields: vec![ #(#fields_data,)* ],
           reserved_names: #reserved_names,
           reserved_numbers: #reserved_numbers,
           options: #options,

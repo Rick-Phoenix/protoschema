@@ -12,29 +12,8 @@ macro_rules! reusable_string {
   };
 }
 
-macro_rules! impl_validator {
-  ($validator:ident, $rust_type:ty, with_lifetime) => {
-    $crate::paste! {
-      impl<'a, S: [< $validator:snake _builder >]::IsComplete> From<[< $validator Builder >]<'a, S>> for ProtoOption {
-        #[track_caller]
-        fn from(value: [< $validator Builder >]<'a, S>) -> ProtoOption {
-          let validator = value.build();
-
-          validator.into()
-        }
-      }
-
-      impl ProtoValidator<$rust_type> for ValidatorMap {
-        type Builder<'a> = [< $validator Builder >]<'a>;
-
-        fn builder() -> Self::Builder<'static> {
-          $validator::builder()
-        }
-      }
-    }
-  };
-
-  ($validator:ident, $rust_type:ty) => {
+macro_rules! impl_into_option {
+  ($validator:ident) => {
     $crate::paste! {
       impl<S: [< $validator:snake _builder >]::IsComplete> From<[< $validator Builder >]<S>> for ProtoOption {
         #[track_caller]
@@ -44,14 +23,22 @@ macro_rules! impl_validator {
           validator.into()
         }
       }
+    }
+  };
+}
 
+macro_rules! impl_validator {
+  ($validator:ident, $rust_type:ty) => {
+    $crate::paste! {
       impl ProtoValidator<$rust_type> for ValidatorMap {
-        type Builder<'a> = [< $validator Builder >];
+        type Builder = [< $validator Builder >];
 
-        fn builder() -> Self::Builder<'static> {
+        fn builder() -> Self::Builder {
           $validator::builder()
         }
       }
+
+      impl<S: State> ValidatorBuilderFor<$rust_type> for [< $validator Builder >]<S> {}
     }
   };
 }

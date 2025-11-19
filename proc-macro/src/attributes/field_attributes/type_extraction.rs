@@ -10,6 +10,24 @@ const PRIMITIVES: [(&str, &str); 7] = [
   ("bool", "bool"),
 ];
 
+pub fn get_validator_call(type_path: &Path) -> TokenStream2 {
+  let last_segment = type_path.segments.last().unwrap();
+
+  last_segment.to_token_stream()
+
+  // if let Some(rust_type) = PRIMITIVES.iter().find_map(|(rust_type, proto_type)| {
+  //   if last_segment.ident == rust_type {
+  //     Some(&**proto_type)
+  //   } else {
+  //     None
+  //   }
+  // }) {
+  //   todo!();
+  // } else {
+  //   last_segment.to_token_stream()
+  // }
+}
+
 pub fn extract_known_type(path: &Path) -> Option<&'static str> {
   let last_segment = path.segments.last().unwrap();
 

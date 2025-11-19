@@ -19,3 +19,7 @@ reusable_string!(LT);
 reusable_string!(LTE);
 reusable_string!(GT);
 reusable_string!(GTE);
+reusable_string!(ID);
+reusable_string!(MESSAGE);
+reusable_string!(EXPRESSION);
+reusable_string!(IGNORE);

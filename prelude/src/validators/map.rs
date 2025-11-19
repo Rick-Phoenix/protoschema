@@ -1,44 +1,62 @@
 use std::marker::PhantomData;
 
+use map_validator_builder::{IsComplete, IsUnset, SetIgnore, State};
+
 use super::*;
 use crate::*;
 
-fn test() {
-  let x: MapValidatorBuilder<bool> = MapValidator::builder();
-
-  x.keys(|v| v.const_(false));
+impl<K, V, S: State> From<MapValidatorBuilder<K, V, S>> for ProtoOption
+where
+  S: IsComplete,
+{
+  #[track_caller]
+  fn from(value: MapValidatorBuilder<K, V, S>) -> Self {
+    value.build().into()
+  }
 }
 
-impl<KI, VI, S: map_validator_builder::State> MapValidatorBuilder<KI, VI, S>
+pub struct ProtoMap<K = (), V = ()>(PhantomData<K>, PhantomData<V>);
+
+impl<K, V> ProtoValidator<ProtoMap<K, V>> for ValidatorMap {
+  type Builder = MapValidatorBuilder<K, V>;
+
+  fn builder() -> Self::Builder {
+    MapValidator::builder()
+  }
+}
+
+impl<K, V, S: map_validator_builder::State> MapValidatorBuilder<K, V, S>
 where
   S::Keys: map_validator_builder::IsUnset,
 {
+  #[track_caller]
   pub fn keys<F, FinalBuilder>(
     self,
     config_fn: F,
-  ) -> MapValidatorBuilder<KI, VI, map_validator_builder::SetKeys<S>>
+  ) -> MapValidatorBuilder<K, V, map_validator_builder::SetKeys<S>>
   where
-    ValidatorMap: ProtoValidator<KI>,
-    FinalBuilder: Into<ProtoOption>,
-    F: for<'a> FnOnce(<ValidatorMap as ProtoValidator<KI>>::Builder<'a>) -> FinalBuilder,
+    ValidatorMap: ProtoValidator<K>,
+    FinalBuilder: ValidatorBuilderFor<K>,
+    F: FnOnce(<ValidatorMap as ProtoValidator<K>>::Builder) -> FinalBuilder,
   {
     let keys_opts = ValidatorMap::build_rules(config_fn);
     self.keys_internal(keys_opts)
   }
 }
 
-impl<KI, VI, S: map_validator_builder::State> MapValidatorBuilder<KI, VI, S>
+impl<K, V, S: map_validator_builder::State> MapValidatorBuilder<K, V, S>
 where
   S::Values: map_validator_builder::IsUnset,
 {
+  #[track_caller]
   pub fn values<F, FinalBuilder>(
     self,
     config_fn: F,
-  ) -> MapValidatorBuilder<KI, VI, map_validator_builder::SetValues<S>>
+  ) -> MapValidatorBuilder<K, V, map_validator_builder::SetValues<S>>
   where
-    ValidatorMap: ProtoValidator<VI>,
-    FinalBuilder: Into<ProtoOption>,
-    F: for<'a> FnOnce(<ValidatorMap as ProtoValidator<VI>>::Builder<'a>) -> FinalBuilder,
+    ValidatorMap: ProtoValidator<V>,
+    FinalBuilder: ValidatorBuilderFor<V>,
+    F: FnOnce(<ValidatorMap as ProtoValidator<V>>::Builder) -> FinalBuilder,
   {
     let values_opts = ValidatorMap::build_rules(config_fn);
     self.values_internal(values_opts)
@@ -46,11 +64,11 @@ where
 }
 
 #[derive(Clone, Debug, Builder)]
-pub struct MapValidator<KeyItems = (), ValueItems = ()> {
+pub struct MapValidator<K = (), V = ()> {
   #[builder(default)]
-  _key_items: PhantomData<KeyItems>,
+  _key_type: PhantomData<K>,
   #[builder(default)]
-  _values_items: PhantomData<ValueItems>,
+  _value_type: PhantomData<V>,
 
   #[builder(setters(vis = "", name = keys_internal))]
   /// The options that will apply to this map's keys.
@@ -75,36 +93,49 @@ pub struct MapValidator<KeyItems = (), ValueItems = ()> {
   pub ignore: Option<Ignore>,
 }
 
-// impl_ignore!(no_lifetime, MapValidatorBuilder);
+impl<S: State, K, V> MapValidatorBuilder<K, V, S>
+where
+  S::Ignore: IsUnset,
+{
+  /// Rules set for this field will always be ignored.
+  pub fn ignore_always(self) -> MapValidatorBuilder<K, V, SetIgnore<S>> {
+    self.ignore(Ignore::Always)
+  }
+}
 
 reusable_string!(MIN_PAIRS);
 reusable_string!(MAX_PAIRS);
+reusable_string!(MAP);
+reusable_string!(KEYS);
+reusable_string!(VALUES);
 
 impl<KeyItems, ValueItems> From<MapValidator<KeyItems, ValueItems>> for ProtoOption {
   #[track_caller]
   fn from(validator: MapValidator<KeyItems, ValueItems>) -> Self {
     let mut rules: OptionValueList = Vec::new();
 
-    insert_option!(validator, rules, min_pairs, Uint);
-    insert_option!(validator, rules, max_pairs, Uint);
+    insert_option!(validator, rules, min_pairs);
+    insert_option!(validator, rules, max_pairs);
 
     if let Some(keys_option) = validator.keys {
-      rules.push(("keys".into(), (keys_option.value).clone()));
+      rules.push((KEYS.clone(), (keys_option.value).clone()));
     }
 
     if let Some(values_option) = validator.values {
-      rules.push(("values".into(), (values_option.value).clone()));
+      rules.push((VALUES.clone(), (values_option.value).clone()));
     }
 
-    let mut option_value: OptionValueList =
-      vec![("map".into(), OptionValue::Message(rules.into()))];
+    let mut outer_rules: OptionValueList = vec![];
 
-    insert_cel_rule!(validator, option_value);
-    insert_option!(validator, option_value, required, bool);
+    outer_rules.push((MAP.clone(), OptionValue::Message(rules.into())));
+
+    insert_cel_rules!(validator, outer_rules);
+    insert_option!(validator, outer_rules, required);
+    insert_option!(validator, outer_rules, ignore);
 
     ProtoOption {
       name: BUF_VALIDATE_FIELD.clone(),
-      value: OptionValue::Message(option_value.into()),
+      value: OptionValue::Message(outer_rules.into()),
     }
   }
 }

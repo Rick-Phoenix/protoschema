@@ -34,14 +34,55 @@ macro_rules! option_value_conversion {
   };
 }
 
+impl<T: Into<OptionValue> + Clone> From<Arc<[T]>> for OptionValue {
+  fn from(value: Arc<[T]>) -> Self {
+    OptionValue::List(
+      value
+        .into_iter()
+        .map(|item| (*item).clone().into())
+        .collect::<Vec<OptionValue>>()
+        .into(),
+    )
+  }
+}
+
+impl<T: Into<OptionValue> + Clone> From<Vec<T>> for OptionValue {
+  fn from(value: Vec<T>) -> Self {
+    OptionValue::List(
+      value
+        .into_iter()
+        .map(|item| item.clone().into())
+        .collect::<Vec<OptionValue>>()
+        .into(),
+    )
+  }
+}
+
+impl<T: Into<OptionValue> + Clone> From<&[T]> for OptionValue {
+  fn from(value: &[T]) -> Self {
+    OptionValue::List(
+      value
+        .into_iter()
+        .map(|item| item.clone().into())
+        .collect::<Vec<OptionValue>>()
+        .into(),
+    )
+  }
+}
+
 impl From<&str> for OptionValue {
   fn from(value: &str) -> Self {
     OptionValue::String(value.into())
   }
 }
 
+impl From<Arc<str>> for OptionValue {
+  fn from(value: Arc<str>) -> Self {
+    OptionValue::String(value.into())
+  }
+}
+
 option_value_conversion!(Arc<[(Arc<str>, OptionValue)]>, Message);
-option_value_conversion!(Arc<[OptionValue]>, List);
 option_value_conversion!(bool, Bool);
 option_value_conversion!(Duration, Duration);
 option_value_conversion!(Timestamp, Timestamp);

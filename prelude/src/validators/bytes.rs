@@ -1,4 +1,6 @@
+use ::bytes::Bytes;
 use bon::Builder;
+use bytes_validator_builder::{IsUnset, SetWellKnown, State};
 use regex::Regex;
 
 use super::*;
@@ -8,8 +10,8 @@ macro_rules! insert_bytes_option {
   ($validator:ident, $values:ident, $field:ident) => {
     $validator.$field.map(|v| {
       $values.push((
-        stringify!($field).into(),
-        OptionValue::String(format_bytes_as_proto_string_literal(v).into()),
+        $crate::paste!([< $field:upper >]).clone(),
+        OptionValue::String(format_bytes_as_proto_string_literal(&v).into()),
       ))
     })
   };
@@ -17,7 +19,7 @@ macro_rules! insert_bytes_option {
   ($validator:ident, $values:ident, $field:ident, list) => {
     $validator.$field.map(|v| {
       $values.push((
-        stringify!($field).into(),
+        $crate::paste!([< $field:upper >]).clone(),
         OptionValue::List(
           v.iter()
             .map(|i| OptionValue::String(format_bytes_as_proto_string_literal(i).into()))
@@ -29,10 +31,12 @@ macro_rules! insert_bytes_option {
   };
 }
 
-impl_validator!(BytesValidator, Vec<u8>, with_lifetime);
+impl_into_option!(BytesValidator);
+impl_validator!(BytesValidator, Vec<u8>);
+impl_validator!(BytesValidator, Bytes);
 
 #[derive(Clone, Debug, Builder)]
-pub struct BytesValidator<'a> {
+pub struct BytesValidator {
   /// Specifies the exact length for this bytes field to be considered valid.
   pub len: Option<u64>,
   /// The minimum length for this field in order to be considered valid.
@@ -42,21 +46,21 @@ pub struct BytesValidator<'a> {
   /// The pattern that this field must match in order to be valid.
   pub pattern: Option<Regex>,
   /// A prefix that this field must contain in order to be valid.
-  pub prefix: Option<&'a [u8]>,
+  pub prefix: Option<Bytes>,
   /// A suffix that this field must contain in order to be valid.
-  pub suffix: Option<&'a [u8]>,
+  pub suffix: Option<Bytes>,
   /// A subset of bytes that this field must contain in order to be valid.
-  pub contains: Option<&'a [u8]>,
+  pub contains: Option<Bytes>,
   /// Only the values in this list will be considered valid for this field.
   #[builder(into)]
-  pub in_: Option<Arc<[&'a [u8]]>>,
+  pub in_: Option<Arc<[Bytes]>>,
   /// The values in this list will be considered invalid for this field.
   #[builder(into)]
-  pub not_in: Option<Arc<[&'a [u8]]>>,
+  pub not_in: Option<Arc<[Bytes]>>,
   #[builder(setters(vis = "", name = well_known))]
   pub well_known: Option<WellKnownBytes>,
   /// Only this specific value will be considered valid for this field.
-  pub const_: Option<&'a [u8]>,
+  pub const_: Option<Bytes>,
   /// Adds custom validation using one or more [`CelRule`]s to this field.
   #[builder(into)]
   pub cel: Option<Arc<[CelRule]>>,
@@ -71,32 +75,25 @@ impl_ignore!(BytesValidatorBuilder);
 
 reusable_string!(BYTES);
 
-impl<'a> From<BytesValidator<'a>> for ProtoOption {
+impl From<BytesValidator> for ProtoOption {
   #[track_caller]
-  fn from(validator: BytesValidator<'a>) -> Self {
+  fn from(validator: BytesValidator) -> Self {
     let mut rules: OptionValueList = Vec::new();
 
     if let Some(const_val) = validator.const_ {
       rules.push((
         CONST_.clone(),
-        OptionValue::String(format_bytes_as_proto_string_literal(const_val).into()),
+        OptionValue::String(format_bytes_as_proto_string_literal(&const_val).into()),
       ));
     }
 
-    validate_lists(validator.in_.as_deref(), validator.not_in.as_deref()).unwrap_or_else(
-      |invalid| {
-        panic!(
-          "The following values are present inside of 'in' and 'not_in': {:?}",
-          invalid
-        )
-      },
-    );
+    validate_lists(validator.in_.as_deref(), validator.not_in.as_deref()).unwrap();
 
     if validator.len.is_none() {
-      insert_option!(validator, rules, min_len, uint);
-      insert_option!(validator, rules, max_len, uint);
+      insert_option!(validator, rules, min_len);
+      insert_option!(validator, rules, max_len);
     } else {
-      insert_option!(validator, rules, len, uint);
+      insert_option!(validator, rules, len);
     }
 
     if let Some(pattern) = validator.pattern {
@@ -113,18 +110,20 @@ impl<'a> From<BytesValidator<'a>> for ProtoOption {
     insert_bytes_option!(validator, rules, not_in, list);
 
     if let Some(v) = validator.well_known {
-      v.to_option(&mut rules)
+      v.to_option(&mut rules);
     }
 
-    let mut outer_options: OptionValueList =
-      vec![(BYTES.clone(), OptionValue::Message(rules.into()))];
+    let mut outer_rules: OptionValueList = vec![];
 
-    insert_cel_rule!(validator, outer_options);
-    insert_option!(validator, outer_options, required, bool);
+    outer_rules.push((BYTES.clone(), OptionValue::Message(rules.into())));
+
+    insert_cel_rules!(validator, outer_rules);
+    insert_option!(validator, outer_rules, required);
+    insert_option!(validator, outer_rules, ignore);
 
     ProtoOption {
       name: BUF_VALIDATE_FIELD.clone(),
-      value: OptionValue::Message(outer_options.into()),
+      value: OptionValue::Message(outer_rules.into()),
     }
   }
 }
@@ -136,12 +135,10 @@ pub enum WellKnownBytes {
   Ipv6,
 }
 
-use bytes_validator_builder::{IsUnset, SetWellKnown, State};
-
 macro_rules! well_known_impl {
   ($name:ident) => {
     paste::paste! {
-      pub fn [< $name:snake >](self) -> BytesValidatorBuilder<'a, SetWellKnown<S>>
+      pub fn [< $name:snake >](self) -> BytesValidatorBuilder<SetWellKnown<S>>
         where
           S::WellKnown: IsUnset,
         {
@@ -151,7 +148,7 @@ macro_rules! well_known_impl {
   };
 }
 
-impl<'a, S: State> BytesValidatorBuilder<'a, S> {
+impl<S: State> BytesValidatorBuilder<S> {
   well_known_impl!(Ip);
   well_known_impl!(Ipv4);
   well_known_impl!(Ipv6);

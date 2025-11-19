@@ -1,5 +1,6 @@
 use bon::Builder;
 use regex::Regex;
+use string_validator_builder::{IsUnset, SetIn, SetNotIn, SetWellKnown, State};
 
 use super::*;
 use crate::{
@@ -7,9 +8,36 @@ use crate::{
   *,
 };
 
+impl<S: State> StringValidatorBuilder<S>
+where
+  S::In: IsUnset,
+{
+  pub fn in_<T: Into<Arc<str>>, I: IntoIterator<Item = T>>(
+    self,
+    list: I,
+  ) -> StringValidatorBuilder<SetIn<S>> {
+    let list = create_string_list(list);
+    self.in_internal(list)
+  }
+}
+
+impl<S: State> StringValidatorBuilder<S>
+where
+  S::NotIn: IsUnset,
+{
+  pub fn not_in<T: Into<Arc<str>>, I: IntoIterator<Item = T>>(
+    self,
+    list: I,
+  ) -> StringValidatorBuilder<SetNotIn<S>> {
+    let list = create_string_list(list);
+    self.not_in_internal(list)
+  }
+}
+
 #[derive(Clone, Debug, Builder)]
 #[builder(derive(Clone))]
-pub struct StringValidator<'a> {
+#[builder(on(Arc<str>, into))]
+pub struct StringValidator {
   /// The exact character length that this field's value must have in order to be considered valid.
   pub len: Option<u64>,
   /// The minimum character length for this field's value to be considered valid.
@@ -25,23 +53,23 @@ pub struct StringValidator<'a> {
   /// A regex pattern that this field's value should match in order to be considered valid.
   pub pattern: Option<Regex>,
   /// The prefix that this field's value should contain in order to be considered valid.
-  pub prefix: Option<&'a str>,
+  pub prefix: Option<Arc<str>>,
   /// The suffix that this field's value should contain in order to be considered valid.
-  pub suffix: Option<&'a str>,
+  pub suffix: Option<Arc<str>>,
   /// The substring that this field's value should contain in order to be considered valid.
-  pub contains: Option<&'a str>,
+  pub contains: Option<Arc<str>>,
   /// The substring that this field's value must not contain in order to be considered valid.
-  pub not_contains: Option<&'a str>,
+  pub not_contains: Option<Arc<str>>,
   /// Only the values in this list will be considered valid for this field.
-  #[builder(into)]
-  pub in_: Option<Arc<[&'a str]>>,
+  #[builder(setters(vis = "", name = in_internal))]
+  pub in_: Option<Arc<[Arc<str>]>>,
   /// All the values in this list will be considered invalid for this field.
-  #[builder(into)]
-  pub not_in: Option<Arc<[&'a str]>>,
+  #[builder(setters(vis = "", name = not_in_internal))]
+  pub not_in: Option<Arc<[Arc<str>]>>,
   #[builder(setters(vis = "", name = well_known))]
   pub well_known: Option<WellKnownStrings>,
   /// Only this specific value will be considered valid for this field.
-  pub const_: Option<&'a str>,
+  pub const_: Option<Arc<str>>,
   /// Adds custom validation using one or more [`CelRule`]s to this field.
   #[builder(into)]
   pub cel: Option<Arc<[CelRule]>>,
@@ -52,38 +80,32 @@ pub struct StringValidator<'a> {
   pub ignore: Option<Ignore>,
 }
 
-impl_validator!(StringValidator, String, with_lifetime);
+impl_into_option!(StringValidator);
+impl_validator!(StringValidator, String);
 
-impl<'a> From<StringValidator<'a>> for ProtoOption {
+impl From<StringValidator> for ProtoOption {
   #[track_caller]
   fn from(validator: StringValidator) -> ProtoOption {
     let mut rules: OptionValueList = Vec::new();
 
     if let Some(const_val) = validator.const_ {
-      rules.push((CONST_.clone(), OptionValue::String(const_val.into())));
+      rules.push((CONST_.clone(), OptionValue::String(const_val)));
     }
 
-    validate_lists(validator.in_.as_deref(), validator.not_in.as_deref()).unwrap_or_else(
-      |invalid| {
-        panic!(
-          "The following values are present inside of 'in' and 'not_in': {:?}",
-          invalid
-        )
-      },
-    );
+    validate_lists(validator.in_.as_deref(), validator.not_in.as_deref()).unwrap();
 
     if validator.len.is_none() {
-      insert_option!(validator, rules, min_len, uint);
-      insert_option!(validator, rules, max_len, uint);
+      insert_option!(validator, rules, min_len);
+      insert_option!(validator, rules, max_len);
     } else {
-      insert_option!(validator, rules, len, uint);
+      insert_option!(validator, rules, len);
     }
 
     if validator.len_bytes.is_none() {
-      insert_option!(validator, rules, min_bytes, uint);
-      insert_option!(validator, rules, max_bytes, uint);
+      insert_option!(validator, rules, min_bytes);
+      insert_option!(validator, rules, max_bytes);
     } else {
-      insert_option!(validator, rules, len_bytes, uint);
+      insert_option!(validator, rules, len_bytes);
     }
 
     if let Some(pattern) = validator.pattern {
@@ -93,29 +115,31 @@ impl<'a> From<StringValidator<'a>> for ProtoOption {
       ))
     }
 
-    insert_option!(validator, rules, prefix, string);
-    insert_option!(validator, rules, suffix, string);
-    insert_option!(validator, rules, contains, string);
-    insert_option!(validator, rules, not_contains, string);
-    insert_option!(validator, rules, in_, [string]);
-    insert_option!(validator, rules, not_in, [string]);
+    insert_option!(validator, rules, prefix);
+    insert_option!(validator, rules, suffix);
+    insert_option!(validator, rules, contains);
+    insert_option!(validator, rules, not_contains);
+    insert_option!(validator, rules, in_);
+    insert_option!(validator, rules, not_in);
 
     if let Some(v) = validator.well_known {
       v.to_option(&mut rules)
     }
 
     // This is the outer rule grouping, "(buf.validate.field)"
-    let mut outer_rule_grouping: OptionValueList =
-      vec![(STRING.clone(), OptionValue::Message(rules.into()))];
+    let mut outer_rules: OptionValueList = vec![];
+
+    outer_rules.push((STRING.clone(), OptionValue::Message(rules.into())));
 
     // These must be added on the outer grouping, as they are generic rules
     // It's (buf.validate.field).required, NOT (buf.validate.field).string.required
-    insert_cel_rule!(validator, outer_rule_grouping);
-    insert_option!(validator, outer_rule_grouping, required, bool);
+    insert_cel_rules!(validator, outer_rules);
+    insert_option!(validator, outer_rules, required);
+    insert_option!(validator, outer_rules, ignore);
 
     ProtoOption {
       name: BUF_VALIDATE_FIELD.clone(),
-      value: OptionValue::Message(outer_rule_grouping.into()),
+      value: OptionValue::Message(outer_rules.into()),
     }
   }
 }
@@ -151,13 +175,11 @@ pub enum WellKnownStrings {
   HeaderValueStrict,
 }
 
-use string_validator_builder::{IsUnset, SetWellKnown, State};
-
 macro_rules! well_known_impl {
   ($name:ident) => {
     paste::paste! {
       #[doc = "Sets a rule for this field to match the [`WellKnown::" $name "`] variant."]
-      pub fn [< $name:snake >](self) -> StringValidatorBuilder<'a, SetWellKnown<S>>
+      pub fn [< $name:snake >](self) -> StringValidatorBuilder<SetWellKnown<S>>
         where
           S::WellKnown: IsUnset,
         {
@@ -169,7 +191,7 @@ macro_rules! well_known_impl {
 
 impl_ignore!(StringValidatorBuilder);
 
-impl<'a, S: State> StringValidatorBuilder<'a, S> {
+impl<S: State> StringValidatorBuilder<S> {
   well_known_impl!(Email);
   well_known_impl!(Hostname);
   well_known_impl!(Ip);

@@ -1,4 +1,9 @@
-use prelude::{EnumVariant, Message, Oneof, ProtoEnum, ProtoField, ProtoFile, ProtoOption};
+#![allow(unused)]
+
+use prelude::{
+  validators::{Sint32, StringValidator, StringValidatorBuilder},
+  EnumVariant, Message, Oneof, ProtoEnum, ProtoField, ProtoFile, ProtoOption,
+};
 use proc_macro_impls::{Enum, Message, Oneof};
 
 pub trait ProtoType {
@@ -18,10 +23,17 @@ enum Bcd {
   C,
 }
 
+fn string_validator() -> StringValidatorBuilder {
+  StringValidator::builder()
+}
+
 #[derive(Message)]
 struct Abc {
-  #[proto(validate = |v| v.min_len(25))]
+  #[proto(validate = string_validator())]
   name: String,
+
+  #[proto(validate = |v| v.lt(25))]
+  num: i32,
 }
 
 fn main() {
