@@ -103,23 +103,18 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
     }
 
     impl #struct_name {
-      pub fn to_message(file: &mut ProtoFile) -> &mut Message {
-        let path = file.path();
-
-        let mut new_msg = Message {
+      pub fn to_message() -> Message {
+        Message {
           name: #proto_name.into(),
-          package: path.package,
-          file: path.file,
+          package: #package.into(),
+          file: #file.into(),
           fields: vec![ #(#fields_data,)* ],
           reserved_names: #reserved_names,
           reserved_numbers: #reserved_numbers,
           options: #options,
           ..Default::default()
-        };
-
-        file.add_message(new_msg)
+        }
       }
-
     }
   });
 

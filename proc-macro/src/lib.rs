@@ -14,8 +14,8 @@ pub(crate) use proc_macro2::TokenStream as TokenStream2;
 use quote::{quote, ToTokens};
 use syn::{
   parse::Parse, parse_macro_input, parse_quote, punctuated::Punctuated, token::Token, Attribute,
-  Data, DataEnum, DataStruct, DeriveInput, Error, Expr, ExprClosure, Fields, Ident, Item, ItemMod,
-  Lit, LitStr, Meta, MetaList, Path, RangeLimits, Token, Type,
+  Data, DataEnum, DataStruct, DeriveInput, Error, Expr, ExprClosure, Fields, Ident, Item, ItemFn,
+  ItemMod, Lit, LitStr, Meta, MetaList, Path, RangeLimits, Token, Type,
 };
 
 use crate::{
@@ -52,19 +52,39 @@ pub fn proto_module(attrs: TokenStream, input: TokenStream) -> TokenStream {
 
   let injected_attr: Attribute = parse_quote! { #[proto(file = #file, package = #package)] };
 
+  let mut found_items: Vec<&Ident> = Vec::new();
+
   if let Some((_, content)) = &mut module.content {
-    for item in content {
+    for item in content.iter_mut() {
       match item {
         // TODO: Not adding the attributes if file and package are already defined
         Item::Struct(s) if has_proto_derive(&s.attrs).unwrap() => {
+          found_items.push(&s.ident);
           s.attrs.push(injected_attr.clone());
         }
         Item::Enum(e) if has_proto_derive(&e.attrs).unwrap() => {
+          found_items.push(&e.ident);
           e.attrs.push(injected_attr.clone());
         }
         _ => {}
       }
     }
+
+    let aggregator_fn: ItemFn = parse_quote! {
+      pub fn proto_file() -> ProtoFile {
+        let mut file = ProtoFile {
+          name: #file.into(),
+          package: #package.into(),
+          ..Default::default()
+        };
+
+        file.add_messages([ #(#found_items::to_message(),)* ]);
+
+        file
+      }
+    };
+
+    content.push(Item::Fn(aggregator_fn));
   }
 
   quote!(#module).into()

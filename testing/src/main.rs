@@ -59,7 +59,7 @@ use inner::*;
 fn main() {
   let mut file = ProtoFile::new("abc.proto", "myapp.v1");
 
-  let msg = Abc::to_message(&mut file);
+  let mut msg = Abc::to_message();
 
   let msg2 = msg.clone();
   let nested = msg.nested_message(msg2);

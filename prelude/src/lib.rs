@@ -68,6 +68,12 @@ impl ProtoFile {
       ..Default::default()
     }
   }
+
+  pub fn add_messages<I: IntoIterator<Item = Message>>(&mut self, messages: I) {
+    for message in messages.into_iter() {
+      self.messages.push(message);
+    }
+  }
 }
 
 #[derive(Default)]
