@@ -13,12 +13,6 @@ use prelude::{
 };
 use proc_macro_impls::{proto_module, Enum, Message, Oneof};
 
-// #[derive(Oneof)]
-// enum PseudoOneof {
-//   A(String),
-//   B(u32),
-// }
-
 // #[derive(Enum)]
 // enum Bcd {
 //   AbcDeg,
@@ -39,11 +33,19 @@ fn repeated_validator() -> impl ValidatorBuilderFor<Vec<i32>> {
 #[proc_macro_impls::proto_module(file = "abc.proto", package = "myapp.v1")]
 mod inner {
   use prelude::{
-    validators::{MessageValidator, MessageValidatorBuilder},
+    validators::{oneof_required, MessageValidator, MessageValidatorBuilder},
     *,
   };
 
   use super::*;
+
+  #[derive(Oneof)]
+  #[proto(required)]
+  enum PseudoOneof {
+    #[proto(validate = |v| v)]
+    A(String),
+    B(i32),
+  }
 
   #[derive(Message)]
   #[proto(nested_messages(Nested))]
@@ -57,6 +59,9 @@ mod inner {
     #[proto(type_(ProtoMap<String, Sint32>))]
     #[proto(validate = |v| v.min_pairs(0).keys(|k| k.min_len(25)).values(|v| v.lt(25)))]
     map: HashMap<String, i32>,
+
+    #[proto(oneof)]
+    oneof: PseudoOneof,
   }
 
   #[derive(Message)]

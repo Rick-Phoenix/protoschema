@@ -164,8 +164,8 @@ pub struct Oneof {
 }
 
 impl Message {
-  pub fn add_oneof(&mut self, oneof: Oneof) {
-    self.oneofs.push(oneof);
+  pub fn add_oneofs<I: IntoIterator<Item = Oneof>>(&mut self, oneofs: I) {
+    self.oneofs = oneofs.into_iter().collect();
   }
 
   pub fn nested_message(&mut self, mut message: Message) -> &mut Message {

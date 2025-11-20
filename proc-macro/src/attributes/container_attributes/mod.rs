@@ -18,6 +18,18 @@ pub(crate) struct MessageAttrs {
   pub parent_message: Option<Path>,
 }
 
+pub(crate) struct OneofTokens {
+  pub path: Path,
+}
+
+impl ToTokens for OneofTokens {
+  fn to_tokens(&self, tokens: &mut TokenStream2) {
+    let path = &self.path;
+
+    tokens.extend(quote! { #path::to_oneof() });
+  }
+}
+
 pub(crate) fn process_message_attrs(
   rust_name: &Ident,
   attrs: &Vec<Attribute>,
