@@ -4,10 +4,9 @@ use enum_validator_builder::State;
 use super::*;
 use crate::*;
 
-pub struct ProtoEnum;
-
-impl_validator!(EnumValidator, ProtoEnum);
 impl_ignore!(EnumValidatorBuilder);
+
+impl<T, S: State> ValidatorBuilderFor<T> for EnumValidatorBuilder<S> where T: ProtoEnumTrait {}
 
 /// Used by the [`enum_field`](crate::enum_field) macro to define validation rules.
 #[derive(Clone, Debug, Builder)]

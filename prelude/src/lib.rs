@@ -13,6 +13,8 @@ pub trait ProtoMessage {
   fn name() -> &'static str;
 }
 
+pub trait ProtoEnumTrait {}
+
 impl Message {
   pub fn full_name(&self) -> Cow<'_, str> {
     let name = self.name;
@@ -25,11 +27,11 @@ impl Message {
   }
 }
 
-pub trait ValidatorBuilderFor<T>: Into<ProtoOption> {}
-
 pub trait AsProtoType {
   fn proto_type() -> ProtoType;
 }
+
+pub trait ValidatorBuilderFor<T>: Into<ProtoOption> {}
 
 pub trait ProtoValidator<T> {
   type Builder;

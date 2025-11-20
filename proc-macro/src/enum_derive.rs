@@ -53,7 +53,7 @@ pub(crate) fn process_enum_derive(input: TokenStream) -> TokenStream {
   }
 
   output_tokens.extend(quote! {
-    impl ValidatorBuilderFor<#enum_name> for EnumValidatorBuilder {}
+    impl ProtoEnumTrait for #enum_name {}
 
     impl ProtoValidator<#enum_name> for ValidatorMap {
       type Builder = EnumValidatorBuilder;

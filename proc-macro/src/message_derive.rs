@@ -104,19 +104,17 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
     .map_none(|parent| quote! { <#parent as ProtoMessage>::name() });
 
   output_tokens.extend(quote! {
-    impl ValidatorBuilderFor<#struct_name> for MessageValidatorBuilder {}
+    impl ProtoMessage for #struct_name {
+      fn name() -> &'static str {
+        #proto_name
+      }
+    }
 
     impl ProtoValidator<#struct_name> for ValidatorMap {
       type Builder = MessageValidatorBuilder;
 
       fn builder() -> Self::Builder {
         MessageValidator::builder()
-      }
-    }
-
-    impl ProtoMessage for #struct_name {
-      fn name() -> &'static str {
-        #proto_name
       }
     }
 

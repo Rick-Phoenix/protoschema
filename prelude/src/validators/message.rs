@@ -4,15 +4,7 @@ use message_validator_builder::{IsUnset, SetIgnore, State};
 use super::*;
 use crate::*;
 
-pub struct ProtoMessage;
-
-impl ProtoValidator<ProtoMessage> for ValidatorMap {
-  type Builder = MessageValidatorBuilder;
-
-  fn builder() -> Self::Builder {
-    MessageValidator::builder()
-  }
-}
+impl<S: State, T> ValidatorBuilderFor<T> for MessageValidatorBuilder<S> where T: ProtoMessage {}
 
 impl<S: State> MessageValidatorBuilder<S>
 where
