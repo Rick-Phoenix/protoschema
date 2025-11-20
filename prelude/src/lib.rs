@@ -44,7 +44,7 @@ pub trait ProtoValidator<T> {
 
 pub struct ValidatorMap;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct ProtoField {
   pub name: String,
   pub type_: ProtoType,
@@ -52,20 +52,20 @@ pub struct ProtoField {
   pub validator: Option<ProtoOption>,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum ProtoType {
   Single(TypeInfo),
   Repeated(TypeInfo),
   Map { keys: TypeInfo, values: TypeInfo },
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct TypeInfo {
   pub name: &'static str,
   pub path: Option<ProtoPath>,
 }
 
-#[derive(Default, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct EnumVariant {
   pub name: String,
   pub options: Vec<ProtoOption>,
@@ -123,7 +123,7 @@ pub struct ProtoPath {
   pub file: Arc<str>,
 }
 
-#[derive(Default, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct Message {
   pub package: Arc<str>,
   pub file: Arc<str>,
@@ -138,7 +138,7 @@ pub struct Message {
   pub imports: BTreeSet<Arc<str>>,
 }
 
-#[derive(Default, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct Oneof {
   pub name: Arc<str>,
   pub fields: Vec<(u32, ProtoField)>,
@@ -191,7 +191,7 @@ pub struct ServiceHandler {
   pub response: Arc<ImportedItemPath>,
 }
 
-#[derive(Default, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct ProtoEnum {
   pub name: Arc<str>,
   pub package: Arc<str>,

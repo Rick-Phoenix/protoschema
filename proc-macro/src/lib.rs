@@ -3,7 +3,7 @@
 #[macro_use]
 mod macros;
 
-use std::{cmp::Ordering, ops::Range};
+use std::{cmp::Ordering, collections::HashMap, ops::Range};
 
 pub(crate) use attributes::*;
 use attributes::*;
@@ -50,26 +50,16 @@ pub fn proto_module(attrs: TokenStream, input: TokenStream) -> TokenStream {
 
   let ModuleAttrs { file, package } = parse_macro_input!(attrs as ModuleAttrs);
 
-  let injected_attr: Attribute = parse_quote! { #[proto(file = #file, package = #package)] };
+  let file_attribute: Attribute = parse_quote! { #[proto(file = #file, package = #package)] };
 
-  let mut found_messages: Vec<&Ident> = Vec::new();
   let mut found_enums: Vec<&Ident> = Vec::new();
+  let mut nested_messages: HashMap<Ident, Ident> = HashMap::new();
 
   if let Some((_, content)) = &mut module.content {
-    for item in content.iter_mut() {
-      match item {
-        // TODO: Not adding the attributes if file and package are already defined
-        Item::Struct(s) if has_proto_derive(&s.attrs).unwrap() => {
-          found_messages.push(&s.ident);
-          s.attrs.push(injected_attr.clone());
-        }
-        Item::Enum(e) if has_proto_derive(&e.attrs).unwrap() => {
-          found_enums.push(&e.ident);
-          e.attrs.push(injected_attr.clone());
-        }
-        _ => {}
-      }
-    }
+    let TopLevelItemsTokens {
+      top_level_messages,
+      top_level_enums,
+    } = process_module_items(file_attribute, content).unwrap();
 
     let aggregator_fn: ItemFn = parse_quote! {
       pub fn proto_file() -> ProtoFile {
@@ -79,7 +69,7 @@ pub fn proto_module(attrs: TokenStream, input: TokenStream) -> TokenStream {
           ..Default::default()
         };
 
-        file.add_messages([ #(#found_messages::to_message(),)* ]);
+        file.add_messages([ #top_level_messages ]);
 
         file
       }

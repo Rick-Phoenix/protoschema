@@ -10,14 +10,16 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
     ..
   } = tokens;
 
-  let ContainerAttrs {
+  let MessageAttrs {
     reserved_names,
     reserved_numbers,
     options,
     proto_name,
     file,
     package,
-  } = process_container_attr(&struct_name, &attrs).unwrap();
+    nested_messages,
+    ..
+  } = process_message_attrs(&struct_name, &attrs).unwrap();
 
   let data = if let Data::Struct(struct_data) = data {
     struct_data

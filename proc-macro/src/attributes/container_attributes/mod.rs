@@ -6,25 +6,29 @@ pub use reserved_numbers::*;
 
 use crate::*;
 
-pub(crate) struct ContainerAttrs {
+pub(crate) struct MessageAttrs {
   pub reserved_names: ReservedNames,
   pub reserved_numbers: ReservedNumbers,
   pub options: ProtoOptions,
   pub proto_name: String,
   pub file: String,
   pub package: String,
+  pub nested_messages: Vec<Path>,
+  pub parent_message: Option<Path>,
 }
 
-pub(crate) fn process_container_attr(
+pub(crate) fn process_message_attrs(
   rust_name: &Ident,
   attrs: &Vec<Attribute>,
-) -> Result<ContainerAttrs, Error> {
+) -> Result<MessageAttrs, Error> {
   let mut reserved_names = ReservedNames::default();
   let mut reserved_numbers = ReservedNumbers::default();
   let mut options: Option<TokenStream2> = None;
   let mut proto_name: Option<String> = None;
   let mut file: Option<String> = None;
   let mut package: Option<String> = None;
+  let mut nested_messages: Vec<Path> = Vec::new();
+  let mut parent_message: Option<Path> = None;
 
   for attr in attrs {
     if !attr.path().is_ident("proto") {
@@ -49,6 +53,10 @@ pub(crate) fn process_container_attr(
             let exprs = list.parse_args::<PunctuatedParser<Expr>>().unwrap().inner;
 
             options = Some(quote! { vec! [ #exprs ] });
+          } else if list.path.is_ident("nested_messages") {
+            let paths = list.parse_args::<PunctuatedParser<Path>>().unwrap().inner;
+
+            nested_messages = paths.into_iter().collect();
           }
         }
         Meta::NameValue(nameval) => {
@@ -64,6 +72,12 @@ pub(crate) fn process_container_attr(
             file = Some(extract_string_lit(&nameval.value)?);
           } else if nameval.path.is_ident("package") {
             package = Some(extract_string_lit(&nameval.value)?);
+          } else if nameval.path.is_ident("parent_message") {
+            if let Expr::Path(expr_path) = nameval.value {
+              parent_message = Some(expr_path.path);
+            } else {
+              panic!("parent_message must be a path");
+            }
           }
         }
       }
@@ -73,12 +87,14 @@ pub(crate) fn process_container_attr(
   let file = file.ok_or(error!(Span::call_site(), "File attribute is missing"))?;
   let package = package.ok_or(error!(Span::call_site(), "Package attribute is missing"))?;
 
-  Ok(ContainerAttrs {
+  Ok(MessageAttrs {
     reserved_names,
     reserved_numbers,
     options: attributes::ProtoOptions(options),
     proto_name: proto_name.unwrap_or_else(|| ccase!(pascal, rust_name.to_string())),
     file,
     package,
+    nested_messages,
+    parent_message,
   })
 }

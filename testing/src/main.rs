@@ -43,14 +43,22 @@ mod inner {
   use super::*;
 
   #[derive(Message)]
+  #[proto(nested_messages(Nested))]
   pub struct Abc {
     #[proto(validate = string_validator())]
     name: String,
-    // #[proto(validate = repeated_validator())]
-    // num: Vec<i32>,
-    // #[proto(type_(ProtoMap<String, Sint32>))]
-    // #[proto(validate = |v| v.min_pairs(0).keys(|k| k.min_len(25)).values(|v| v.lt(25)))]
-    // map: HashMap<String, i32>,
+
+    #[proto(validate = repeated_validator())]
+    num: Vec<i32>,
+
+    #[proto(type_(ProtoMap<String, Sint32>))]
+    #[proto(validate = |v| v.min_pairs(0).keys(|k| k.min_len(25)).values(|v| v.lt(25)))]
+    map: HashMap<String, i32>,
+  }
+
+  #[derive(Message)]
+  pub struct Nested {
+    name: String,
   }
 }
 
@@ -61,8 +69,6 @@ fn main() {
 
   let mut msg = Abc::to_message();
 
-  let msg2 = msg.clone();
-  let nested = msg.nested_message(msg2);
-
+  println!("{msg:#?}");
   // let nested_enum = Bcd::to_nested_enum(nested);
 }
