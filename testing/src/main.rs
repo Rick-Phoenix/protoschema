@@ -38,7 +38,10 @@ fn repeated_validator() -> impl ValidatorBuilderFor<Vec<i32>> {
 
 #[proc_macro_impls::proto_module(file = "abc.proto", package = "myapp.v1")]
 mod inner {
-  use prelude::*;
+  use prelude::{
+    validators::{MessageValidator, MessageValidatorBuilder},
+    *,
+  };
 
   use super::*;
 
@@ -57,8 +60,17 @@ mod inner {
   }
 
   #[derive(Message)]
+  #[proto(nested_messages(Nested2))]
   pub struct Nested {
     name: String,
+  }
+
+  #[derive(Message)]
+  pub struct Nested2 {
+    name: String,
+
+    #[proto(validate = |v| v)]
+    nested1: Nested,
   }
 }
 
@@ -69,8 +81,8 @@ fn main() {
 
   let mut msg = Abc::to_message();
 
-  let nested = Nested::to_message();
+  let nested2 = Nested2::to_message();
 
-  println!("{}", nested.full_name());
+  println!("{nested2:#?}");
   // let nested_enum = Bcd::to_nested_enum(nested);
 }

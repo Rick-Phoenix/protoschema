@@ -1,4 +1,4 @@
-use std::{collections::HashSet, fmt::Write, sync::Arc};
+use std::{collections::HashSet, fmt::Write, rc::Rc};
 
 use syn::{ItemEnum, ItemStruct, MetaNameValue};
 
@@ -22,7 +22,7 @@ pub(crate) enum ItemKind<'a> {
 
 pub(crate) struct ModuleItem<'a> {
   pub kind: ItemKind<'a>,
-  pub name: Arc<str>,
+  pub name: Rc<str>,
 }
 
 impl<'a> ModuleItem<'a> {
@@ -51,7 +51,7 @@ pub(crate) enum DeriveKind {
 
 pub(crate) struct ParentMessage {
   pub ident: Ident,
-  pub name: Arc<str>,
+  pub name: Rc<str>,
 }
 
 pub fn process_module_items(
@@ -99,7 +99,7 @@ pub fn process_module_items(
           panic!("The Message derive can only be used on structs");
         }
 
-        let name: Arc<str> = if let Some(name_override) = name {
+        let name: Rc<str> = if let Some(name_override) = name {
           name_override.into()
         } else {
           let inferred_name = s.ident.to_string();
@@ -145,7 +145,7 @@ pub fn process_module_items(
           }
         }
 
-        let name: Arc<str> = if let Some(name_override) = name {
+        let name: Rc<str> = if let Some(name_override) = name {
           name_override.into()
         } else {
           let inferred_name = e.ident.to_string();
