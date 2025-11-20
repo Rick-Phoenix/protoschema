@@ -52,9 +52,6 @@ pub fn proto_module(attrs: TokenStream, input: TokenStream) -> TokenStream {
 
   let file_attribute: Attribute = parse_quote! { #[proto(file = #file, package = #package)] };
 
-  let mut found_enums: Vec<&Ident> = Vec::new();
-  let mut nested_messages: HashMap<Ident, Ident> = HashMap::new();
-
   if let Some((_, content)) = &mut module.content {
     let TopLevelItemsTokens {
       top_level_messages,

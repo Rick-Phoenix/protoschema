@@ -16,3 +16,37 @@ mod module_attributes;
 pub use module_attributes::*;
 
 use crate::*;
+
+pub(crate) struct OptionTokens<'a, T: ToTokens> {
+  pub item: Option<&'a T>,
+}
+
+impl<'a, T: ToTokens> OptionTokens<'a, T> {
+  pub fn new(item: Option<&'a T>) -> OptionTokens<'a, T> {
+    Self { item }
+  }
+
+  pub fn map_none<F>(&self, func: F) -> TokenStream2
+  where
+    F: FnOnce(&'a T) -> TokenStream2,
+  {
+    if let Some(item) = self.item {
+      let closure_result = func(item);
+      quote! { Some(#closure_result) }
+    } else {
+      quote! { None }
+    }
+  }
+
+  pub fn map_empty<F>(&self, func: F) -> TokenStream2
+  where
+    F: FnOnce(&'a T) -> TokenStream2,
+  {
+    if let Some(item) = self.item {
+      let closure_result = func(item);
+      quote! { Some(#closure_result) }
+    } else {
+      TokenStream2::new()
+    }
+  }
+}

@@ -4,10 +4,26 @@ mod macros;
 pub use paste::paste;
 mod items;
 pub mod validators;
-use std::{collections::BTreeSet, marker::PhantomData, ops::Range, sync::Arc};
+use std::{borrow::Cow, collections::BTreeSet, ops::Range, sync::Arc};
 
 use bon::Builder;
 pub use items::*;
+
+pub trait ProtoMessage {
+  fn name() -> &'static str;
+}
+
+impl Message {
+  pub fn full_name(&self) -> Cow<'_, str> {
+    let name = self.name;
+
+    if let Some(parent) = &self.parent_message {
+      format!("{parent}.{name}").into()
+    } else {
+      Cow::Borrowed(name)
+    }
+  }
+}
 
 pub trait ValidatorBuilderFor<T>: Into<ProtoOption> {}
 
@@ -125,9 +141,10 @@ pub struct ProtoPath {
 
 #[derive(Debug, Default, Clone)]
 pub struct Message {
+  pub name: &'static str,
+  pub full_name: &'static str,
   pub package: Arc<str>,
   pub file: Arc<str>,
-  pub name: Arc<str>,
   pub fields: Vec<(u32, ProtoField)>,
   pub messages: Vec<Message>,
   pub oneofs: Vec<Oneof>,
@@ -136,6 +153,7 @@ pub struct Message {
   pub reserved_names: Vec<&'static str>,
   pub reserved_numbers: Vec<Range<u32>>,
   pub imports: BTreeSet<Arc<str>>,
+  pub parent_message: Option<&'static str>,
 }
 
 #[derive(Debug, Default, Clone)]

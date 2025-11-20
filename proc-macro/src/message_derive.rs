@@ -14,10 +14,12 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
     reserved_names,
     reserved_numbers,
     options,
-    proto_name,
+    name: proto_name,
     file,
     package,
     nested_messages,
+    parent_message,
+    full_name,
     ..
   } = process_message_attrs(&struct_name, &attrs).unwrap();
 
@@ -88,7 +90,16 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
     });
   }
 
+  let parent_message_tokens = OptionTokens::new(parent_message.as_ref())
+    .map_none(|parent| quote! { <#parent as ProtoMessage>::name() });
+
   output_tokens.extend(quote! {
+    impl ProtoMessage for #struct_name {
+      fn name() -> &'static str {
+        #proto_name
+      }
+    }
+
     impl AsProtoType for #struct_name {
       fn proto_type() -> ProtoType {
         ProtoType::Single(TypeInfo {
@@ -104,13 +115,15 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
     impl #struct_name {
       pub fn to_message() -> Message {
         Message {
-          name: #proto_name.into(),
+          name: #proto_name,
+          full_name: #full_name,
           package: #package.into(),
           file: #file.into(),
           fields: vec![ #(#fields_data,)* ],
           reserved_names: #reserved_names,
           reserved_numbers: #reserved_numbers,
           options: #options,
+          parent_message: #parent_message_tokens,
           ..Default::default()
         }
       }

@@ -14,7 +14,7 @@ pub(crate) fn process_enum_derive(input: TokenStream) -> TokenStream {
     reserved_names,
     reserved_numbers,
     options,
-    proto_name,
+    name: proto_name,
     file,
     package,
     nested_messages,

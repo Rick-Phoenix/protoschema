@@ -10,7 +10,8 @@ pub(crate) struct MessageAttrs {
   pub reserved_names: ReservedNames,
   pub reserved_numbers: ReservedNumbers,
   pub options: ProtoOptions,
-  pub proto_name: String,
+  pub name: String,
+  pub full_name: String,
   pub file: String,
   pub package: String,
   pub nested_messages: Vec<Path>,
@@ -25,6 +26,7 @@ pub(crate) fn process_message_attrs(
   let mut reserved_numbers = ReservedNumbers::default();
   let mut options: Option<TokenStream2> = None;
   let mut proto_name: Option<String> = None;
+  let mut full_name: Option<String> = None;
   let mut file: Option<String> = None;
   let mut package: Option<String> = None;
   let mut nested_messages: Vec<Path> = Vec::new();
@@ -66,6 +68,8 @@ pub(crate) fn process_message_attrs(
             options = Some(quote! { #func_call });
           } else if nameval.path.is_ident("name") {
             proto_name = Some(extract_string_lit(&nameval.value).unwrap());
+          } else if nameval.path.is_ident("full_name") {
+            full_name = Some(extract_string_lit(&nameval.value).unwrap());
           } else if nameval.path.is_ident("reserved_names") {
             reserved_names = ReservedNames::Expr(nameval.value);
           } else if nameval.path.is_ident("file") {
@@ -87,11 +91,14 @@ pub(crate) fn process_message_attrs(
   let file = file.ok_or(error!(Span::call_site(), "File attribute is missing"))?;
   let package = package.ok_or(error!(Span::call_site(), "Package attribute is missing"))?;
 
+  let name = proto_name.unwrap_or_else(|| ccase!(pascal, rust_name.to_string()));
+
   Ok(MessageAttrs {
     reserved_names,
     reserved_numbers,
     options: attributes::ProtoOptions(options),
-    proto_name: proto_name.unwrap_or_else(|| ccase!(pascal, rust_name.to_string())),
+    full_name: full_name.unwrap_or_else(|| name.clone()),
+    name,
     file,
     package,
     nested_messages,

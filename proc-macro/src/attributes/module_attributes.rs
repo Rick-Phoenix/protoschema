@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, fmt::Write, sync::Arc};
 
 use syn::{ItemEnum, ItemStruct, MetaNameValue};
 
@@ -22,6 +22,7 @@ pub(crate) enum ItemKind<'a> {
 
 pub(crate) struct ModuleItem<'a> {
   pub kind: ItemKind<'a>,
+  pub name: Arc<str>,
 }
 
 impl<'a> ModuleItem<'a> {
@@ -48,12 +49,17 @@ pub(crate) enum DeriveKind {
   Oneof,
 }
 
+pub(crate) struct ParentMessage {
+  pub ident: Ident,
+  pub name: Arc<str>,
+}
+
 pub fn process_module_items(
   file_attribute: Attribute,
   items: &'_ mut Vec<Item>,
 ) -> Result<TopLevelItemsTokens, Error> {
   let mut processed_items: Vec<ModuleItem> = Vec::new();
-  let mut nested_items: HashMap<Ident, Ident> = HashMap::new();
+  let mut nested_items_map: HashMap<Ident, ParentMessage> = HashMap::new();
 
   for item in items {
     let derive_kind = if let Some(kind) = get_derive_kind(item)? {
@@ -64,19 +70,26 @@ pub fn process_module_items(
 
     match item {
       Item::Struct(s) => {
+        let mut name: Option<String> = None;
+        let mut nested_items_list: Option<PunctuatedParser<Path>> = None;
+
         for attr in &s.attrs {
-          if attr.path().is_ident("proto") && let Ok(list) = attr.meta.require_list()  {
-            let metas = list.parse_args::<PunctuatedParser<Meta>>().unwrap().inner;
+          if attr.path().is_ident("proto") {
+            let metas = attr.parse_args::<PunctuatedParser<Meta>>().unwrap().inner;
 
             for meta in metas {
-              if meta.path().is_ident("nested_messages") {
-                let nested_messages_list = meta.require_list().unwrap().parse_args::<PunctuatedParser<Path>>().unwrap().inner;
-
-                for msg in nested_messages_list {
-                  let nested_msg_ident = msg.require_ident()?;
-
-                  nested_items.insert(nested_msg_ident.clone(), s.ident.clone());
+              match meta {
+                Meta::List(list) => {
+                  if list.path.is_ident("nested_messages") {
+                    nested_items_list = Some(list.parse_args::<PunctuatedParser<Path>>()?);
+                  }
                 }
+                Meta::NameValue(nv) => {
+                  if nv.path.is_ident("name") {
+                    name = Some(extract_string_lit(&nv.value)?);
+                  }
+                }
+                _ => {}
               }
             }
           }
@@ -86,16 +99,70 @@ pub fn process_module_items(
           panic!("The Message derive can only be used on structs");
         }
 
+        let name: Arc<str> = if let Some(name_override) = name {
+          name_override.into()
+        } else {
+          let inferred_name = s.ident.to_string();
+
+          let name_attr: Attribute = parse_quote! { #[proto(name = #inferred_name)] };
+          s.attrs.push(name_attr);
+
+          inferred_name.into()
+        };
+
+        if let Some(nested_items_list) = nested_items_list {
+          for nested_item in nested_items_list.inner {
+            let nested_item_ident = nested_item.require_ident()?;
+
+            nested_items_map.insert(
+              nested_item_ident.clone(),
+              ParentMessage {
+                ident: s.ident.clone(),
+                name: name.clone(),
+              },
+            );
+          }
+        }
+
         processed_items.push(ModuleItem {
+          name,
           kind: ItemKind::Message(s),
         })
       }
       Item::Enum(e) => {
+        let mut name: Option<String> = None;
+
+        for attr in &e.attrs {
+          if attr.path().is_ident("proto") {
+            let metas = attr.parse_args::<PunctuatedParser<Meta>>().unwrap().inner;
+
+            for meta in metas {
+              if let Meta::NameValue(nv) = meta
+                && nv.path.is_ident("name") {
+                  name = Some(extract_string_lit(&nv.value)?);
+                }
+            }
+          }
+        }
+
+        let name: Arc<str> = if let Some(name_override) = name {
+          name_override.into()
+        } else {
+          let inferred_name = e.ident.to_string();
+
+          let name_attr: Attribute = parse_quote! { #[proto(name = #inferred_name)] };
+          e.attrs.push(name_attr);
+
+          inferred_name.into()
+        };
+
         match derive_kind {
           DeriveKind::Enum => processed_items.push(ModuleItem {
+            name,
             kind: ItemKind::Enum(e),
           }),
           DeriveKind::Oneof => processed_items.push(ModuleItem {
+            name,
             kind: ItemKind::Oneof(e),
           }),
           DeriveKind::Message => panic!("Cannot use the Message derive on an enum"),
@@ -111,7 +178,30 @@ pub fn process_module_items(
   for item in processed_items.iter_mut() {
     item.inject_attr(file_attribute.clone());
 
-    if let Some(parent_message_ident) = nested_items.get(item.get_ident()) {
+    if let Some(parent_message) = nested_items_map.get(item.get_ident()) {
+      let parent_message_ident = &parent_message.ident;
+
+      let mut ancestors = vec![parent_message];
+      let mut current_message = parent_message_ident;
+
+      while let Some(parent) = nested_items_map.get(current_message) {
+        ancestors.push(parent);
+        current_message = &parent.ident;
+      }
+
+      let mut full_name = String::new();
+
+      for ancestor in ancestors.iter().rev() {
+        let ancestor_name = &ancestor.name;
+        write!(full_name, "{ancestor_name}.").unwrap();
+      }
+
+      full_name.push_str(&item.name);
+
+      let full_name_attr: Attribute = parse_quote! { #[proto(full_name = #full_name)] };
+
+      item.inject_attr(full_name_attr);
+
       let parent_message_attr: Attribute =
         parse_quote! { #[proto(parent_message = #parent_message_ident)] };
 
@@ -152,16 +242,6 @@ impl Parse for ModuleAttrs {
     let package = package.ok_or(error!(Span::call_site(), "Package attribute is missing"))?;
 
     Ok(ModuleAttrs { file, package })
-  }
-}
-
-pub(crate) struct Derives {
-  list: PunctuatedParser<Path>,
-}
-
-impl Derives {
-  pub fn contains(&self, ident: &str) -> bool {
-    self.list.inner.iter().any(|derive| derive.is_ident(ident))
   }
 }
 

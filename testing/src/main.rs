@@ -69,6 +69,8 @@ fn main() {
 
   let mut msg = Abc::to_message();
 
-  println!("{msg:#?}");
+  let nested = Nested::to_message();
+
+  println!("{}", nested.full_name());
   // let nested_enum = Bcd::to_nested_enum(nested);
 }
