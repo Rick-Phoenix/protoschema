@@ -17,35 +17,19 @@ pub(crate) struct TopLevelItemsTokens {
 pub(crate) enum ItemKind<'a> {
   Message(&'a mut ItemStruct),
   Enum(&'a mut ItemEnum),
+  Oneof(&'a mut ItemEnum),
 }
 
 pub(crate) struct ModuleItem<'a> {
   pub kind: ItemKind<'a>,
-  pub is_nested: bool,
-}
-
-impl<'a> ToTokens for ModuleItem<'a> {
-  fn to_tokens(&self, tokens: &mut TokenStream2) {
-    let ident = self.get_ident();
-
-    let content = match &self.kind {
-      ItemKind::Message(_) => quote! { #ident::to_message() },
-      ItemKind::Enum(_) => quote! { #ident::to_enum() },
-    };
-
-    tokens.extend(content);
-  }
 }
 
 impl<'a> ModuleItem<'a> {
-  pub fn is_top_level(&self) -> bool {
-    !self.is_nested
-  }
-
   pub fn inject_attr(&mut self, attr: Attribute) {
     match &mut self.kind {
       ItemKind::Message(item) => item.attrs.push(attr),
       ItemKind::Enum(item) => item.attrs.push(attr),
+      ItemKind::Oneof(item) => item.attrs.push(attr),
     }
   }
 
@@ -53,8 +37,15 @@ impl<'a> ModuleItem<'a> {
     match &self.kind {
       ItemKind::Message(item) => &item.ident,
       ItemKind::Enum(item) => &item.ident,
+      ItemKind::Oneof(item) => &item.ident,
     }
   }
+}
+
+pub(crate) enum DeriveKind {
+  Message,
+  Enum,
+  Oneof,
 }
 
 pub fn process_module_items(
@@ -65,6 +56,12 @@ pub fn process_module_items(
   let mut nested_items: HashMap<Ident, Ident> = HashMap::new();
 
   for item in items {
+    let derive_kind = if let Some(kind) = get_derive_kind(item)? {
+      kind
+    } else {
+      continue;
+    };
+
     match item {
       Item::Struct(s) => {
         for attr in &s.attrs {
@@ -85,15 +82,25 @@ pub fn process_module_items(
           }
         }
 
+        if !matches!(derive_kind, DeriveKind::Message) {
+          panic!("The Message derive can only be used on structs");
+        }
+
         processed_items.push(ModuleItem {
           kind: ItemKind::Message(s),
-          is_nested: false,
         })
       }
-      Item::Enum(e) => processed_items.push(ModuleItem {
-        kind: ItemKind::Enum(e),
-        is_nested: false,
-      }),
+      Item::Enum(e) => {
+        match derive_kind {
+          DeriveKind::Enum => processed_items.push(ModuleItem {
+            kind: ItemKind::Enum(e),
+          }),
+          DeriveKind::Oneof => processed_items.push(ModuleItem {
+            kind: ItemKind::Oneof(e),
+          }),
+          DeriveKind::Message => panic!("Cannot use the Message derive on an enum"),
+        };
+      }
       _ => {}
     }
   }
@@ -109,12 +116,13 @@ pub fn process_module_items(
         parse_quote! { #[proto(parent_message = #parent_message_ident)] };
 
       item.inject_attr(parent_message_attr);
-    } else {
+    } else if !matches!(item.kind, ItemKind::Oneof(_)) {
       let item_ident = item.get_ident();
 
       match item.kind {
         ItemKind::Message(_) => top_level_messages.extend(quote! { #item_ident::to_message(), }),
         ItemKind::Enum(_) => top_level_enums.extend(quote! { #item_ident::to_enum() }),
+        _ => {}
       }
     }
   }
@@ -147,10 +155,44 @@ impl Parse for ModuleAttrs {
   }
 }
 
-pub fn get_derives(meta: &Meta) -> Result<PunctuatedParser<Path>, Error> {
-  let list = meta.require_list()?;
+pub(crate) struct Derives {
+  list: PunctuatedParser<Path>,
+}
 
-  let derives = list.parse_args::<PunctuatedParser<Path>>()?;
+impl Derives {
+  pub fn contains(&self, ident: &str) -> bool {
+    self.list.inner.iter().any(|derive| derive.is_ident(ident))
+  }
+}
 
-  Ok(derives)
+pub fn get_derive_kind(item: &Item) -> Result<Option<DeriveKind>, Error> {
+  let attrs = match item {
+    Item::Struct(s) => &s.attrs,
+    Item::Enum(e) => &e.attrs,
+    _ => return Ok(None),
+  };
+
+  for attr in attrs {
+    if attr.path().is_ident("derive") {
+      let derives = attr
+        .meta
+        .require_list()?
+        .parse_args::<PunctuatedParser<Path>>()?
+        .inner;
+
+      for path in derives {
+        if path.is_ident("Message") {
+          return Ok(Some(DeriveKind::Message));
+        } else if path.is_ident("Enum") {
+          return Ok(Some(DeriveKind::Enum));
+        } else if path.is_ident("Oneof") {
+          return Ok(Some(DeriveKind::Oneof));
+        }
+      }
+
+      return Ok(None);
+    }
+  }
+
+  Ok(None)
 }
