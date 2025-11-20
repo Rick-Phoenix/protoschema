@@ -67,6 +67,7 @@ pub fn proto_module(attrs: TokenStream, input: TokenStream) -> TokenStream {
         };
 
         file.add_messages([ #top_level_messages ]);
+        file.add_enums([ #top_level_enums ]);
 
         file
       }

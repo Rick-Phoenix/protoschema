@@ -13,13 +13,6 @@ use prelude::{
 };
 use proc_macro_impls::{proto_module, Enum, Message, Oneof};
 
-// #[derive(Enum)]
-// enum Bcd {
-//   AbcDeg,
-//   B,
-//   C,
-// }
-
 fn string_validator() -> StringValidatorBuilder {
   StringValidator::builder()
 }
@@ -33,11 +26,21 @@ fn repeated_validator() -> impl ValidatorBuilderFor<Vec<i32>> {
 #[proc_macro_impls::proto_module(file = "abc.proto", package = "myapp.v1")]
 mod inner {
   use prelude::{
-    validators::{oneof_required, MessageValidator, MessageValidatorBuilder},
+    validators::{
+      oneof_required, EnumValidator, EnumValidatorBuilder, MessageValidator,
+      MessageValidatorBuilder,
+    },
     *,
   };
 
   use super::*;
+
+  #[derive(Enum)]
+  enum PseudoEnum {
+    AbcDeg,
+    B,
+    C,
+  }
 
   #[derive(Oneof)]
   #[proto(required)]
@@ -62,6 +65,9 @@ mod inner {
 
     #[proto(oneof)]
     oneof: PseudoOneof,
+
+    #[proto(validate = |v| v)]
+    enum_field: PseudoEnum,
   }
 
   #[derive(Message)]

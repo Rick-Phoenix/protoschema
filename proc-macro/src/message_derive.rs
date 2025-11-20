@@ -20,7 +20,7 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
     nested_messages,
     parent_message,
     full_name,
-    ..
+    nested_enums,
   } = process_message_attrs(&struct_name, &attrs).unwrap();
 
   let data = if let Data::Struct(struct_data) = data {
@@ -145,6 +145,8 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
           options: #options,
           parent_message: #parent_message_tokens,
           oneofs: vec![ #(#oneofs,)* ],
+          messages: vec![ #nested_messages ],
+          enums: vec![ #nested_enums ],
           ..Default::default()
         }
       }

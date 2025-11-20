@@ -14,8 +14,33 @@ pub(crate) struct MessageAttrs {
   pub full_name: String,
   pub file: String,
   pub package: String,
-  pub nested_messages: Vec<Path>,
+  pub nested_messages: Option<NestedMessages>,
+  pub nested_enums: Option<NestedEnums>,
   pub parent_message: Option<Path>,
+}
+
+pub(crate) struct NestedEnums {
+  pub paths: PunctuatedParser<Path>,
+}
+
+impl ToTokens for NestedEnums {
+  fn to_tokens(&self, tokens: &mut TokenStream2) {
+    for path in &self.paths.inner {
+      tokens.extend(quote! { #path::to_enum(), });
+    }
+  }
+}
+
+pub(crate) struct NestedMessages {
+  pub paths: PunctuatedParser<Path>,
+}
+
+impl ToTokens for NestedMessages {
+  fn to_tokens(&self, tokens: &mut TokenStream2) {
+    for path in &self.paths.inner {
+      tokens.extend(quote! { #path::to_message(), });
+    }
+  }
 }
 
 pub(crate) struct OneofTokens {
@@ -41,7 +66,8 @@ pub(crate) fn process_message_attrs(
   let mut full_name: Option<String> = None;
   let mut file: Option<String> = None;
   let mut package: Option<String> = None;
-  let mut nested_messages: Vec<Path> = Vec::new();
+  let mut nested_messages: Option<NestedMessages> = None;
+  let mut nested_enums: Option<NestedEnums> = None;
   let mut parent_message: Option<Path> = None;
 
   for attr in attrs {
@@ -68,9 +94,13 @@ pub(crate) fn process_message_attrs(
 
             options = Some(quote! { vec! [ #exprs ] });
           } else if list.path.is_ident("nested_messages") {
-            let paths = list.parse_args::<PunctuatedParser<Path>>().unwrap().inner;
+            let paths = list.parse_args::<PunctuatedParser<Path>>().unwrap();
 
-            nested_messages = paths.into_iter().collect();
+            nested_messages = Some(NestedMessages { paths });
+          } else if list.path.is_ident("nested_enums") {
+            let paths = list.parse_args::<PunctuatedParser<Path>>().unwrap();
+
+            nested_enums = Some(NestedEnums { paths });
           }
         }
         Meta::NameValue(nameval) => {
@@ -115,5 +145,6 @@ pub(crate) fn process_message_attrs(
     package,
     nested_messages,
     parent_message,
+    nested_enums,
   })
 }

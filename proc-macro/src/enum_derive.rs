@@ -18,13 +18,14 @@ pub(crate) fn process_enum_derive(input: TokenStream) -> TokenStream {
     file,
     package,
     nested_messages,
+    full_name,
     ..
   } = process_message_attrs(&enum_name, &attrs).unwrap();
 
   let data = if let Data::Enum(enum_data) = data {
     enum_data
   } else {
-    panic!()
+    panic!("The enum derive can only be used on enums");
   };
 
   let mut output_tokens = TokenStream2::new();
@@ -45,42 +46,47 @@ pub(crate) fn process_enum_derive(input: TokenStream) -> TokenStream {
 
     variants_tokens.push(quote! {
       (
-        1,
+        #tag,
         EnumVariant { name: #name.to_string(), options: #options, }
       )
     });
   }
 
   output_tokens.extend(quote! {
-    impl #enum_name {
-      pub fn to_proto_enum(file: &mut ProtoFile) -> ProtoEnum {
-        let path = file.path();
+    impl ValidatorBuilderFor<#enum_name> for EnumValidatorBuilder {}
 
+    impl ProtoValidator<#enum_name> for ValidatorMap {
+      type Builder = EnumValidatorBuilder;
+
+      fn builder() -> Self::Builder {
+        EnumValidator::builder()
+      }
+    }
+
+    impl AsProtoType for #enum_name {
+      fn proto_type() -> ProtoType {
+        ProtoType::Single(TypeInfo {
+          name: #full_name,
+          path: Some(ProtoPath {
+            file: #file.into(),
+            package: #package.into()
+          })
+        })
+      }
+    }
+
+    impl #enum_name {
+      pub fn to_enum() -> ProtoEnum {
         ProtoEnum {
           name: #proto_name.into(),
-          package: path.package,
-          file: path.file,
+          full_name: #full_name,
+          package: #package.into(),
+          file: #file.into(),
           variants: vec! [ #(#variants_tokens,)* ],
           reserved_names: #reserved_names,
           reserved_numbers: #reserved_numbers,
           options: #options,
-          ..Default::default()
         }
-      }
-
-      pub fn to_nested_enum(message: &mut Message) ->  &mut ProtoEnum {
-        let mut new_enum = ProtoEnum {
-          name: #proto_name.into(),
-          package: message.package.clone(),
-          file: message.file.clone(),
-          variants: vec! [ #(#variants_tokens,)* ],
-          reserved_names: #reserved_names,
-          reserved_numbers: #reserved_numbers,
-          options: #options,
-          ..Default::default()
-        };
-
-        message.nested_enum(new_enum)
       }
     }
   });

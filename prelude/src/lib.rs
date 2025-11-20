@@ -101,6 +101,12 @@ impl ProtoFile {
       self.messages.push(message);
     }
   }
+
+  pub fn add_enums<I: IntoIterator<Item = ProtoEnum>>(&mut self, enums: I) {
+    for enum_ in enums.into_iter() {
+      self.enums.push(enum_);
+    }
+  }
 }
 
 #[derive(Default)]
@@ -168,26 +174,8 @@ impl Message {
     self.oneofs = oneofs.into_iter().collect();
   }
 
-  pub fn nested_message(&mut self, mut message: Message) -> &mut Message {
-    message.file = self.file.clone();
-    message.package = self.package.clone();
-
-    let new_idx = self.messages.len();
-
-    self.messages.push(message);
-
-    &mut self.messages[new_idx]
-  }
-
-  pub fn nested_enum(&mut self, mut proto_enum: ProtoEnum) -> &mut ProtoEnum {
-    proto_enum.file = self.file.clone();
-    proto_enum.package = self.package.clone();
-
-    let new_idx = self.enums.len();
-
-    self.enums.push(proto_enum);
-
-    &mut self.enums[new_idx]
+  pub fn add_enums<I: IntoIterator<Item = ProtoEnum>>(&mut self, enums: I) {
+    self.enums = enums.into_iter().collect();
   }
 }
 
@@ -212,9 +200,10 @@ pub struct ServiceHandler {
 #[derive(Debug, Default, Clone)]
 pub struct ProtoEnum {
   pub name: Arc<str>,
+  pub full_name: &'static str,
   pub package: Arc<str>,
   pub file: Arc<str>,
-  pub variants: Vec<(i32, EnumVariant)>,
+  pub variants: Vec<(u32, EnumVariant)>,
   pub reserved_numbers: Vec<Range<u32>>,
   pub reserved_names: Vec<&'static str>,
   pub options: Vec<ProtoOption>,
