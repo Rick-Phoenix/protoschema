@@ -21,6 +21,7 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
     parent_message,
     full_name,
     nested_enums,
+    oneofs,
   } = process_message_attrs(&struct_name, &attrs).unwrap();
 
   let data = if let Data::Struct(struct_data) = data {
@@ -38,7 +39,6 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
   let mut output_tokens = TokenStream2::new();
 
   let mut fields_data: Vec<TokenStream2> = Vec::new();
-  let mut oneofs: Vec<OneofTokens> = Vec::new();
 
   for field in fields {
     let field_name = field.ident.as_ref().expect("Expected named field");
@@ -49,7 +49,6 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
       options,
       name,
       type_,
-      oneof,
     } = process_field_attrs(field_name, &reserved_numbers, &field.attrs);
 
     let mut is_repeated = false;
@@ -61,11 +60,7 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
       _ => panic!("Must be a path type"),
     };
 
-    if oneof {
-      oneofs.push(OneofTokens {
-        path: field_type.clone(),
-      });
-
+    if let Some(oneofs) = &oneofs && oneofs.contains(&field_type) {
       continue;
     }
 
@@ -142,7 +137,7 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
           reserved_numbers: #reserved_numbers,
           options: #options,
           parent_message: #parent_message_tokens,
-          oneofs: vec![ #(#oneofs,)* ],
+          oneofs: vec![ #oneofs ],
           messages: vec![ #nested_messages ],
           enums: vec![ #nested_enums ],
           ..Default::default()

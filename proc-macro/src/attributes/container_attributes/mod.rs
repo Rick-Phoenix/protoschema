@@ -16,6 +16,7 @@ pub(crate) struct MessageAttrs {
   pub package: String,
   pub nested_messages: Option<NestedMessages>,
   pub nested_enums: Option<NestedEnums>,
+  pub oneofs: Option<Oneofs>,
   pub parent_message: Option<Path>,
 }
 
@@ -43,15 +44,27 @@ impl ToTokens for NestedMessages {
   }
 }
 
-pub(crate) struct OneofTokens {
-  pub path: Path,
+pub(crate) struct Oneofs {
+  pub paths: PunctuatedParser<Path>,
 }
 
-impl ToTokens for OneofTokens {
-  fn to_tokens(&self, tokens: &mut TokenStream2) {
-    let path = &self.path;
+impl Oneofs {
+  pub fn contains(&self, path: &Path) -> bool {
+    for oneof_path in &self.paths.inner {
+      if oneof_path == path {
+        return true;
+      }
+    }
 
-    tokens.extend(quote! { #path::to_oneof() });
+    false
+  }
+}
+
+impl ToTokens for Oneofs {
+  fn to_tokens(&self, tokens: &mut TokenStream2) {
+    for path in &self.paths.inner {
+      tokens.extend(quote! { #path::to_oneof(), });
+    }
   }
 }
 
@@ -69,6 +82,7 @@ pub(crate) fn process_message_attrs(
   let mut nested_messages: Option<NestedMessages> = None;
   let mut nested_enums: Option<NestedEnums> = None;
   let mut parent_message: Option<Path> = None;
+  let mut oneofs: Option<Oneofs> = None;
 
   for attr in attrs {
     if !attr.path().is_ident("proto") {
@@ -101,6 +115,10 @@ pub(crate) fn process_message_attrs(
             let paths = list.parse_args::<PunctuatedParser<Path>>().unwrap();
 
             nested_enums = Some(NestedEnums { paths });
+          } else if list.path.is_ident("oneofs") {
+            let paths = list.parse_args::<PunctuatedParser<Path>>().unwrap();
+
+            oneofs = Some(Oneofs { paths });
           }
         }
         Meta::NameValue(nameval) => {
@@ -146,5 +164,6 @@ pub(crate) fn process_message_attrs(
     nested_messages,
     parent_message,
     nested_enums,
+    oneofs,
   })
 }

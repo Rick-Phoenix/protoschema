@@ -15,7 +15,6 @@ pub(crate) struct FieldAttrs {
   pub options: ProtoOptions,
   pub name: String,
   pub type_: Option<Path>,
-  pub oneof: bool,
 }
 
 pub(crate) enum ValidatorExpr {
@@ -33,7 +32,6 @@ pub(crate) fn process_field_attrs(
   let mut options: Option<TokenStream2> = None;
   let mut name: Option<String> = None;
   let mut type_: Option<Path> = None;
-  let mut oneof = false;
 
   let mut incr_counter: u32 = 1;
 
@@ -65,11 +63,7 @@ pub(crate) fn process_field_attrs(
             name = Some(extract_string_lit(&nameval.value).unwrap());
           }
         }
-        Meta::Path(path) => {
-          if path.is_ident("oneof") {
-            oneof = true;
-          }
-        }
+        Meta::Path(path) => {}
         Meta::List(list) => {
           if list.path.is_ident("options") {
             let exprs = list.parse_args::<PunctuatedParser<Expr>>().unwrap().inner;
@@ -103,6 +97,5 @@ pub(crate) fn process_field_attrs(
     options: attributes::ProtoOptions(options),
     name: name.unwrap_or_else(|| ccase!(snake, original_name.to_string())),
     type_,
-    oneof,
   }
 }

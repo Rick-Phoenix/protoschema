@@ -8,7 +8,6 @@ impl_ignore!(EnumValidatorBuilder);
 
 impl<T, S: State> ValidatorBuilderFor<T> for EnumValidatorBuilder<S> where T: ProtoEnumTrait {}
 
-/// Used by the [`enum_field`](crate::enum_field) macro to define validation rules.
 #[derive(Clone, Debug, Builder)]
 pub struct EnumValidator {
   /// Only the values in this list will be considered valid for this field.

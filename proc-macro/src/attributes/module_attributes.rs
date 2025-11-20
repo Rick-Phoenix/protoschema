@@ -52,6 +52,7 @@ pub(crate) enum DeriveKind {
 pub(crate) struct ParentMessage {
   pub ident: Ident,
   pub name: Rc<str>,
+  pub reserved_numbers: Option<MetaList>,
 }
 
 pub fn process_module_items(
@@ -59,7 +60,7 @@ pub fn process_module_items(
   items: &'_ mut Vec<Item>,
 ) -> Result<TopLevelItemsTokens, Error> {
   let mut processed_items: Vec<ModuleItem> = Vec::new();
-  let mut nested_items_map: HashMap<Ident, ParentMessage> = HashMap::new();
+  let mut nested_items_map: HashMap<Ident, Rc<ParentMessage>> = HashMap::new();
 
   for item in items {
     let derive_kind = if let Some(kind) = get_derive_kind(item)? {
@@ -71,7 +72,9 @@ pub fn process_module_items(
     match item {
       Item::Struct(s) => {
         let mut name: Option<String> = None;
-        let mut nested_items_list: Option<PunctuatedParser<Path>> = None;
+        let mut nested_items_list: Vec<Path> = Vec::new();
+        let mut reserved_numbers: Option<MetaList> = None;
+        let mut reserved_names: Option<MetaList> = None;
 
         for attr in &s.attrs {
           if attr.path().is_ident("proto") {
@@ -80,8 +83,10 @@ pub fn process_module_items(
             for meta in metas {
               match meta {
                 Meta::List(list) => {
-                  if list.path.is_ident("nested_messages") {
-                    nested_items_list = Some(list.parse_args::<PunctuatedParser<Path>>()?);
+                  if list.path.is_ident("nested_messages") || list.path.is_ident("oneofs") {
+                    nested_items_list.extend(list.parse_args::<PunctuatedParser<Path>>()?.inner);
+                  } else if list.path.is_ident("reserved_numbers") {
+                    reserved_numbers = Some(list.clone());
                   }
                 }
                 Meta::NameValue(nv) => {
@@ -110,17 +115,18 @@ pub fn process_module_items(
           inferred_name.into()
         };
 
-        if let Some(nested_items_list) = nested_items_list {
-          for nested_item in nested_items_list.inner {
+        if !nested_items_list.is_empty() {
+          let parent_message_info: Rc<ParentMessage> = ParentMessage {
+            ident: s.ident.clone(),
+            name: name.clone(),
+            reserved_numbers,
+          }
+          .into();
+
+          for nested_item in nested_items_list {
             let nested_item_ident = nested_item.require_ident()?;
 
-            nested_items_map.insert(
-              nested_item_ident.clone(),
-              ParentMessage {
-                ident: s.ident.clone(),
-                name: name.clone(),
-              },
-            );
+            nested_items_map.insert(nested_item_ident.clone(), parent_message_info.clone());
           }
         }
 
@@ -177,6 +183,13 @@ pub fn process_module_items(
 
   for item in processed_items.iter_mut() {
     item.inject_attr(file_attribute.clone());
+
+    if matches!(item.kind, ItemKind::Oneof(_)) && let Some(parent_message_info) = nested_items_map.get(item.get_ident())
+      && let Some(reserved_numbers) = &parent_message_info.reserved_numbers {
+        let numbers_attribute: Attribute = parse_quote!{ #[proto(#reserved_numbers)] };
+
+        item.inject_attr(numbers_attribute);
+      }
 
     if let Some(parent_message) = nested_items_map.get(item.get_ident()) {
       let parent_message_ident = &parent_message.ident;
