@@ -14,6 +14,7 @@ use std::{
 mod field;
 mod file;
 mod message;
+mod optional;
 mod proto_enum;
 mod proto_type;
 mod tag_allocator;

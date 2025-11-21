@@ -23,7 +23,7 @@ macro_rules! impl_map {
 
         let values = match V::proto_type() {
           ProtoType::Single(data) => data,
-          _ => panic!("Map values cannot be repeated or nested maps"),
+          _ => panic!("Map values cannot be repeated, optional or nested maps"),
         };
 
         ProtoType::Map { keys, values }

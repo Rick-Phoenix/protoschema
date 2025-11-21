@@ -14,6 +14,7 @@ impl ProtoField {
     match &self.type_ {
       ProtoType::Single(ty) => ty.register_import(imports),
       ProtoType::Repeated(ty) => ty.register_import(imports),
+      ProtoType::Optional(ty) => ty.register_import(imports),
       ProtoType::Map { keys, values } => {
         keys.register_import(imports);
         values.register_import(imports);

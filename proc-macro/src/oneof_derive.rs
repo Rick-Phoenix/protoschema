@@ -87,6 +87,7 @@ pub(crate) fn process_oneof_derive(input: TokenStream) -> TokenStream {
     }
 
     impl #enum_name {
+      #[track_caller]
       pub fn to_oneof(tag_allocator: &mut TagAllocator) -> Oneof {
         let mut options: Vec<ProtoOption> = #options;
 

@@ -20,7 +20,7 @@ macro_rules! impl_repeated {
           ProtoType::Single(data) => {
             inner_type = ProtoType::Repeated(data);
           }
-          _ => panic!("Repeated fields cannot be nested"),
+          _ => panic!("Repeated fields cannot be optional, maps or nested within each other"),
         }
 
         inner_type

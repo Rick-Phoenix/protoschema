@@ -53,17 +53,13 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
       type_,
     } = process_field_attrs(field_name, &field.attrs);
 
-    if let Some(tag) = tag {
-      manually_set_tags.push(tag);
-    }
-
-    let field_type = match field.ty {
-      Type::Path(type_path) => type_path.path,
+    let mut field_type = match &field.ty {
+      Type::Path(type_path) => &type_path.path,
 
       _ => panic!("Must be a path type"),
     };
 
-    if let Some(oneofs) = &oneofs && oneofs.contains(&field_type) {
+    if let Some(oneofs) = &oneofs && oneofs.contains(field_type) {
       fields_data.push(quote! {
         MessageEntry::Oneof(#field_type::to_oneof(&mut tag_allocator))
       });
@@ -71,7 +67,18 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
       continue;
     }
 
-    let proto_type = if let Some(type_data) = type_ {
+    let mut is_optional = false;
+
+    if let Some(tag) = tag {
+      manually_set_tags.push(tag);
+    }
+
+    if let Some(option_type) = extract_option(field_type) {
+      is_optional = true;
+      field_type = option_type;
+    }
+
+    let proto_type = if let Some(type_data) = &type_ {
       type_data
     } else {
       field_type
@@ -90,6 +97,12 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
       quote! { None }
     };
 
+    let field_type_tokens = if is_optional {
+      quote! { <Option<#proto_type> as AsProtoType>::proto_type() }
+    } else {
+      quote! { <#proto_type as AsProtoType>::proto_type() }
+    };
+
     let tag_tokens = OptionTokens::new(tag.as_ref());
 
     fields_data.push(quote! {
@@ -98,7 +111,7 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
           name: #name.to_string(),
           tag: tag_allocator.get_or_next(#tag_tokens),
           options: #options,
-          type_: <#proto_type as AsProtoType>::proto_type(),
+          type_: #field_type_tokens,
           validator: #validator_tokens,
         }
       )
@@ -135,6 +148,7 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
     }
 
     impl #struct_name {
+      #[track_caller]
       pub fn to_message() -> Message {
         const UNAVAILABLE_TAGS: &'static [std::ops::Range<i32>] = &[#occupied_ranges];
 

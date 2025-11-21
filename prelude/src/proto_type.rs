@@ -8,6 +8,7 @@ pub trait AsProtoType {
 pub enum ProtoType {
   Single(TypeInfo),
   Repeated(TypeInfo),
+  Optional(TypeInfo),
   Map { keys: TypeInfo, values: TypeInfo },
 }
 

@@ -14,6 +14,7 @@ use syn::{
   DeriveInput, Error, Expr, ExprClosure, Fields, Ident, Item, ItemFn, ItemMod, Lit, LitStr, Meta,
   Path, RangeLimits, Token, Type,
 };
+use type_extraction::*;
 
 use crate::{
   enum_derive::process_enum_derive, message_derive::process_message_derive,
@@ -23,6 +24,7 @@ use crate::{
 mod enum_derive;
 mod message_derive;
 mod oneof_derive;
+mod type_extraction;
 
 mod attributes;
 

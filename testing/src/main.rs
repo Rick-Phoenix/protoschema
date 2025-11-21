@@ -53,7 +53,7 @@ mod inner {
   #[proto(nested_enums(PseudoEnum))]
   pub struct Abc {
     #[proto(validate = string_validator())]
-    name: String,
+    name: Option<String>,
 
     #[proto(validate = repeated_validator())]
     num: Vec<i32>,

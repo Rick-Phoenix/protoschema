@@ -80,6 +80,7 @@ pub(crate) fn process_enum_derive(input: TokenStream) -> TokenStream {
     }
 
     impl #enum_name {
+      #[track_caller]
       pub fn to_enum() -> ProtoEnum {
         const UNAVAILABLE_TAGS: &'static [std::ops::Range<i32>] = &[#occupied_ranges];
 
