@@ -1,7 +1,6 @@
 use crate::*;
 
-pub(crate) fn process_oneof_derive(input: TokenStream) -> TokenStream {
-  let tokens = parse_macro_input!(input as DeriveInput);
+pub(crate) fn process_oneof_derive(tokens: DeriveInput) -> Result<TokenStream2, Error> {
   let enum_name = tokens.ident;
 
   let mut output_tokens = TokenStream2::new();
@@ -22,14 +21,19 @@ pub(crate) fn process_oneof_derive(input: TokenStream) -> TokenStream {
   for variant in data.variants {
     let variant_name = variant.ident;
 
+    let field_attrs = if let Some(attrs) = process_field_attrs(&variant_name, &variant.attrs)? {
+      attrs
+    } else {
+      continue;
+    };
+
     let FieldAttrs {
       tag,
       validator,
       options,
       name,
       type_,
-      ..
-    } = process_field_attrs(&variant_name, &variant.attrs);
+    } = field_attrs;
 
     let variant_type = if let Fields::Unnamed(variant_fields) = variant.fields {
       if variant_fields.unnamed.len() != 1 {
@@ -102,5 +106,5 @@ pub(crate) fn process_oneof_derive(input: TokenStream) -> TokenStream {
     }
   });
 
-  output_tokens.into()
+  Ok(output_tokens)
 }

@@ -71,16 +71,15 @@ pub(crate) fn process_message_derive(tokens: DeriveInput) -> Result<TokenStream2
       continue;
     }
 
-    let mut is_optional = false;
-
     if let Some(tag) = tag {
       manually_set_tags.push(tag);
     }
 
-    if let Some(option_type) = extract_option(field_type) {
-      is_optional = true;
-      field_type = option_type;
-    }
+    let processed_type = extract_type(field_type);
+
+    field_type = processed_type.path();
+
+    let is_optional = processed_type.is_option();
 
     let proto_type = if let Some(type_data) = &type_ {
       type_data

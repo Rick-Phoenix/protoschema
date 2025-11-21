@@ -45,7 +45,12 @@ pub fn enum_derive(input: TokenStream) -> TokenStream {
 
 #[proc_macro_derive(Oneof, attributes(proto))]
 pub fn oneof_derive(input: TokenStream) -> TokenStream {
-  process_oneof_derive(input)
+  let tokens = parse_macro_input!(input as DeriveInput);
+
+  match process_oneof_derive(tokens) {
+    Ok(output) => output.into(),
+    Err(e) => e.to_compile_error().into(),
+  }
 }
 
 #[proc_macro_attribute]

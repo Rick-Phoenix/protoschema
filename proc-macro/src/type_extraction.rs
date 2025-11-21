@@ -1,14 +1,46 @@
-use syn::{GenericArgument, PathArguments};
+use syn::{GenericArgument, PathArguments, PathSegment};
 
 use crate::*;
 
-pub fn extract_option(ty: &Path) -> Option<&Path> {
-  let last_segment = ty.segments.last()?;
+pub enum FieldType<'a> {
+  Normal(&'a Path),
+  Option(&'a Path),
+}
 
-  if last_segment.ident == "Option" && let PathArguments::AngleBracketed(args) = &last_segment.arguments
+impl<'a> FieldType<'a> {
+  pub fn path(&self) -> &Path {
+    match self {
+      FieldType::Normal(path) => path,
+      FieldType::Option(path) => path,
+    }
+  }
+
+  pub fn is_option(&self) -> bool {
+    matches!(self, Self::Option(_))
+  }
+}
+
+fn extract_inner_type(path_segment: &PathSegment) -> Option<&Path> {
+  if let PathArguments::AngleBracketed(args) = &path_segment.arguments
     && let GenericArgument::Type(inner_ty) = args.args.first()? && let Type::Path(type_path) = inner_ty {
       return Some(&type_path.path);
     }
 
   None
+}
+
+pub fn extract_type<'a>(ty: &'a Path) -> FieldType<'a> {
+  let last_segment = ty.segments.last().unwrap();
+
+  if last_segment.ident == "Option" {
+    let inner = extract_inner_type(last_segment).unwrap();
+
+    FieldType::Option(inner)
+  } else if last_segment.ident == "Box" {
+    let inner = extract_inner_type(last_segment).unwrap();
+
+    FieldType::Normal(inner)
+  } else {
+    FieldType::Normal(ty)
+  }
 }
