@@ -16,12 +16,16 @@ pub enum ValidatorExpr {
   Call(ExprCall),
 }
 
-pub fn process_field_attrs(original_name: &Ident, attrs: &Vec<Attribute>) -> FieldAttrs {
+pub fn process_field_attrs(
+  original_name: &Ident,
+  attrs: &Vec<Attribute>,
+) -> Result<Option<FieldAttrs>, Error> {
   let mut validator: Option<ValidatorExpr> = None;
   let mut tag: Option<i32> = None;
   let mut options: Option<TokenStream2> = None;
   let mut name: Option<String> = None;
   let mut type_: Option<Path> = None;
+  let mut is_ignored = false;
 
   for attr in attrs {
     if !attr.path().is_ident("proto") {
@@ -60,16 +64,24 @@ pub fn process_field_attrs(original_name: &Ident, attrs: &Vec<Attribute>) -> Fie
             type_ = Some(list.parse_args::<TypePath>().unwrap().path);
           }
         }
-        Meta::Path(_) => {}
+        Meta::Path(path) => {
+          if path.is_ident("ignore") {
+            is_ignored = true;
+          }
+        }
       };
     }
   }
 
-  FieldAttrs {
-    validator,
-    tag,
-    options: attributes::ProtoOptions(options),
-    name: name.unwrap_or_else(|| ccase!(snake, original_name.to_string())),
-    type_,
+  if !is_ignored {
+    Ok(Some(FieldAttrs {
+      validator,
+      tag,
+      options: attributes::ProtoOptions(options),
+      name: name.unwrap_or_else(|| ccase!(snake, original_name.to_string())),
+      type_,
+    }))
+  } else {
+    Ok(None)
   }
 }

@@ -35,6 +35,7 @@ impl<'a> TagAllocator<'a> {
     result.is_ok()
   }
 
+  #[track_caller]
   pub fn next_tag(&mut self) -> i32 {
     loop {
       let idx = self.unavailable.partition_point(|r| r.end <= self.next_tag);
@@ -55,6 +56,7 @@ impl<'a> TagAllocator<'a> {
     }
   }
 
+  #[track_caller]
   pub fn get_or_next(&mut self, manual_tag: Option<i32>) -> i32 {
     if let Some(tag) = manual_tag {
       return tag;

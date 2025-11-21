@@ -1,8 +1,6 @@
 use crate::*;
 
-pub trait ProtoMessage {
-  fn full_name() -> &'static str;
-}
+pub trait ProtoMessage {}
 
 #[derive(Debug, Default, Clone)]
 pub struct Message {

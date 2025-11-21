@@ -1,8 +1,6 @@
 use crate::*;
 
-pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
-  let tokens = parse_macro_input!(input as DeriveInput);
-
+pub(crate) fn process_message_derive(tokens: DeriveInput) -> Result<TokenStream2, Error> {
   let DeriveInput {
     attrs,
     ident: struct_name,
@@ -45,13 +43,19 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
   for field in fields {
     let field_name = field.ident.as_ref().expect("Expected named field");
 
+    let field_attrs = if let Some(attrs) = process_field_attrs(field_name, &field.attrs)? {
+      attrs
+    } else {
+      continue;
+    };
+
     let FieldAttrs {
       tag,
       validator,
       options,
       name,
       type_,
-    } = process_field_attrs(field_name, &field.attrs);
+    } = field_attrs;
 
     let mut field_type = match &field.ty {
       Type::Path(type_path) => &type_path.path,
@@ -121,11 +125,7 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
   let occupied_ranges = reserved_numbers.build_unavailable_ranges(manually_set_tags);
 
   output_tokens.extend(quote! {
-    impl ProtoMessage for #struct_name {
-      fn full_name() -> &'static str {
-        #proto_name
-      }
-    }
+    impl ProtoMessage for #struct_name {}
 
     impl ProtoValidator<#struct_name> for ValidatorMap {
       type Builder = MessageValidatorBuilder;
@@ -172,5 +172,5 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
     }
   });
 
-  output_tokens.into()
+  Ok(output_tokens)
 }

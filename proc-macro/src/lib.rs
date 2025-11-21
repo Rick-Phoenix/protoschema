@@ -1,7 +1,7 @@
 #[macro_use]
 mod macros;
 
-use std::{cmp::Ordering, collections::HashMap, ops::Range};
+use std::{collections::HashMap, ops::Range};
 
 use attributes::*;
 pub(crate) use convert_case::ccase;
@@ -30,7 +30,12 @@ mod attributes;
 
 #[proc_macro_derive(Message, attributes(proto))]
 pub fn message_derive(input: TokenStream) -> TokenStream {
-  process_message_derive(input)
+  let tokens = parse_macro_input!(input as DeriveInput);
+
+  match process_message_derive(tokens) {
+    Ok(output) => output.into(),
+    Err(e) => e.to_compile_error().into(),
+  }
 }
 
 #[proc_macro_derive(Enum, attributes(proto))]
