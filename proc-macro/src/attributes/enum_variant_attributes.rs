@@ -1,12 +1,12 @@
 use crate::*;
 
-pub(crate) struct EnumVariantAttrs {
+pub struct EnumVariantAttrs {
   pub name: String,
   pub tag: u32,
   pub options: ProtoOptions,
 }
 
-pub(crate) fn process_enum_variants_attrs(
+pub fn process_enum_variants_attrs(
   original_name: &Ident,
   reserved_numbers: &ReservedNumbers,
   attrs: &Vec<Attribute>,

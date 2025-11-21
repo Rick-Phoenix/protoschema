@@ -1,12 +1,6 @@
-mod reserved_names;
-pub use reserved_names::*;
-
-mod reserved_numbers;
-pub use reserved_numbers::*;
-
 use crate::*;
 
-pub(crate) struct MessageAttrs {
+pub struct MessageAttrs {
   pub reserved_names: ReservedNames,
   pub reserved_numbers: ReservedNumbers,
   pub options: ProtoOptions,
@@ -19,7 +13,7 @@ pub(crate) struct MessageAttrs {
   pub oneofs: Option<Oneofs>,
 }
 
-pub(crate) struct NestedEnums {
+pub struct NestedEnums {
   pub paths: PunctuatedParser<Path>,
 }
 
@@ -31,7 +25,7 @@ impl ToTokens for NestedEnums {
   }
 }
 
-pub(crate) struct NestedMessages {
+pub struct NestedMessages {
   pub paths: PunctuatedParser<Path>,
 }
 
@@ -43,7 +37,7 @@ impl ToTokens for NestedMessages {
   }
 }
 
-pub(crate) struct Oneofs {
+pub struct Oneofs {
   pub paths: PunctuatedParser<Path>,
 }
 
@@ -67,7 +61,7 @@ impl ToTokens for Oneofs {
   }
 }
 
-pub(crate) fn process_message_attrs(
+pub fn process_message_attrs(
   rust_name: &Ident,
   attrs: &Vec<Attribute>,
 ) -> Result<MessageAttrs, Error> {
@@ -91,7 +85,6 @@ pub(crate) fn process_message_attrs(
 
     for arg in args.inner {
       match arg {
-        Meta::Path(path) => todo!(),
         Meta::List(list) => {
           if list.path.is_ident("reserved_names") {
             let names = list.parse_args::<StringList>().unwrap();
@@ -136,6 +129,7 @@ pub(crate) fn process_message_attrs(
             package = Some(extract_string_lit(&nameval.value)?);
           }
         }
+        Meta::Path(_) => {}
       }
     }
   }

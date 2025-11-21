@@ -1,6 +1,6 @@
 use crate::*;
 
-pub(crate) enum ReservedNames {
+pub enum ReservedNames {
   List(Vec<String>),
   Expr(Expr),
 }

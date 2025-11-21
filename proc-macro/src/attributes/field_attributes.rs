@@ -3,7 +3,7 @@ use syn::{ExprCall, Path, TypePath};
 
 use crate::*;
 
-pub(crate) struct FieldAttrs {
+pub struct FieldAttrs {
   pub tag: Option<u32>,
   pub validator: Option<ValidatorExpr>,
   pub options: ProtoOptions,
@@ -11,12 +11,12 @@ pub(crate) struct FieldAttrs {
   pub type_: Option<Path>,
 }
 
-pub(crate) enum ValidatorExpr {
+pub enum ValidatorExpr {
   Closure(ExprClosure),
   Call(ExprCall),
 }
 
-pub(crate) fn process_field_attrs(original_name: &Ident, attrs: &Vec<Attribute>) -> FieldAttrs {
+pub fn process_field_attrs(original_name: &Ident, attrs: &Vec<Attribute>) -> FieldAttrs {
   let mut validator: Option<ValidatorExpr> = None;
   let mut tag: Option<u32> = None;
   let mut options: Option<TokenStream2> = None;

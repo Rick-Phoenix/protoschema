@@ -1,12 +1,12 @@
 use crate::*;
 
-pub(crate) struct OneofAttrs {
+pub struct OneofAttrs {
   pub options: ProtoOptions,
   pub name: String,
   pub required: bool,
 }
 
-pub(crate) fn process_oneof_attrs(enum_name: &Ident, attrs: &Vec<Attribute>) -> OneofAttrs {
+pub fn process_oneof_attrs(enum_name: &Ident, attrs: &Vec<Attribute>) -> OneofAttrs {
   let mut options: Option<TokenStream2> = None;
   let mut name: Option<String> = None;
   let mut required = false;
