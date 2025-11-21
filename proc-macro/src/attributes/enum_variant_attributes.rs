@@ -7,7 +7,8 @@ pub struct EnumVariantAttrs {
 }
 
 pub fn process_enum_variants_attrs(
-  original_name: &Ident,
+  enum_name: &str,
+  rust_variant_name: &Ident,
   attrs: &Vec<Attribute>,
 ) -> EnumVariantAttrs {
   let mut tag: Option<i32> = None;
@@ -46,9 +47,15 @@ pub fn process_enum_variants_attrs(
     }
   }
 
+  let name = format!(
+    "{}_{}",
+    ccase!(constant, enum_name),
+    name.unwrap_or_else(|| ccase!(constant, rust_variant_name.to_string()))
+  );
+
   EnumVariantAttrs {
     tag,
     options: attributes::ProtoOptions(options),
-    name: name.unwrap_or_else(|| ccase!(constant, original_name.to_string())),
+    name,
   }
 }

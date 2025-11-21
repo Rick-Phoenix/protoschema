@@ -41,7 +41,7 @@ pub(crate) fn process_enum_derive(input: TokenStream) -> TokenStream {
     let variant_name = variant.ident;
 
     let EnumVariantAttrs { tag, options, name } =
-      process_enum_variants_attrs(&variant_name, &variant.attrs);
+      process_enum_variants_attrs(&proto_name, &variant_name, &variant.attrs);
 
     if let Some(tag) = tag {
       manually_set_tags.push(tag);
