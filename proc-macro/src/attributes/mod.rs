@@ -3,6 +3,7 @@ mod enum_variant_attributes;
 mod field_attributes;
 mod message_attributes;
 mod module_attributes;
+pub(crate) mod nested_items;
 mod oneof_attributes;
 mod parsers;
 mod reserved_names;

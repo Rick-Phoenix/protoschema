@@ -31,6 +31,7 @@ mod inner {
   use super::*;
 
   #[derive(Enum)]
+  #[proto(reserved_numbers(1, 2, 10..))]
   enum PseudoEnum {
     AbcDeg,
     B,
