@@ -4,7 +4,7 @@ use syn::{ExprCall, Path, TypePath};
 use crate::*;
 
 pub struct FieldAttrs {
-  pub tag: Option<u32>,
+  pub tag: Option<i32>,
   pub validator: Option<ValidatorExpr>,
   pub options: ProtoOptions,
   pub name: String,
@@ -18,7 +18,7 @@ pub enum ValidatorExpr {
 
 pub fn process_field_attrs(original_name: &Ident, attrs: &Vec<Attribute>) -> FieldAttrs {
   let mut validator: Option<ValidatorExpr> = None;
-  let mut tag: Option<u32> = None;
+  let mut tag: Option<i32> = None;
   let mut options: Option<TokenStream2> = None;
   let mut name: Option<String> = None;
   let mut type_: Option<Path> = None;
@@ -42,7 +42,7 @@ pub fn process_field_attrs(original_name: &Ident, attrs: &Vec<Attribute>) -> Fie
               panic!("Invalid");
             }
           } else if nameval.path.is_ident("tag") {
-            tag = Some(extract_u32(&nameval.value).unwrap());
+            tag = Some(extract_i32(&nameval.value).unwrap());
           } else if nameval.path.is_ident("options") {
             let func_call = nameval.value;
 

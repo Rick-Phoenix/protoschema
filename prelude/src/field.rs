@@ -3,7 +3,7 @@ use crate::*;
 #[derive(Debug, Clone)]
 pub struct ProtoField {
   pub name: String,
-  pub tag: u32,
+  pub tag: i32,
   pub type_: ProtoType,
   pub options: Vec<ProtoOption>,
   pub validator: Option<ProtoOption>,

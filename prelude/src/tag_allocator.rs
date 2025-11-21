@@ -1,19 +1,19 @@
 use crate::*;
 
 pub struct TagAllocator<'a> {
-  pub unavailable: &'a [Range<u32>],
-  pub next_tag: u32,
+  pub unavailable: &'a [Range<i32>],
+  pub next_tag: i32,
 }
 
 impl<'a> TagAllocator<'a> {
-  pub fn new(unavailable: &'a [Range<u32>]) -> Self {
+  pub fn new(unavailable: &'a [Range<i32>]) -> Self {
     Self {
       unavailable,
       next_tag: 1,
     }
   }
 
-  pub fn tag_is_unavailable(&self, number: &u32) -> bool {
+  pub fn tag_is_unavailable(&self, number: &i32) -> bool {
     let result = self.unavailable.binary_search_by(|range| {
       if range.contains(number) {
         Ordering::Equal
@@ -27,7 +27,7 @@ impl<'a> TagAllocator<'a> {
     result.is_ok()
   }
 
-  pub fn next_tag(&mut self) -> u32 {
+  pub fn next_tag(&mut self) -> i32 {
     while self.tag_is_unavailable(&self.next_tag) {
       self.next_tag += 1;
     }
@@ -37,7 +37,7 @@ impl<'a> TagAllocator<'a> {
     tag
   }
 
-  pub fn get_or_next(&mut self, manual_tag: Option<u32>) -> u32 {
+  pub fn get_or_next(&mut self, manual_tag: Option<i32>) -> i32 {
     if let Some(tag) = manual_tag {
       return tag;
     }

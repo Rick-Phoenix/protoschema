@@ -1,12 +1,12 @@
 use crate::*;
 
 #[derive(Default, Clone)]
-pub(crate) struct ReservedNumbers(pub Vec<Range<u32>>);
+pub(crate) struct ReservedNumbers(pub Vec<Range<i32>>);
 
-pub const PROTOBUF_MAX_TAG: u32 = 536_870_911;
+pub const PROTOBUF_MAX_TAG: i32 = 536_870_911;
 
 impl ReservedNumbers {
-  pub fn build_unavailable_ranges(self, manual_tags: Vec<u32>) -> Self {
+  pub fn build_unavailable_ranges(self, manual_tags: Vec<i32>) -> Self {
     if manual_tags.is_empty() {
       return self;
     }
@@ -20,7 +20,7 @@ impl ReservedNumbers {
     ranges.sort_by_key(|r| r.start);
 
     // Coalesce
-    let mut merged: Vec<Range<u32>> = Vec::new();
+    let mut merged: Vec<Range<i32>> = Vec::new();
     let mut current = ranges[0].clone();
 
     for next in ranges.into_iter().skip(1) {
@@ -38,20 +38,6 @@ impl ReservedNumbers {
     merged.push(current);
 
     Self(merged)
-  }
-
-  pub fn contains(&self, number: &u32) -> bool {
-    let result = self.0.binary_search_by(|range| {
-      if range.contains(number) {
-        Ordering::Equal
-      } else if *number < range.start {
-        Ordering::Greater
-      } else {
-        Ordering::Less
-      }
-    });
-
-    result.is_ok()
   }
 }
 
@@ -74,20 +60,20 @@ impl ToTokens for ReservedNumbers {
 
 impl Parse for ReservedNumbers {
   fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-    let mut ranges: Vec<Range<u32>> = Vec::new();
+    let mut ranges: Vec<Range<i32>> = Vec::new();
 
     let items = Punctuated::<Expr, Token![,]>::parse_terminated(input)?;
 
     for item in items {
       if let Expr::Range(range_expr) = &item {
         let start = if let Some(start_expr) = &range_expr.start {
-          extract_u32(start_expr)?
+          extract_i32(start_expr)?
         } else {
           0
         };
 
         let end = if let Some(end_expr) = &range_expr.end {
-          extract_u32(end_expr)?
+          extract_i32(end_expr)?
         } else {
           PROTOBUF_MAX_TAG + 1
         };
@@ -100,7 +86,7 @@ impl Parse for ReservedNumbers {
 
         ranges.push(start..final_end);
       } else if let Expr::Lit(lit) = &item && let Lit::Int(lit_int) = &lit.lit {
-        let num = lit_int.base10_parse::<u32>()?;
+        let num = lit_int.base10_parse::<i32>()?;
 
         ranges.push(num..num + 1);
       } else {

@@ -10,7 +10,7 @@ pub(crate) fn process_enum_derive(input: TokenStream) -> TokenStream {
     ..
   } = tokens;
 
-  let MessageAttrs {
+  let EnumAttrs {
     reserved_names,
     reserved_numbers,
     options,
@@ -18,8 +18,10 @@ pub(crate) fn process_enum_derive(input: TokenStream) -> TokenStream {
     file,
     package,
     full_name,
-    ..
-  } = process_message_attrs(&enum_name, &attrs).unwrap();
+  } = process_enum_attrs(&enum_name, &attrs).unwrap();
+
+  let reserved_numbers_tokens = reserved_numbers.to_token_stream();
+  let mut manually_set_tags: Vec<i32> = Vec::new();
 
   let data = if let Data::Enum(enum_data) = data {
     enum_data
@@ -39,15 +41,20 @@ pub(crate) fn process_enum_derive(input: TokenStream) -> TokenStream {
     let variant_name = variant.ident;
 
     let EnumVariantAttrs { tag, options, name } =
-      process_enum_variants_attrs(&variant_name, &reserved_numbers, &variant.attrs);
+      process_enum_variants_attrs(&variant_name, &variant.attrs);
+
+    if let Some(tag) = tag {
+      manually_set_tags.push(tag);
+    }
+
+    let tag_tokens = OptionTokens::new(tag.as_ref());
 
     variants_tokens.push(quote! {
-      (
-        #tag,
-        EnumVariant { name: #name.to_string(), options: #options, }
-      )
+      EnumVariant { name: #name.to_string(), options: #options, tag: tag_allocator.get_or_next(#tag_tokens), }
     });
   }
+
+  let occupied_ranges = reserved_numbers.build_unavailable_ranges(manually_set_tags);
 
   output_tokens.extend(quote! {
     impl ProtoEnumTrait for #enum_name {}
@@ -74,6 +81,10 @@ pub(crate) fn process_enum_derive(input: TokenStream) -> TokenStream {
 
     impl #enum_name {
       pub fn to_enum() -> ProtoEnum {
+        const UNAVAILABLE_TAGS: &'static [std::ops::Range<i32>] = &[#occupied_ranges];
+
+        let mut tag_allocator = TagAllocator::new(UNAVAILABLE_TAGS);
+
         ProtoEnum {
           name: #proto_name.into(),
           full_name: #full_name,
@@ -81,7 +92,7 @@ pub(crate) fn process_enum_derive(input: TokenStream) -> TokenStream {
           file: #file.into(),
           variants: vec! [ #(#variants_tokens,)* ],
           reserved_names: #reserved_names,
-          reserved_numbers: vec![ #reserved_numbers ],
+          reserved_numbers: vec![ #reserved_numbers_tokens ],
           options: #options,
         }
       }

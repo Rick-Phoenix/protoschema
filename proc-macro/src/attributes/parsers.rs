@@ -12,7 +12,7 @@ impl<T: Parse> Parse for PunctuatedParser<T> {
   }
 }
 
-pub fn extract_u32(expr: &Expr) -> Result<u32, Error> {
+pub fn extract_i32(expr: &Expr) -> Result<i32, Error> {
   if let Expr::Lit(expr_lit) = expr && let Lit::Int(value) = &expr_lit.lit {
     Ok(value.base10_parse()?)
   } else {

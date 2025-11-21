@@ -8,8 +8,8 @@ pub struct ProtoEnum {
   pub full_name: &'static str,
   pub package: Arc<str>,
   pub file: Arc<str>,
-  pub variants: Vec<(u32, EnumVariant)>,
-  pub reserved_numbers: Vec<Range<u32>>,
+  pub variants: Vec<EnumVariant>,
+  pub reserved_numbers: Vec<Range<i32>>,
   pub reserved_names: Vec<&'static str>,
   pub options: Vec<ProtoOption>,
 }
@@ -17,5 +17,6 @@ pub struct ProtoEnum {
 #[derive(Debug, Default, Clone)]
 pub struct EnumVariant {
   pub name: String,
+  pub tag: i32,
   pub options: Vec<ProtoOption>,
 }

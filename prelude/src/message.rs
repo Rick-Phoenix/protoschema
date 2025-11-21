@@ -15,7 +15,7 @@ pub struct Message {
   pub enums: Vec<ProtoEnum>,
   pub options: Vec<ProtoOption>,
   pub reserved_names: Vec<&'static str>,
-  pub reserved_numbers: Vec<Range<u32>>,
+  pub reserved_numbers: Vec<Range<i32>>,
 }
 
 #[derive(Debug, Clone)]

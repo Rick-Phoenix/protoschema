@@ -40,7 +40,7 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
   let mut output_tokens = TokenStream2::new();
 
   let mut fields_data: Vec<TokenStream2> = Vec::new();
-  let mut manually_set_tags: Vec<u32> = Vec::new();
+  let mut manually_set_tags: Vec<i32> = Vec::new();
 
   for field in fields {
     let field_name = field.ident.as_ref().expect("Expected named field");
@@ -136,10 +136,9 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
 
     impl #struct_name {
       pub fn to_message() -> Message {
-        const UNAVAILABLE_TAGS: &'static [std::ops::Range<u32>] = &[#occupied_ranges];
+        const UNAVAILABLE_TAGS: &'static [std::ops::Range<i32>] = &[#occupied_ranges];
 
-        let occupied_ranges = UNAVAILABLE_TAGS;
-        let mut tag_allocator = TagAllocator::new(occupied_ranges);
+        let mut tag_allocator = TagAllocator::new(UNAVAILABLE_TAGS);
 
         let mut new_msg = Message {
           name: #proto_name,
