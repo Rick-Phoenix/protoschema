@@ -1,9 +1,45 @@
 use crate::*;
 
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub(crate) struct ReservedNumbers(pub Vec<Range<u32>>);
 
+pub const PROTOBUF_MAX_TAG: u32 = 536_870_911;
+
 impl ReservedNumbers {
+  pub fn build_unavailable_ranges(&self, manual_tags: Vec<u32>) -> Self {
+    let mut ranges = self.0.clone();
+
+    for tag in manual_tags {
+      ranges.push(tag..(tag + 1));
+    }
+
+    if ranges.is_empty() {
+      return self.clone();
+    }
+
+    ranges.sort_by_key(|r| r.start);
+
+    // Coalesce
+    let mut merged: Vec<Range<u32>> = Vec::new();
+    let mut current = ranges[0].clone();
+
+    for next in ranges.into_iter().skip(1) {
+      if next.start < current.end {
+        panic!("Using a taken tag");
+      } else if next.start == current.end {
+        // Extend current to the max end
+        current.end = std::cmp::max(current.end, next.end);
+      } else {
+        // Gap found, push current and start new
+        merged.push(current);
+        current = next;
+      }
+    }
+    merged.push(current);
+
+    Self(merged)
+  }
+
   pub fn contains(&self, number: &u32) -> bool {
     let result = self.0.binary_search_by(|range| {
       if range.contains(number) {
@@ -32,9 +68,7 @@ impl ToTokens for ReservedNumbers {
       });
     }
 
-    tokens.extend(quote! {
-      vec![ #agg_tokens ]
-    });
+    tokens.extend(agg_tokens);
   }
 }
 

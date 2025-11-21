@@ -10,7 +10,7 @@ pub use type_extraction::*;
 use crate::*;
 
 pub(crate) struct FieldAttrs {
-  pub tag: u32,
+  pub tag: Option<u32>,
   pub validator: Option<ValidatorExpr>,
   pub options: ProtoOptions,
   pub name: String,
@@ -22,18 +22,12 @@ pub(crate) enum ValidatorExpr {
   Call(ExprCall),
 }
 
-pub(crate) fn process_field_attrs(
-  original_name: &Ident,
-  reserved_numbers: &ReservedNumbers,
-  attrs: &Vec<Attribute>,
-) -> FieldAttrs {
+pub(crate) fn process_field_attrs(original_name: &Ident, attrs: &Vec<Attribute>) -> FieldAttrs {
   let mut validator: Option<ValidatorExpr> = None;
   let mut tag: Option<u32> = None;
   let mut options: Option<TokenStream2> = None;
   let mut name: Option<String> = None;
   let mut type_: Option<Path> = None;
-
-  let mut incr_counter: u32 = 1;
 
   for attr in attrs {
     if !attr.path().is_ident("proto") {
@@ -78,18 +72,6 @@ pub(crate) fn process_field_attrs(
       };
     }
   }
-
-  let tag = tag.unwrap_or_else(|| {
-    while reserved_numbers.contains(&incr_counter) {
-      incr_counter += 1;
-    }
-
-    let found = incr_counter;
-
-    incr_counter += 1;
-
-    found
-  });
 
   FieldAttrs {
     validator,

@@ -39,6 +39,7 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
   let mut output_tokens = TokenStream2::new();
 
   let mut fields_data: Vec<TokenStream2> = Vec::new();
+  let mut manually_set_tags: Vec<u32> = Vec::new();
 
   for field in fields {
     let field_name = field.ident.as_ref().expect("Expected named field");
@@ -49,7 +50,11 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
       options,
       name,
       type_,
-    } = process_field_attrs(field_name, &reserved_numbers, &field.attrs);
+    } = process_field_attrs(field_name, &field.attrs);
+
+    if let Some(tag) = tag {
+      manually_set_tags.push(tag);
+    }
 
     let mut is_repeated = false;
     let mut is_optional = false;
@@ -61,6 +66,10 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
     };
 
     if let Some(oneofs) = &oneofs && oneofs.contains(&field_type) {
+      fields_data.push(quote! {
+        MessageEntry::Oneof(#field_type::to_oneof(&mut tag_allocator))
+      });
+
       continue;
     }
 
@@ -73,34 +82,42 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
     let validator_tokens = if let Some(validator) = validator {
       match validator {
         ValidatorExpr::Call(call) => {
-          quote! { Some(<prelude::ValidatorMap as prelude::ProtoValidator<#proto_type>>::from_builder(#call)) }
+          quote! { Some(<ValidatorMap as ProtoValidator<#proto_type>>::from_builder(#call)) }
         }
         ValidatorExpr::Closure(closure) => {
           let validator_type = get_validator_call(&proto_type);
 
-          quote! { Some(<prelude::ValidatorMap as prelude::ProtoValidator<#proto_type>>::build_rules(#closure)) }
+          quote! { Some(<ValidatorMap as ProtoValidator<#proto_type>>::build_rules(#closure)) }
         }
       }
     } else {
       quote! { None }
     };
 
+    let tag_tokens = OptionTokens::new(tag.as_ref());
+
     fields_data.push(quote! {
-      (#tag, ProtoField {
-        name: #name.to_string(),
-        options: #options,
-        type_: <#proto_type as AsProtoType>::proto_type(),
-        validator: #validator_tokens,
-      })
+      MessageEntry::Field(
+        ProtoField {
+          name: #name.to_string(),
+          tag: tag_allocator.get_or_next(#tag_tokens),
+          options: #options,
+          type_: <#proto_type as AsProtoType>::proto_type(),
+          validator: #validator_tokens,
+        }
+      )
     });
   }
 
   let parent_message_tokens = OptionTokens::new(parent_message.as_ref())
-    .map_none(|parent| quote! { <#parent as ProtoMessage>::name() });
+    .map_none(|parent| quote! { <#parent as ProtoMessage>::full_name() });
+
+  let occupied_ranges = reserved_numbers.build_unavailable_ranges(manually_set_tags);
 
   output_tokens.extend(quote! {
     impl ProtoMessage for #struct_name {
-      fn name() -> &'static str {
+      const UNAVAILABLE_TAGS: &'static [std::ops::Range<u32>] = &[#occupied_ranges];
+      fn full_name() -> &'static str {
         #proto_name
       }
     }
@@ -127,21 +144,26 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
 
     impl #struct_name {
       pub fn to_message() -> Message {
-        Message {
+        let occupied_ranges = <Self as ProtoMessage>::UNAVAILABLE_TAGS;
+        let mut tag_allocator = TagAllocator::new(occupied_ranges);
+
+        let mut new_msg = Message {
           name: #proto_name,
           full_name: #full_name,
           package: #package.into(),
           file: #file.into(),
-          fields: vec![ #(#fields_data,)* ],
           reserved_names: #reserved_names,
-          reserved_numbers: #reserved_numbers,
+          reserved_numbers: vec![ #reserved_numbers ],
           options: #options,
           parent_message: #parent_message_tokens,
-          oneofs: vec![ #oneofs ],
           messages: vec![ #nested_messages ],
           enums: vec![ #nested_enums ],
-          ..Default::default()
-        }
+          entries: vec![ #(#fields_data,)* ],
+        };
+
+        // new_msg.set_entries(vec![ #(#fields_data,)* ]);
+
+        new_msg
       }
     }
   });

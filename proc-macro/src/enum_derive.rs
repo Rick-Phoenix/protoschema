@@ -84,7 +84,7 @@ pub(crate) fn process_enum_derive(input: TokenStream) -> TokenStream {
           file: #file.into(),
           variants: vec! [ #(#variants_tokens,)* ],
           reserved_names: #reserved_names,
-          reserved_numbers: #reserved_numbers,
+          reserved_numbers: vec![ #reserved_numbers ],
           options: #options,
         }
       }

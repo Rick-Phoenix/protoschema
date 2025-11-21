@@ -1,0 +1,51 @@
+use crate::*;
+
+#[derive(Default)]
+pub struct ProtoFile {
+  pub name: Arc<str>,
+  pub package: Arc<str>,
+  pub imports: BTreeSet<Arc<str>>,
+  pub messages: Vec<Message>,
+  pub enums: Vec<ProtoEnum>,
+  pub services: Vec<ServiceData>,
+}
+
+impl ProtoFile {
+  pub fn new(name: &str, package: &str) -> Self {
+    Self {
+      name: name.into(),
+      package: package.into(),
+      ..Default::default()
+    }
+  }
+
+  pub fn add_messages<I: IntoIterator<Item = Message>>(&mut self, messages: I) {
+    for message in messages.into_iter() {
+      self.messages.push(message);
+    }
+  }
+
+  pub fn add_enums<I: IntoIterator<Item = ProtoEnum>>(&mut self, enums: I) {
+    for enum_ in enums.into_iter() {
+      self.enums.push(enum_);
+    }
+  }
+}
+
+pub struct ServiceData {
+  pub name: Box<str>,
+  pub handlers: Box<[ServiceHandler]>,
+  pub options: Box<[ProtoOption]>,
+}
+
+pub struct ImportedItemPath {
+  pub file: String,
+}
+
+#[derive(Builder)]
+pub struct ServiceHandler {
+  pub name: Box<str>,
+  pub options: Vec<ProtoOption>,
+  pub request: Arc<ImportedItemPath>,
+  pub response: Arc<ImportedItemPath>,
+}

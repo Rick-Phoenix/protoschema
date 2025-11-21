@@ -21,6 +21,16 @@ pub(crate) struct OptionTokens<'a, T: ToTokens> {
   pub item: Option<&'a T>,
 }
 
+impl<'a, T: ToTokens> ToTokens for OptionTokens<'a, T> {
+  fn to_tokens(&self, tokens: &mut TokenStream2) {
+    tokens.extend(if let Some(item) = &self.item {
+      quote! { Some(#item) }
+    } else {
+      quote! { None }
+    });
+  }
+}
+
 impl<'a, T: ToTokens> OptionTokens<'a, T> {
   pub fn new(item: Option<&'a T>) -> OptionTokens<'a, T> {
     Self { item }

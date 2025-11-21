@@ -6,10 +6,9 @@ use prelude::{
   validators::{
     repeated_validator_builder::{SetItems, State},
     MapValidatorBuilder, ProtoMap, ProtoRepeated, RepeatedValidator, RepeatedValidatorBuilder,
-    Sint32, StringValidator, StringValidatorBuilder,
+    Sint32, StringValidator, StringValidatorBuilder, ValidatorBuilderFor,
   },
   EnumVariant, Message, Oneof, ProtoEnum, ProtoField, ProtoFile, ProtoOption, ProtoPath, ProtoType,
-  ProtoValidator, ValidatorBuilderFor, ValidatorMap,
 };
 use proc_macro_impls::{proto_module, Enum, Message, Oneof};
 
@@ -26,10 +25,7 @@ fn repeated_validator() -> impl ValidatorBuilderFor<Vec<i32>> {
 #[proc_macro_impls::proto_module(file = "abc.proto", package = "myapp.v1")]
 mod inner {
   use prelude::{
-    validators::{
-      oneof_required, EnumValidator, EnumValidatorBuilder, MessageValidator,
-      MessageValidatorBuilder,
-    },
+    validators::{ProtoValidator, ValidatorMap, *},
     *,
   };
 
@@ -51,7 +47,7 @@ mod inner {
   }
 
   #[derive(Message)]
-  #[proto(reserved_names("abc", "bcd"))]
+  #[proto(reserved_numbers(1, 2, 3..9))]
   #[proto(oneofs(PseudoOneof))]
   #[proto(nested_messages(Nested))]
   pub struct Abc {
@@ -95,6 +91,6 @@ fn main() {
 
   let nested2 = Nested2::to_message();
 
-  println!("{nested2:#?}");
+  println!("{msg:#?}");
   // let nested_enum = Bcd::to_nested_enum(nested);
 }

@@ -30,7 +30,7 @@ pub(crate) fn process_oneof_derive(input: TokenStream) -> TokenStream {
       name,
       type_,
       ..
-    } = process_field_attrs(&variant_name, &reserved_numbers, &variant.attrs);
+    } = process_field_attrs(&variant_name, &variant.attrs);
 
     let variant_type = if let Fields::Unnamed(variant_fields) = variant.fields {
       if variant_fields.unnamed.len() != 1 {
@@ -55,40 +55,49 @@ pub(crate) fn process_oneof_derive(input: TokenStream) -> TokenStream {
     let validator_tokens = if let Some(validator) = validator {
       match validator {
         ValidatorExpr::Call(call) => {
-          quote! { Some(<prelude::ValidatorMap as prelude::ProtoValidator<#proto_type>>::from_builder(#call)) }
+          quote! { Some(<ValidatorMap as ProtoValidator<#proto_type>>::from_builder(#call)) }
         }
         ValidatorExpr::Closure(closure) => {
           let validator_type = get_validator_call(&proto_type);
 
-          quote! { Some(<prelude::ValidatorMap as prelude::ProtoValidator<#proto_type>>::build_rules(#closure)) }
+          quote! { Some(<ValidatorMap as ProtoValidator<#proto_type>>::build_rules(#closure)) }
         }
       }
     } else {
       quote! { None }
     };
 
+    let tag_tokens = OptionTokens::new(tag.as_ref());
+
     variants_tokens.push(quote! {
-        (#tag, ProtoField {
-          name: #name.to_string(),
-          options: #options,
-          type_: <#proto_type as AsProtoType>::proto_type(),
-          validator: #validator_tokens,
-        })
+      ProtoField {
+        name: #name.to_string(),
+        options: #options,
+        type_: <#proto_type as AsProtoType>::proto_type(),
+        validator: #validator_tokens,
+        tag: tag_allocator.get_or_next(#tag_tokens),
+      }
     });
   }
 
   let required_option_tokens = required.then(|| quote! { options.push(oneof_required()); });
 
   output_tokens.extend(quote! {
+    impl ProtoOneof for #enum_name {
+      fn fields(tag_allocator: &mut TagAllocator) -> Vec<ProtoField> {
+        vec![ #(#variants_tokens,)* ]
+      }
+    }
+
     impl #enum_name {
-      pub fn to_oneof() -> Oneof {
+      pub fn to_oneof(tag_allocator: &mut TagAllocator) -> Oneof {
         let mut options: Vec<ProtoOption> = #options;
 
         #required_option_tokens
 
         Oneof {
           name: #proto_name.into(),
-          fields: vec! [ #(#variants_tokens,)* ],
+          fields: Self::fields(tag_allocator),
           options,
         }
       }

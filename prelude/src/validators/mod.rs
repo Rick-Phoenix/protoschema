@@ -1,8 +1,40 @@
+use crate::*;
 mod common_strings;
 use std::{collections::HashSet, fmt::Debug, hash::Hash, sync::Arc};
 
 use common_strings::*;
 use proto_types::protovalidate::Ignore;
+
+pub trait ValidatorBuilderFor<T>: Into<ProtoOption> {}
+
+pub trait ProtoValidator<T> {
+  type Builder;
+
+  fn builder() -> Self::Builder;
+
+  #[track_caller]
+  fn from_builder<B>(builder: B) -> ProtoOption
+  where
+    B: ValidatorBuilderFor<T>,
+  {
+    builder.into()
+  }
+
+  #[track_caller]
+  fn build_rules<F, FinalBuilder>(config_fn: F) -> ProtoOption
+  where
+    F: FnOnce(Self::Builder) -> FinalBuilder,
+    FinalBuilder: ValidatorBuilderFor<T>,
+  {
+    let initial_builder = Self::builder();
+
+    let final_builder = config_fn(initial_builder);
+
+    final_builder.into()
+  }
+}
+
+pub struct ValidatorMap;
 
 type OptionValueList = Vec<(Arc<str>, OptionValue)>;
 
@@ -172,5 +204,3 @@ pub use oneof::*;
 pub use repeated::{repeated_validator_builder, *};
 pub use string::*;
 pub use timestamp::*;
-
-use crate::OptionValue;
