@@ -1,7 +1,6 @@
 use crate::*;
 
 pub trait ProtoMessage {
-  const UNAVAILABLE_TAGS: &'static [Range<u32>];
   fn full_name() -> &'static str;
 }
 

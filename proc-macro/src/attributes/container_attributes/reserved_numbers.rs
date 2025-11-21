@@ -6,15 +6,15 @@ pub(crate) struct ReservedNumbers(pub Vec<Range<u32>>);
 pub const PROTOBUF_MAX_TAG: u32 = 536_870_911;
 
 impl ReservedNumbers {
-  pub fn build_unavailable_ranges(&self, manual_tags: Vec<u32>) -> Self {
-    let mut ranges = self.0.clone();
+  pub fn build_unavailable_ranges(mut self, manual_tags: Vec<u32>) -> Self {
+    if manual_tags.is_empty() {
+      return self;
+    }
+
+    let mut ranges = self.0;
 
     for tag in manual_tags {
       ranges.push(tag..(tag + 1));
-    }
-
-    if ranges.is_empty() {
-      return self.clone();
     }
 
     ranges.sort_by_key(|r| r.start);
@@ -89,10 +89,7 @@ impl Parse for ReservedNumbers {
         let end = if let Some(end_expr) = &range_expr.end {
           extract_u32(end_expr)?
         } else {
-          return Err(spanned_error!(
-            range_expr,
-            "Infinite range is not supported"
-          ));
+          PROTOBUF_MAX_TAG + 1
         };
 
         let final_end = if let RangeLimits::HalfOpen(_) = &range_expr.limits {

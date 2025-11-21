@@ -17,7 +17,6 @@ pub(crate) struct TopLevelItemsTokens {
 pub(crate) enum ItemKind<'a> {
   Message(&'a mut ItemStruct),
   Enum(&'a mut ItemEnum),
-  Oneof(&'a mut ItemEnum),
 }
 
 pub(crate) struct ModuleItem<'a> {
@@ -30,7 +29,6 @@ impl<'a> ModuleItem<'a> {
     match &mut self.kind {
       ItemKind::Message(item) => item.attrs.push(attr),
       ItemKind::Enum(item) => item.attrs.push(attr),
-      ItemKind::Oneof(item) => item.attrs.push(attr),
     }
   }
 
@@ -38,7 +36,6 @@ impl<'a> ModuleItem<'a> {
     match &self.kind {
       ItemKind::Message(item) => &item.ident,
       ItemKind::Enum(item) => &item.ident,
-      ItemKind::Oneof(item) => &item.ident,
     }
   }
 }
@@ -52,7 +49,6 @@ pub(crate) enum DeriveKind {
 pub(crate) struct ParentMessage {
   pub ident: Ident,
   pub name: Rc<str>,
-  pub reserved_numbers: Option<MetaList>,
 }
 
 pub fn process_module_items(
@@ -83,10 +79,11 @@ pub fn process_module_items(
             for meta in metas {
               match meta {
                 Meta::List(list) => {
-                  if list.path.is_ident("nested_messages") || list.path.is_ident("oneofs") {
+                  if list.path.is_ident("nested_messages")
+                    || list.path.is_ident("oneofs")
+                    || list.path.is_ident("nested_enums")
+                  {
                     nested_items_list.extend(list.parse_args::<PunctuatedParser<Path>>()?.inner);
-                  } else if list.path.is_ident("reserved_numbers") {
-                    reserved_numbers = Some(list.clone());
                   }
                 }
                 Meta::NameValue(nv) => {
@@ -119,7 +116,6 @@ pub fn process_module_items(
           let parent_message_info: Rc<ParentMessage> = ParentMessage {
             ident: s.ident.clone(),
             name: name.clone(),
-            reserved_numbers,
           }
           .into();
 
@@ -162,17 +158,10 @@ pub fn process_module_items(
           inferred_name.into()
         };
 
-        match derive_kind {
-          DeriveKind::Enum => processed_items.push(ModuleItem {
-            name,
-            kind: ItemKind::Enum(e),
-          }),
-          DeriveKind::Oneof => processed_items.push(ModuleItem {
-            name,
-            kind: ItemKind::Oneof(e),
-          }),
-          DeriveKind::Message => panic!("Cannot use the Message derive on an enum"),
-        };
+        processed_items.push(ModuleItem {
+          name,
+          kind: ItemKind::Enum(e),
+        });
       }
       _ => {}
     }
@@ -183,13 +172,6 @@ pub fn process_module_items(
 
   for item in processed_items.iter_mut() {
     item.inject_attr(file_attribute.clone());
-
-    if matches!(item.kind, ItemKind::Oneof(_)) && let Some(parent_message_info) = nested_items_map.get(item.get_ident())
-      && let Some(reserved_numbers) = &parent_message_info.reserved_numbers {
-        let numbers_attribute: Attribute = parse_quote!{ #[proto(#reserved_numbers)] };
-
-        item.inject_attr(numbers_attribute);
-      }
 
     if let Some(parent_message) = nested_items_map.get(item.get_ident()) {
       let parent_message_ident = &parent_message.ident;
@@ -219,7 +201,7 @@ pub fn process_module_items(
         parse_quote! { #[proto(parent_message = #parent_message_ident)] };
 
       item.inject_attr(parent_message_attr);
-    } else if !matches!(item.kind, ItemKind::Oneof(_)) {
+    } else {
       let item_ident = item.get_ident();
 
       match item.kind {

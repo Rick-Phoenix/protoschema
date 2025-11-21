@@ -4,7 +4,6 @@ use bytes_validator_builder::{IsUnset, SetWellKnown, State};
 use regex::Regex;
 
 use super::*;
-use crate::*;
 
 impl_validator!(BytesValidator, Vec<u8>);
 impl_validator!(BytesValidator, Bytes);

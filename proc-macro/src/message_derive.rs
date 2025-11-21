@@ -24,6 +24,8 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
     oneofs,
   } = process_message_attrs(&struct_name, &attrs).unwrap();
 
+  let reserved_numbers_tokens = reserved_numbers.to_token_stream();
+
   let data = if let Data::Struct(struct_data) = data {
     struct_data
   } else {
@@ -116,7 +118,6 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
 
   output_tokens.extend(quote! {
     impl ProtoMessage for #struct_name {
-      const UNAVAILABLE_TAGS: &'static [std::ops::Range<u32>] = &[#occupied_ranges];
       fn full_name() -> &'static str {
         #proto_name
       }
@@ -144,7 +145,9 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
 
     impl #struct_name {
       pub fn to_message() -> Message {
-        let occupied_ranges = <Self as ProtoMessage>::UNAVAILABLE_TAGS;
+        const UNAVAILABLE_TAGS: &'static [std::ops::Range<u32>] = &[#occupied_ranges];
+
+        let occupied_ranges = UNAVAILABLE_TAGS;
         let mut tag_allocator = TagAllocator::new(occupied_ranges);
 
         let mut new_msg = Message {
@@ -153,15 +156,13 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
           package: #package.into(),
           file: #file.into(),
           reserved_names: #reserved_names,
-          reserved_numbers: vec![ #reserved_numbers ],
+          reserved_numbers: vec![ #reserved_numbers_tokens ],
           options: #options,
           parent_message: #parent_message_tokens,
           messages: vec![ #nested_messages ],
           enums: vec![ #nested_enums ],
           entries: vec![ #(#fields_data,)* ],
         };
-
-        // new_msg.set_entries(vec![ #(#fields_data,)* ]);
 
         new_msg
       }

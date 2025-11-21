@@ -7,7 +7,7 @@ pub struct ProtoFile {
   pub imports: BTreeSet<Arc<str>>,
   pub messages: Vec<Message>,
   pub enums: Vec<ProtoEnum>,
-  pub services: Vec<ServiceData>,
+  // pub services: Vec<ServiceData>,
 }
 
 impl ProtoFile {
@@ -30,22 +30,4 @@ impl ProtoFile {
       self.enums.push(enum_);
     }
   }
-}
-
-pub struct ServiceData {
-  pub name: Box<str>,
-  pub handlers: Box<[ServiceHandler]>,
-  pub options: Box<[ProtoOption]>,
-}
-
-pub struct ImportedItemPath {
-  pub file: String,
-}
-
-#[derive(Builder)]
-pub struct ServiceHandler {
-  pub name: Box<str>,
-  pub options: Vec<ProtoOption>,
-  pub request: Arc<ImportedItemPath>,
-  pub response: Arc<ImportedItemPath>,
 }

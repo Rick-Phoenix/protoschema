@@ -50,6 +50,7 @@ mod inner {
   #[proto(reserved_numbers(1, 2, 3..9))]
   #[proto(oneofs(PseudoOneof))]
   #[proto(nested_messages(Nested))]
+  #[proto(nested_enums(PseudoEnum))]
   pub struct Abc {
     #[proto(validate = string_validator())]
     name: String,
