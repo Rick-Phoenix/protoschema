@@ -2,7 +2,6 @@ use bon::Builder;
 use enum_validator_builder::State;
 
 use super::*;
-use crate::*;
 
 impl_ignore!(EnumValidatorBuilder);
 

@@ -17,7 +17,6 @@ pub(crate) fn process_enum_derive(input: TokenStream) -> TokenStream {
     name: proto_name,
     file,
     package,
-    nested_messages,
     full_name,
     ..
   } = process_message_attrs(&enum_name, &attrs).unwrap();
@@ -29,8 +28,6 @@ pub(crate) fn process_enum_derive(input: TokenStream) -> TokenStream {
   };
 
   let mut output_tokens = TokenStream2::new();
-
-  let mut fields_data: Vec<TokenStream2> = Vec::new();
 
   let mut variants_tokens: Vec<TokenStream2> = Vec::new();
 

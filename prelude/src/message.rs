@@ -16,7 +16,6 @@ pub struct Message {
   pub options: Vec<ProtoOption>,
   pub reserved_names: Vec<&'static str>,
   pub reserved_numbers: Vec<Range<u32>>,
-  pub parent_message: Option<&'static str>,
 }
 
 #[derive(Debug, Clone)]

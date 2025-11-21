@@ -1,7 +1,6 @@
 use std::sync::LazyLock;
 
 use super::*;
-use crate::*;
 
 #[allow(clippy::type_complexity)]
 static REQUIRED_OPTION: LazyLock<Arc<[(Arc<str>, OptionValue)]>> =

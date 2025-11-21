@@ -38,7 +38,7 @@ impl<T: Into<OptionValue> + Clone> From<Arc<[T]>> for OptionValue {
   fn from(value: Arc<[T]>) -> Self {
     OptionValue::List(
       value
-        .into_iter()
+        .iter()
         .map(|item| (*item).clone().into())
         .collect::<Vec<OptionValue>>()
         .into(),
@@ -62,7 +62,7 @@ impl<T: Into<OptionValue> + Clone> From<&[T]> for OptionValue {
   fn from(value: &[T]) -> Self {
     OptionValue::List(
       value
-        .into_iter()
+        .iter()
         .map(|item| item.clone().into())
         .collect::<Vec<OptionValue>>()
         .into(),
@@ -78,7 +78,7 @@ impl From<&str> for OptionValue {
 
 impl From<Arc<str>> for OptionValue {
   fn from(value: Arc<str>) -> Self {
-    OptionValue::String(value.into())
+    OptionValue::String(value)
   }
 }
 

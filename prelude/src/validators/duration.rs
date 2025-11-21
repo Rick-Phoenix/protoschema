@@ -3,7 +3,6 @@ use duration_validator_builder::{IsUnset, SetIgnore, State};
 use proto_types::Duration;
 
 use super::*;
-use crate::*;
 
 impl_validator!(DurationValidator, Duration);
 

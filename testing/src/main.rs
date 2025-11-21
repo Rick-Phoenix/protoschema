@@ -1,16 +1,15 @@
 #![allow(unused)]
 
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 use prelude::{
   validators::{
-    repeated_validator_builder::{SetItems, State},
-    MapValidatorBuilder, ProtoMap, ProtoRepeated, RepeatedValidator, RepeatedValidatorBuilder,
-    Sint32, StringValidator, StringValidatorBuilder, ValidatorBuilderFor,
+    RepeatedValidator, RepeatedValidatorBuilder, StringValidator, StringValidatorBuilder,
+    ValidatorBuilderFor,
   },
-  EnumVariant, Message, Oneof, ProtoEnum, ProtoField, ProtoFile, ProtoOption, ProtoPath, ProtoType,
+  ProtoFile,
 };
-use proc_macro_impls::{proto_module, Enum, Message, Oneof};
+use proc_macro_impls::{Enum, Message, Oneof};
 
 fn string_validator() -> StringValidatorBuilder {
   StringValidator::builder()

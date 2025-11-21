@@ -1,4 +1,4 @@
-use std::{collections::HashSet, fmt::Write, rc::Rc};
+use std::{fmt::Write, rc::Rc};
 
 use syn::{ItemEnum, ItemStruct, MetaNameValue};
 
@@ -69,8 +69,6 @@ pub fn process_module_items(
       Item::Struct(s) => {
         let mut name: Option<String> = None;
         let mut nested_items_list: Vec<Path> = Vec::new();
-        let mut reserved_numbers: Option<MetaList> = None;
-        let mut reserved_names: Option<MetaList> = None;
 
         for attr in &s.attrs {
           if attr.path().is_ident("proto") {
@@ -196,18 +194,12 @@ pub fn process_module_items(
       let full_name_attr: Attribute = parse_quote! { #[proto(full_name = #full_name)] };
 
       item.inject_attr(full_name_attr);
-
-      let parent_message_attr: Attribute =
-        parse_quote! { #[proto(parent_message = #parent_message_ident)] };
-
-      item.inject_attr(parent_message_attr);
     } else {
       let item_ident = item.get_ident();
 
       match item.kind {
         ItemKind::Message(_) => top_level_messages.extend(quote! { #item_ident::to_message(), }),
         ItemKind::Enum(_) => top_level_enums.extend(quote! { #item_ident::to_enum() }),
-        _ => {}
       }
     }
   }

@@ -2,7 +2,6 @@ use bon::Builder;
 use message_validator_builder::{IsUnset, SetIgnore, State};
 
 use super::*;
-use crate::*;
 
 impl<S: State, T> ValidatorBuilderFor<T> for MessageValidatorBuilder<S> where T: ProtoMessage {}
 

@@ -17,7 +17,6 @@ pub(crate) struct MessageAttrs {
   pub nested_messages: Option<NestedMessages>,
   pub nested_enums: Option<NestedEnums>,
   pub oneofs: Option<Oneofs>,
-  pub parent_message: Option<Path>,
 }
 
 pub(crate) struct NestedEnums {
@@ -81,7 +80,6 @@ pub(crate) fn process_message_attrs(
   let mut package: Option<String> = None;
   let mut nested_messages: Option<NestedMessages> = None;
   let mut nested_enums: Option<NestedEnums> = None;
-  let mut parent_message: Option<Path> = None;
   let mut oneofs: Option<Oneofs> = None;
 
   for attr in attrs {
@@ -136,12 +134,6 @@ pub(crate) fn process_message_attrs(
             file = Some(extract_string_lit(&nameval.value)?);
           } else if nameval.path.is_ident("package") {
             package = Some(extract_string_lit(&nameval.value)?);
-          } else if nameval.path.is_ident("parent_message") {
-            if let Expr::Path(expr_path) = nameval.value {
-              parent_message = Some(expr_path.path);
-            } else {
-              panic!("parent_message must be a path");
-            }
           }
         }
       }
@@ -162,7 +154,6 @@ pub(crate) fn process_message_attrs(
     file,
     package,
     nested_messages,
-    parent_message,
     nested_enums,
     oneofs,
   })

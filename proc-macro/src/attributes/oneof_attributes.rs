@@ -3,14 +3,12 @@ use crate::*;
 pub(crate) struct OneofAttrs {
   pub options: ProtoOptions,
   pub name: String,
-  pub reserved_numbers: ReservedNumbers,
   pub required: bool,
 }
 
 pub(crate) fn process_oneof_attrs(enum_name: &Ident, attrs: &Vec<Attribute>) -> OneofAttrs {
   let mut options: Option<TokenStream2> = None;
   let mut name: Option<String> = None;
-  let mut reserved_numbers = ReservedNumbers::default();
   let mut required = false;
 
   for attr in attrs {
@@ -32,10 +30,6 @@ pub(crate) fn process_oneof_attrs(enum_name: &Ident, attrs: &Vec<Attribute>) -> 
             let exprs = list.parse_args::<PunctuatedParser<Expr>>().unwrap().inner;
 
             options = Some(quote! { vec! [ #exprs ] });
-          } else if list.path.is_ident("reserved_numbers") {
-            let numbers = list.parse_args::<ReservedNumbers>().unwrap();
-
-            reserved_numbers = numbers;
           }
         }
         Meta::NameValue(nameval) => {
@@ -54,7 +48,6 @@ pub(crate) fn process_oneof_attrs(enum_name: &Ident, attrs: &Vec<Attribute>) -> 
   OneofAttrs {
     options: attributes::ProtoOptions(options),
     name: name.unwrap_or_else(|| ccase!(snake, enum_name.to_string())),
-    reserved_numbers,
     required,
   }
 }

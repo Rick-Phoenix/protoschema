@@ -6,7 +6,6 @@ use std::{
 use map_validator_builder::{IsComplete, IsUnset, SetIgnore, SetKeys, SetValues, State};
 
 use super::*;
-use crate::*;
 
 pub struct ProtoMap<K, V>(PhantomData<K>, PhantomData<V>);
 

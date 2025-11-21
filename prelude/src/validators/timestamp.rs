@@ -3,7 +3,6 @@ use proto_types::{Duration, Timestamp};
 use timestamp_validator_builder::{IsUnset, SetIgnore, State};
 
 use super::*;
-use crate::*;
 
 /// Used by the [`timestamp`](crate::timestamp) macro to define validation rules.
 #[derive(Clone, Debug, Builder)]

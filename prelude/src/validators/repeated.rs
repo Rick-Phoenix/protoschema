@@ -4,7 +4,6 @@ use bon::Builder;
 use repeated_validator_builder::{IsComplete, IsUnset, SetIgnore, State};
 
 use super::*;
-use crate::*;
 
 pub struct ProtoRepeated<T>(PhantomData<T>);
 

@@ -9,7 +9,6 @@ pub(crate) fn process_oneof_derive(input: TokenStream) -> TokenStream {
   let OneofAttrs {
     options,
     name: proto_name,
-    reserved_numbers,
     required,
   } = process_oneof_attrs(&enum_name, &tokens.attrs);
 
@@ -58,8 +57,6 @@ pub(crate) fn process_oneof_derive(input: TokenStream) -> TokenStream {
           quote! { Some(<ValidatorMap as ProtoValidator<#proto_type>>::from_builder(#call)) }
         }
         ValidatorExpr::Closure(closure) => {
-          let validator_type = get_validator_call(&proto_type);
-
           quote! { Some(<ValidatorMap as ProtoValidator<#proto_type>>::build_rules(#closure)) }
         }
       }

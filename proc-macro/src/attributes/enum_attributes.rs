@@ -39,7 +39,6 @@ pub(crate) fn process_enum_variants_attrs(
             name = Some(extract_string_lit(&nameval.value).unwrap());
           }
         }
-        Meta::Path(path) => {}
         Meta::List(list) => {
           if list.path.is_ident("options") {
             let exprs = list.parse_args::<PunctuatedParser<Expr>>().unwrap().inner;
@@ -47,8 +46,7 @@ pub(crate) fn process_enum_variants_attrs(
             options = Some(quote! { vec! [ #exprs ] });
           }
         }
-
-        _ => {}
+        Meta::Path(_) => {}
       };
     }
   }

@@ -1,11 +1,5 @@
-mod type_extraction;
-
-use std::{cmp::Ordering, ops::Range};
-
 use convert_case::ccase;
-use quote::ToTokens;
-use syn::{token::Token, ExprCall, Path, TypePath};
-pub use type_extraction::*;
+use syn::{ExprCall, Path, TypePath};
 
 use crate::*;
 
@@ -57,7 +51,6 @@ pub(crate) fn process_field_attrs(original_name: &Ident, attrs: &Vec<Attribute>)
             name = Some(extract_string_lit(&nameval.value).unwrap());
           }
         }
-        Meta::Path(path) => {}
         Meta::List(list) => {
           if list.path.is_ident("options") {
             let exprs = list.parse_args::<PunctuatedParser<Expr>>().unwrap().inner;
@@ -67,8 +60,7 @@ pub(crate) fn process_field_attrs(original_name: &Ident, attrs: &Vec<Attribute>)
             type_ = Some(list.parse_args::<TypePath>().unwrap().path);
           }
         }
-
-        _ => {}
+        Meta::Path(_) => {}
       };
     }
   }

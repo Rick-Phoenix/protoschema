@@ -3,7 +3,6 @@ use bon::Builder;
 use proto_types::Any;
 
 use super::*;
-use crate::*;
 
 impl_validator!(AnyValidator, Any);
 

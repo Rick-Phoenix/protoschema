@@ -18,7 +18,6 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
     file,
     package,
     nested_messages,
-    parent_message,
     full_name,
     nested_enums,
     oneofs,
@@ -58,9 +57,6 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
       manually_set_tags.push(tag);
     }
 
-    let mut is_repeated = false;
-    let mut is_optional = false;
-
     let field_type = match field.ty {
       Type::Path(type_path) => type_path.path,
 
@@ -87,8 +83,6 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
           quote! { Some(<ValidatorMap as ProtoValidator<#proto_type>>::from_builder(#call)) }
         }
         ValidatorExpr::Closure(closure) => {
-          let validator_type = get_validator_call(&proto_type);
-
           quote! { Some(<ValidatorMap as ProtoValidator<#proto_type>>::build_rules(#closure)) }
         }
       }
@@ -110,9 +104,6 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
       )
     });
   }
-
-  let parent_message_tokens = OptionTokens::new(parent_message.as_ref())
-    .map_none(|parent| quote! { <#parent as ProtoMessage>::full_name() });
 
   let occupied_ranges = reserved_numbers.build_unavailable_ranges(manually_set_tags);
 
@@ -158,7 +149,6 @@ pub(crate) fn process_message_derive(input: TokenStream) -> TokenStream {
           reserved_names: #reserved_names,
           reserved_numbers: vec![ #reserved_numbers_tokens ],
           options: #options,
-          parent_message: #parent_message_tokens,
           messages: vec![ #nested_messages ],
           enums: vec![ #nested_enums ],
           entries: vec![ #(#fields_data,)* ],

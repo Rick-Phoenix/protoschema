@@ -2,7 +2,6 @@ use bon::Builder;
 use bool_validator_builder::State;
 
 use super::*;
-use crate::*;
 
 impl_validator!(BoolValidator, bool);
 

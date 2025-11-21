@@ -6,7 +6,7 @@ pub(crate) struct ReservedNumbers(pub Vec<Range<u32>>);
 pub const PROTOBUF_MAX_TAG: u32 = 536_870_911;
 
 impl ReservedNumbers {
-  pub fn build_unavailable_ranges(mut self, manual_tags: Vec<u32>) -> Self {
+  pub fn build_unavailable_ranges(self, manual_tags: Vec<u32>) -> Self {
     if manual_tags.is_empty() {
       return self;
     }

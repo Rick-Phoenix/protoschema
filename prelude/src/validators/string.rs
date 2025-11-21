@@ -3,10 +3,6 @@ use regex::Regex;
 use string_validator_builder::{IsUnset, SetIn, SetNotIn, SetWellKnown, State};
 
 use super::*;
-use crate::{
-  validators::{cel::CelRule, validate_lists, OptionValueList},
-  *,
-};
 
 impl_proto_type!(String, String);
 

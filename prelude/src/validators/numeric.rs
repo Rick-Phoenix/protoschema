@@ -4,7 +4,6 @@ use bon::Builder;
 use int_validator_builder::{IsUnset, SetIgnore, State};
 
 use super::*;
-use crate::*;
 
 // Validator implementations
 impl<N> ProtoValidator<IntValidator<N>> for ValidatorMap
