@@ -1,5 +1,9 @@
 # 📘 Protoschema
 
+## ⚠️ Notice
+
+I am currently working on a crate that will merge the functionalities of this and [protocheck](https://github.com/Rick-Phoenix/protocheck), re-implementing the schema-related functionalities of this crate with procedural macros rather than declarative macros. I do not plan on maintaining this crate once that will be released.
+
 > 📐 Programmatically define protobuf contracts using flexible, modular and reusable elements
 
 Protobuf has many strengths, like its schema-driven composition and language-agnostic reproduction of the objects defined in `.proto` files.
